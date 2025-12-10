@@ -1,100 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>ScoutPro Radar</title>
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Mono&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --bg:#07090f;
-  --card:#141824;
-  --soft:#1b2030;
+  --bg:#05060a;
+  --card:#151821;
+  --soft:#1c2130;
   --border:rgba(255,255,255,.12);
   --text:#f4f6fb;
-  --muted:#9aa4bb;
+  --muted:#9aa2b3;
+
   --green:#00d68f;
-  --greenBg:rgba(0,214,143,.25);
+  --greenBg:rgba(0,214,143,.18);
   --blue:#5aa9ff;
-  --blueBg:rgba(90,169,255,.25);
+  --blueBg:rgba(90,169,255,.18);
   --red:#ff6b6b;
-  --redBg:rgba(255,107,107,.25);
+  --redBg:rgba(255,107,107,.18);
 }
 *{box-sizing:border-box}
 body{
   margin:0;
-  background:var(--bg);
+  background:radial-gradient(circle at top,#121723,#05060a 55%);
   color:var(--text);
   font-family:'DM Sans',sans-serif;
-  padding-bottom:40px;
 }
-.app{max-width:440px;margin:auto}
+.app{max-width:440px;margin:auto;padding-bottom:40px}
 
-/* Sticky scanner */
+/* header */
 header{
-  position:sticky;top:0;z-index:50;
-  background:rgba(7,9,15,.95);
-  backdrop-filter:blur(8px);
+  padding:14px 16px;
+  position:sticky;top:0;z-index:10;
+  background:rgba(7,9,16,.85);
+  backdrop-filter:blur(10px);
   border-bottom:1px solid var(--border);
-  padding:14px;
 }
-.input-group{display:flex;gap:8px}
+h1{margin:0;font-size:18px}
+.sub{font-size:11px;color:var(--muted)}
+
+/* scan */
+.scan-row{display:flex;gap:8px;margin-top:8px}
 input[type=text]{
-  flex:1;background:var(--soft);border:1px solid var(--border);
-  color:white;padding:12px;border-radius:10px;
-  font-family:'DM Mono',monospace;font-size:16px;
+  flex:1;
+  background:#050711;
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:12px;
+  padding:12px;
+  font-family:'DM Mono',monospace;
 }
-.btn-scan{
-  background:var(--blue);border:none;border-radius:10px;
-  font-weight:700;padding:0 16px;cursor:pointer;
+button{
+  background:var(--blue);
+  border:none;
+  border-radius:12px;
+  padding:0 16px;
+  font-weight:700;
+  cursor:pointer;
 }
 
-/* Empty */
-#emptyState{text-align:center;padding:80px 20px;color:var(--muted)}
-.empty-icon{font-size:48px;opacity:.5}
+/* empty */
+.empty{
+  text-align:center;
+  padding:80px 20px;
+  color:var(--muted);
+}
+.empty div{font-size:48px;margin-bottom:8px}
 
-/* Card */
+/* card */
 .card{
-  margin:16px;background:var(--card);
-  border-radius:18px;border:1px solid var(--border);
-  overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.5);
+  margin:16px;
+  background:var(--card);
+  border-radius:22px;
+  border:1px solid var(--border);
+  overflow:hidden;
+  box-shadow:0 18px 40px rgba(0,0,0,.6);
+  display:none;
 }
-.hidden{display:none}
 
-/* Banner */
+/* banner */
 .banner{
-  padding:18px;text-align:center;border-bottom:1px solid var(--border);
+  padding:18px;
+  border-bottom:1px solid var(--border);
 }
-.banner.buy{background:linear-gradient(135deg,var(--greenBg),#111)}
-.banner.check{background:linear-gradient(135deg,var(--blueBg),#111)}
-.banner.pass{background:linear-gradient(135deg,var(--redBg),#111)}
+.banner.buy{background:linear-gradient(135deg,var(--greenBg),#0b0e16)}
+.banner.check{background:linear-gradient(135deg,var(--blueBg),#0b0e16)}
+.banner.pass{background:linear-gradient(135deg,var(--redBg),#0b0e16)}
+
 .decision{
-  font-size:26px;font-weight:700;letter-spacing:.04em;
+  font-size:24px;
+  font-weight:700;
+  letter-spacing:.06em;
 }
 .decision.buy{color:var(--green)}
 .decision.check{color:var(--blue)}
 .decision.pass{color:var(--red)}
-.basis{font-size:13px;color:var(--muted);margin-top:6px}
-
-/* Blocks */
-.block{padding:14px 16px;border-top:1px solid var(--border)}
-.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.label{font-size:13px;color:var(--muted)}
-.value{font-family:'DM Mono',monospace;font-size:16px;font-weight:600}
-
-/* Controls */
-.control-block{padding:14px 16px;border-top:1px solid var(--border)}
-.control-header{
-  display:flex;justify-content:space-between;
-  font-size:13px;color:var(--muted);margin-bottom:6px;
+.reason{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--muted);
 }
-input[type=range]{width:100%;accent-color:var(--blue)}
+
+/* sections */
+.section{
+  padding:14px 16px;
+  border-top:1px solid var(--border);
+}
+.section-title{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
+.label{font-size:12px;color:var(--muted)}
+.value{
+  font-family:'DM Mono',monospace;
+  font-size:16px;
+}
+
+/* controls */
+.control{
+  background:var(--soft);
+  padding:10px;
+  border-radius:14px;
+}
+.control-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  color:var(--muted);
+}
+input[type=range]{width:100%;margin-top:8px}
 input[type=number]{
-  width:80px;background:#05070c;border:1px solid var(--border);
-  color:var(--text);border-radius:6px;
-  text-align:right;font-family:'DM Mono',monospace;
+  width:80px;
+  background:#050711;
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:8px;
+  padding:4px;
+  font-family:'DM Mono',monospace;
 }
 </style>
 </head>
@@ -103,58 +159,62 @@ input[type=number]{
 <div class="app">
 
 <header>
-  <div class="input-group">
-    <input id="scanInput" type="text" placeholder="Scan ISBN / UPC…" inputmode="numeric">
-    <button class="btn-scan" id="scanBtn">GO</button>
+  <h1>ScoutPro Radar</h1>
+  <div class="sub">Scan first. Decide instantly.</div>
+  <div class="scan-row">
+    <input id="scan" type="text" placeholder="Scan ISBN / UPC">
+    <button onclick="scan()">GO</button>
   </div>
 </header>
 
-<div id="emptyState">
-  <div class="empty-icon">📡</div>
-  <h3>ScoutPro Radar</h3>
-  <p>Scan a book to begin</p>
+<div id="empty" class="empty">
+  <div>📡</div>
+  Ready to scan
 </div>
 
-<div id="resultCard" class="card hidden">
+<div id="card" class="card">
 
   <div id="banner" class="banner buy">
-    <div id="decision" class="decision buy">BUY</div>
-    <div id="basis" class="basis">Profit meets your goal</div>
+    <div id="decision" class="decision buy">BUY NOW</div>
+    <div id="reason" class="reason">Profit meets your rule</div>
   </div>
 
-  <div class="block">
+  <div class="section">
+    <div class="section-title">Outcome</div>
     <div class="row">
       <span class="label">Sell FBA for</span>
-      <span class="value">$<input id="sellInput" type="number" step="0.01"></span>
+      <span class="value" id="sell">$24.99</span>
     </div>
     <div class="row">
-      <span class="label">Estimated fees</span>
-      <span class="value" id="feesVal">-$0.00</span>
-    </div>
-    <div class="row">
-      <span class="label" style="color:#fff">Net profit</span>
-      <span class="value" id="profitVal">+$0.00</span>
+      <span class="label">Profit</span>
+      <span class="value" id="profit">+$0.00</span>
     </div>
     <div class="row">
       <span class="label">ROI</span>
-      <span class="value" id="roiVal">0%</span>
+      <span class="value" id="roi">0%</span>
     </div>
   </div>
 
-  <div class="control-block">
-    <div class="control-header">
-      <span>Buy cost</span>
-      <input id="buyInput" type="number" step="0.25">
+  <div class="section">
+    <div class="section-title">Your costs</div>
+    <div class="control">
+      <div class="control-head">
+        <span>Buy cost</span>
+        <span>$ <input id="buyCost" type="number" step=".25"></span>
+      </div>
+      <input id="buySlider" type="range" min=".25" max="25" step=".25">
     </div>
-    <input id="buySlider" type="range" min="0" max="25" step="0.25">
   </div>
 
-  <div class="control-block">
-    <div class="control-header">
-      <span>Minimum profit goal</span>
-      <input id="goalInput" type="number" step="1">
+  <div class="section">
+    <div class="section-title">Rules</div>
+    <div class="control">
+      <div class="control-head">
+        <span>Minimum profit</span>
+        <span>$ <input id="floor" type="number" step="1"></span>
+      </div>
+      <input id="floorSlider" type="range" min="1" max="50" step="1">
     </div>
-    <input id="goalSlider" type="range" min="1" max="50" step="1">
   </div>
 
 </div>
@@ -162,81 +222,69 @@ input[type=number]{
 
 <script>
 let sellPrice = 24.99
-let buyCost = parseFloat(localStorage.getItem('buyCost')||'1')
-let profitGoal = parseFloat(localStorage.getItem('profitGoal')||'5')
+let buy = parseFloat(localStorage.getItem('buy')||'1')
+let floor = parseFloat(localStorage.getItem('floor')||'5')
 
-const el = id => document.getElementById(id)
-const scanInput = el('scanInput')
+const card = document.getElementById('card')
+const empty = document.getElementById('empty')
+const buyInput = document.getElementById('buyCost')
+const buySlider = document.getElementById('buySlider')
+const floorInput = document.getElementById('floor')
+const floorSlider = document.getElementById('floorSlider')
 
-function sync(){
-  el('sellInput').value = sellPrice.toFixed(2)
-  el('buyInput').value = buyCost.toFixed(2)
-  el('buySlider').value = buyCost
-  el('goalInput').value = profitGoal
-  el('goalSlider').value = profitGoal
+function scan(){
+  sellPrice = 15 + Math.random()*30
+  empty.style.display='none'
+  card.style.display='block'
+  recalc()
 }
 
 function recalc(){
-  sellPrice = parseFloat(el('sellInput').value)||0
-  buyCost = parseFloat(el('buyInput').value)||0
-  profitGoal = parseFloat(el('goalInput').value)||0
+  localStorage.setItem('buy',buy)
+  localStorage.setItem('floor',floor)
 
-  localStorage.setItem('buyCost',buyCost)
-  localStorage.setItem('profitGoal',profitGoal)
+  const fees = sellPrice*.15 + 4.5
+  const profit = sellPrice - buy - fees
+  const roi = buy>0 ? profit/buy*100 : 0
 
-  const fees = sellPrice*0.15 + 4.5
-  const profit = sellPrice - buyCost - fees
-  const roi = buyCost>0 ? profit/buyCost*100 : 0
+  document.getElementById('sell').textContent = `$${sellPrice.toFixed(2)}`
+  document.getElementById('profit').textContent =
+    (profit>=0?'+':'-')+`$${Math.abs(profit).toFixed(2)}`
+  document.getElementById('roi').textContent = roi.toFixed(0)+'%'
 
-  el('feesVal').textContent = `-$${fees.toFixed(2)}`
-  el('profitVal').textContent = (profit>=0?'+':'-')+`$${Math.abs(profit).toFixed(2)}`
-  el('roiVal').textContent = roi.toFixed(0)+'%'
+  const banner = document.getElementById('banner')
+  const dec = document.getElementById('decision')
+  const reason = document.getElementById('reason')
 
-  const banner = el('banner')
-  const decision = el('decision')
-  const basis = el('basis')
-
-  if(profit >= profitGoal){
+  if(profit >= floor){
     banner.className='banner buy'
-    decision.className='decision buy'
-    decision.textContent='BUY'
-    basis.textContent='Profit meets your goal'
-  } else if(profit > 0){
+    dec.className='decision buy'
+    dec.textContent='BUY NOW'
+    reason.textContent='Profit meets your rule'
+  }else if(profit > 0){
     banner.className='banner check'
-    decision.className='decision check'
-    decision.textContent='CHECK'
-    basis.textContent='Below profit goal — verify pricing'
-  } else {
+    dec.className='decision check'
+    dec.textContent='CHECK SCOUTLY'
+    reason.textContent='Below profit target — verify'
+  }else{
     banner.className='banner pass'
-    decision.className='decision pass'
-    decision.textContent='SKIP'
-    basis.textContent='Projected loss'
+    dec.className='decision pass'
+    dec.textContent='SKIP'
+    reason.textContent='Projected loss'
   }
 }
 
-function handleScan(){
-  const code = scanInput.value.trim()
-  if(!code) return
-  sellPrice = Math.random()*30 + 10
-  el('emptyState').style.display='none'
-  el('resultCard').classList.remove('hidden')
-  sync()
-  recalc()
-  scanInput.value=''
-}
+buyInput.value = buy.toFixed(2)
+buySlider.value = buy
+floorInput.value = floor
+floorSlider.value = floor
 
-el('scanBtn').onclick=handleScan
-scanInput.onkeypress=e=>{if(e.key==='Enter')handleScan()}
+buyInput.oninput = e=>{buy=parseFloat(e.target.value)||0;buySlider.value=buy;recalc()}
+buySlider.oninput = e=>{buy=parseFloat(e.target.value);buyInput.value=buy;recalc()}
+floorInput.oninput = e=>{floor=parseFloat(e.target.value)||0;floorSlider.value=floor;recalc()}
+floorSlider.oninput = e=>{floor=parseFloat(e.target.value);floorInput.value=floor;recalc()}
 
-;['sellInput','buyInput','goalInput'].forEach(id=>el(id).oninput=recalc)
-;['buySlider','goalSlider'].forEach(id=>{
-  el(id).oninput=()=>{
-    el(id.replace('Slider','Input')).value=el(id).value
-    recalc()
-  }
-})
-
-sync();recalc()
+recalc()
 </script>
 </body>
 </html>
