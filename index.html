@@ -23,6 +23,8 @@
       --red-soft:rgba(255,107,107,.15);
       --yellow:#ffd166;
       --yellow-soft:rgba(255,209,102,.2);
+      --blue:#5aa9ff;
+      --blue-soft:rgba(90,169,255,.18);
       --shadow:0 18px 40px rgba(0,0,0,.55);
       --radius-lg:20px;
       --radius-md:14px;
@@ -185,6 +187,10 @@
       background:linear-gradient(135deg,rgba(255,209,102,.25),rgba(7,10,18,.95));
       border-bottom:1px solid rgba(255,209,102,.55);
     }
+    .banner.check{
+      background:linear-gradient(135deg,rgba(90,169,255,.25),rgba(7,10,18,.95));
+      border-bottom:1px solid rgba(90,169,255,.7);
+    }
     .banner-main{
       display:flex;
       flex-direction:column;
@@ -345,7 +351,7 @@
   <header>
     <div class="hdr-left">
       <div class="hdr-title">ScoutPro Radar</div>
-      <div class="hdr-sub">See what other scanners miss</div>
+      <div class="hdr-sub">Scan first here, then use Scoutly when needed</div>
     </div>
     <div class="hdr-right">
       <span id="tokenDisplay"></span>
@@ -390,7 +396,7 @@
     </div>
     <div style="margin-top:4px;font-size:10px;color:var(--muted);display:flex;justify-content:space-between;">
       <span id="itemTypeStatus">📘 Auto-detect item type from Keepa</span>
-      <span>Hold volume buttons to fire scanner</span>
+      <span>Radar first → Scoutly only when asked</span>
     </div>
   </div>
 
@@ -486,12 +492,11 @@
 </div>
 
 <script>
-  // --- STATE ---
   let apiKey = localStorage.getItem('scoutProKey') || '';
-  let mode = 'speed'; // 'speed' | 'analysis' | 'hold'
-  let condition = 'used'; // 'used' | 'new'
-  let itemType = 'auto'; // 'auto' | 'book' | 'media' | 'generic'
-  let manualOverride = false; // expert override for filters
+  let mode = 'speed';
+  let condition = 'used';
+  let itemType = 'auto';
+  let manualOverride = false;
 
   const input = document.getElementById('barcodeInput');
   const clearBtn = document.getElementById('clearBtn');
@@ -507,7 +512,6 @@
   const intelSection = document.getElementById('intelSection');
   const itemTypeStatus = document.getElementById('itemTypeStatus');
 
-  // --- UI CONTROLS ---
   const modeButtons = {
     speed: document.getElementById('modeSpeed'),
     analysis: document.getElementById('modeAnalysis'),
@@ -585,7 +589,6 @@
     }
   }
 
-  // --- INPUT HANDLING ---
   input.focus();
   input.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -595,7 +598,6 @@
     }
   });
 
-  // --- KEEPA HELPERS ---
   function getStat(stats, idx) {
     const chain = ['current','avg30','avg90','avg180'];
     for (const key of chain) {
@@ -615,27 +617,16 @@
 
   function sanitizePrice(obj) {
     if (!obj || !obj.v) return null;
-    if (obj.v < 150) return null; // < $1.50 = junk for books
+    if (obj.v < 150) return null;
     return obj;
   }
 
   function isCorroboratedUsedFBA(usedFBA, usedFBM, amazon) {
     if (!usedFBA || !usedFBA.v) return false;
-
-    // absolute floor
-    if (usedFBA.v < 200) return false; // < $2.00
-
-    // CSV-only Prime-used is junk
+    if (usedFBA.v < 200) return false;
     if (usedFBA.src === 'csv') return false;
-
-    // must not be wildly cheaper than FBM
     if (usedFBM && usedFBM.v && usedFBA.v < usedFBM.v * 0.6) return false;
-
-    // if Amazon present but FBA not recent, treat as suspect
-    if (amazon && amazon.v && usedFBA.src !== 'current' && usedFBA.src !== 'avg30') {
-      return false;
-    }
-
+    if (amazon && amazon.v && usedFBA.src !== 'current' && usedFBA.src !== 'avg30') return false;
     return true;
   }
 
@@ -698,25 +689,21 @@
     const res = { label:'Unknown', sub:'No offer data', depth:0, warning:false };
     const offers = product.offers;
     if (!Array.isArray(offers) || offers.length === 0) return res;
-
     const prices = [];
     for (const off of offers) {
       if (!off.isShippable) continue;
-      const cond = off.condition; // 0=new,1=used per Keepa
+      const cond = off.condition;
       if (targetCondition === 'used' && cond !== 1) continue;
       if (targetCondition === 'new' && cond !== 0) continue;
       if (off.price <= 0) continue;
       prices.push(off.price);
     }
     if (prices.length === 0) return res;
-
     prices.sort((a,b)=>a-b);
     const depth = prices.length;
     const first = prices[0];
     const second = prices[1] ?? null;
-
     res.depth = depth;
-
     if (depth === 1) {
       res.label = '⚠ Fragile';
       res.sub = 'Only one meaningful seller';
@@ -761,14 +748,11 @@
   function computeROIBand(sellPrice, buyCost) {
     if (!sellPrice || !buyCost) return null;
     const fee = (p) => p * 0.15 + 4.50;
-
     const best = sellPrice;
     const likely = sellPrice * 0.9;
     const worst = sellPrice * 0.8;
-
     const prof = (p) => p - buyCost - fee(p);
     const roi = (prof) => (prof / buyCost) * 100;
-
     return {
       best: { profit:prof(best), roi:roi(prof(best)) },
       likely:{ profit:prof(likely), roi:roi(prof(likely)) },
@@ -778,17 +762,14 @@
 
   function chooseSellPrice(condition, prices, amazon) {
     const { usedFBA_raw, usedFBM_raw, newFBA_raw, newFBM_raw } = prices;
-
     const usedFBA_san = sanitizePrice(usedFBA_raw);
     const usedFBM_san = sanitizePrice(usedFBM_raw);
     const newFBA_san = sanitizePrice(newFBA_raw);
     const newFBM_san = sanitizePrice(newFBM_raw);
     const amz_san = sanitizePrice(amazon);
 
-    // Used
     if (condition === 'used') {
       const fbaOK = isCorroboratedUsedFBA(usedFBA_san, usedFBM_san, amz_san);
-
       if (usedFBM_san && fbaOK) {
         if (usedFBA_san.v <= usedFBM_san.v * 1.15) {
           return { price:usedFBA_san, basis:'Used FBA (corroborated, within 15% of FBM)' };
@@ -796,22 +777,18 @@
           return { price:usedFBM_san, basis:'Used FBM (cheaper than FBA)' };
         }
       }
-
       if (usedFBM_san) {
         return {
           price:usedFBM_san,
           basis:usedFBM_san.inferred ? 'Used FBM (inferred from Amazon)' : 'Used FBM'
         };
       }
-
       if (fbaOK) {
         return { price:usedFBA_san, basis:'Used FBA (only viable used offer)' };
       }
-
       return { price:null, basis:'No reliable used offers' };
     }
 
-    // New
     if (condition === 'new') {
       if (newFBA_san && newFBM_san) {
         if (newFBA_san.v <= newFBM_san.v * 1.15) {
@@ -820,9 +797,7 @@
           return { price:newFBM_san, basis:'New FBM (FBA > 15% higher)' };
         }
       }
-
       if (newFBA_san) return { price:newFBA_san, basis:'New FBA (Buy Box approx.)' };
-
       if (amz_san && newFBM_san) {
         if (amz_san.v <= newFBM_san.v * 1.15) {
           return { price:amz_san, basis:'Amazon Retail (within 15% of FBM)' };
@@ -830,10 +805,8 @@
           return { price:newFBM_san, basis:'New FBM (cheaper than Amazon)' };
         }
       }
-
       if (amz_san) return { price:amz_san, basis:'Amazon Retail' };
       if (newFBM_san) return { price:newFBM_san, basis:'New FBM (no FBA/Amazon)' };
-
       return { price:null, basis:'No reliable new offers' };
     }
 
@@ -841,13 +814,10 @@
   }
 
   function autoDetectType(product) {
-    // Very loose, safe heuristics; manual override always available.
     let autoLabel = '📘 Auto-detect item type from Keepa';
     let detected = 'generic';
-
     const group = (product.productGroup || '').toString().toLowerCase();
     const title = (product.title || '').toString().toLowerCase();
-
     if (group.includes('book') || title.includes('volume') || title.includes('edition')) {
       detected = 'book';
       autoLabel = '📘 Auto: Book mode';
@@ -858,7 +828,6 @@
       detected = 'generic';
       autoLabel = '📦 Auto: Generic mode';
     }
-
     if (itemType === 'auto') {
       itemTypeStatus.textContent = autoLabel;
     }
@@ -871,22 +840,18 @@
       return;
     }
     card.style.display = 'none';
-
     try {
       const res = await fetch(
         `https://api.keepa.com/product?key=${encodeURIComponent(apiKey)}&domain=1&code=${encodeURIComponent(code)}&stats=1&offers=20`
       );
       const data = await res.json();
-
       if (data.tokensLeft !== undefined) {
         tokenDisplay.textContent = data.tokensLeft + ' tokens';
       }
-
       if (!data.products || !data.products[0]) {
         alert('No product found for that code.');
         return;
       }
-
       renderProduct(data.products[0]);
     } catch (err) {
       alert('Error contacting Keepa: ' + err.message);
@@ -896,11 +861,8 @@
   function renderProduct(p) {
     const s = p.stats;
     const csv = p.csv || {};
-
-    // Auto detect item type if in auto
     const detectedType = autoDetectType(p);
 
-    // Base prices (raw Keepa objects)
     let usedFBA_raw = getStat(s,11) || getCsv(csv,11);
     let usedFBM_raw = getStat(s,7)  || getCsv(csv,7);
     let newFBA_raw  = getStat(s,10) || getCsv(csv,10);
@@ -908,23 +870,27 @@
     let amazon      = getStat(s,0)  || getCsv(csv,0);
     let rank        = getStat(s,3);
 
-    // Inference: if Amazon exists & Used FBM missing or overpriced, infer used FBM
+    const hasObservedUsedBeforeInfer =
+      (usedFBM_raw && !usedFBM_raw.inferred) ||
+      (usedFBA_raw && !usedFBA_raw.inferred);
+
     if (amazon && amazon.v) {
       if (!usedFBM_raw || !usedFBM_raw.v || usedFBM_raw.v > amazon.v) {
         usedFBM_raw = inferUsedFBMFromAmazon(amazon);
       }
     }
 
-    // For display
-    const fbaOK = isCorroboratedUsedFBA(sanitizePrice(usedFBA_raw), sanitizePrice(usedFBM_raw), sanitizePrice(amazon));
-    const usedFBA_display = fbaOK ? sanitizePrice(usedFBA_raw) : null;
+    const usedFBA_display = isCorroboratedUsedFBA(
+      sanitizePrice(usedFBA_raw),
+      sanitizePrice(usedFBM_raw),
+      sanitizePrice(amazon)
+    ) ? sanitizePrice(usedFBA_raw) : null;
 
     showPrice('usedFBM', usedFBM_raw);
     showPrice('newFBA', newFBA_raw);
     showPrice('newFBM', newFBM_raw);
     showPrice('amazon', amazon);
 
-    // Used FBA row: show price if valid, else ignored badge
     const usedFBAEl = document.getElementById('usedFBA');
     const usedFBA_metaEl = document.getElementById('usedFBA_meta');
     const usedFBA_badge = document.getElementById('usedFBA_badge');
@@ -952,23 +918,16 @@
       document.getElementById('rank_meta').textContent = '';
     }
 
-    // Choose effective item type
     const effectiveType = itemType === 'auto' ? detectedType : itemType;
 
-    // Choose sell price
     const sellChoice = chooseSellPrice(
       condition,
-      {
-        usedFBA_raw,
-        usedFBM_raw,
-        newFBA_raw,
-        newFBM_raw
-      },
+      { usedFBA_raw, usedFBM_raw, newFBA_raw, newFBM_raw },
       amazon
     );
     const sellObj = sellChoice.price;
-
     const conf = computeConfidence(sellObj);
+
     if (sellObj && sellObj.v) {
       confidenceTag.style.display = 'inline-flex';
       confidenceTag.textContent = conf.label;
@@ -991,7 +950,7 @@
     document.getElementById('intelAmazon').textContent = amzBeh.label;
     document.getElementById('intelAmazonSub').textContent = amzBeh.sub;
 
-    const buyCost = 1.00; // placeholder cost
+    const buyCost = 1.00;
     let profit = null;
     let roiBand = null;
 
@@ -1002,64 +961,112 @@
       roiBand = computeROIBand(sell, buyCost);
     }
 
-    let decision = 'PASS';
-    let reasonSuffix = '';
-
+    const velTier = velocity.tier;
+    const rankVal = rank?.v || null;
     const baseProfOK = profit !== null && profit >= 5;
     const looserProfOK = profit !== null && profit >= 3;
     const longTailProfOK = profit !== null && profit >= 8;
-    const velTier = velocity.tier;
-    const rankVal = rank?.v || null;
+
+    const hasObservedUsed =
+      (usedFBM_raw && usedFBM_raw.v && !usedFBM_raw.inferred) ||
+      (usedFBA_raw && usedFBA_raw.v && !usedFBA_raw.inferred);
+
+    const hasObservedAny =
+      hasObservedUsed ||
+      (newFBA_raw && newFBA_raw.v && !newFBA_raw.inferred) ||
+      (newFBM_raw && newFBM_raw.v && !newFBM_raw.inferred) ||
+      (amazon && amazon.v);
+
+    const blindSpot =
+      !!rankVal &&
+      !hasObservedAny;
+
+    const hiddenUsedMarket =
+      !!rankVal &&
+      amazon && amazon.v &&
+      !hasObservedUsed &&
+      usedFBM_raw && usedFBM_raw.inferred;
+
+    let action = 'SKIP';
+    let actionReason = sellChoice.basis || '';
+    let actionBannerClass = 'pass';
 
     if (manualOverride) {
       if (profit !== null && profit >= 5) {
-        decision = 'BUY';
+        action = 'BUY NOW';
+        actionReason = 'Profit looks solid. You chose manual override.';
+        actionBannerClass = 'buy';
       } else {
-        decision = 'PASS';
+        action = 'SKIP';
+        actionReason = 'Even with override, profit is weak/negative.';
+        actionBannerClass = 'pass';
       }
-      reasonSuffix = ' (Manual override: filters relaxed)';
-    } else if (mode === 'speed') {
-      if (baseProfOK &&
-          (velTier === 'fast' || velTier === 'strong' || velTier === 'decent') &&
-          conf.score >= 45 &&
-          (!rankVal || rankVal < 1500000)) {
-        decision = 'BUY';
-      } else {
-        decision = 'PASS';
-        reasonSuffix = ' (Speed mode filters applied)';
-      }
-    } else if (mode === 'analysis') {
-      decision = looserProfOK ? 'BUY' : 'PASS';
-      reasonSuffix = ' (Analysis mode)';
+    } else if (blindSpot) {
+      action = 'CHECK SCOUTLY';
+      actionReason = 'Rank exists but Keepa can\'t see live offers. Use Scoutly/Amazon app to see actual used price.';
+      actionBannerClass = 'check';
+    } else if (hiddenUsedMarket) {
+      action = 'CHECK SCOUTLY';
+      actionReason = 'Used price is inferred from Amazon only. Confirm lowest used FBM in Scoutly before buying.';
+      actionBannerClass = 'check';
     } else if (mode === 'hold') {
       if (longTailProfOK &&
           (velTier === 'slow' || velTier === 'dead') &&
           rankVal && rankVal > 1000000) {
-        decision = 'HOLD CANDIDATE';
+        action = 'HOLD BIN CANDIDATE';
+        actionReason = 'High potential margin, slow velocity. Good for long-tail hold if you have storage.';
+        actionBannerClass = 'hold';
       } else if (baseProfOK && velTier !== 'dead') {
-        decision = 'BUY';
+        action = 'BUY NOW';
+        actionReason = 'Good profit and not dead. Hold mode still likes this.';
+        actionBannerClass = 'buy';
       } else {
-        decision = 'PASS';
+        action = 'SKIP';
+        actionReason = 'Not enough margin or demand for hold strategy.';
+        actionBannerClass = 'pass';
       }
-      reasonSuffix = ' (Hold mode)';
+    } else if (mode === 'analysis') {
+      if (looserProfOK && velTier !== 'dead') {
+        action = 'BUY NOW';
+        actionReason = 'Looks good on paper. You can still cross-check in Scoutly if unsure.';
+        actionBannerClass = 'buy';
+      } else {
+        action = 'SKIP';
+        actionReason = 'Profit or velocity too weak. Not worth the slot.';
+        actionBannerClass = 'pass';
+      }
+    } else {
+      if (baseProfOK &&
+          (velTier === 'fast' || velTier === 'strong' || velTier === 'decent') &&
+          conf.score >= 45 &&
+          (!rankVal || rankVal < 1500000)) {
+        action = 'BUY NOW';
+        actionReason = 'Fast enough, profitable enough, and data looks solid.';
+        actionBannerClass = 'buy';
+      } else if (sellObj && sellObj.v && conf.score >= 35) {
+        action = 'CHECK SCOUTLY';
+        actionReason = 'Price exists but filters not fully met. Quick Scoutly check recommended before buying.';
+        actionBannerClass = 'check';
+      } else {
+        action = 'SKIP';
+        actionReason = sellChoice.basis || 'Not enough signal to risk money here.';
+        actionBannerClass = 'pass';
+      }
     }
 
-    decisionEl.textContent = decision;
+    decisionEl.textContent = action;
+    reasonEl.textContent = actionReason;
+
     if (!sellObj || !sellObj.v) {
-      reasonEl.textContent = (sellChoice.basis || 'No usable price') + reasonSuffix;
       profitEl.textContent = '--';
       roiLikelyEl.textContent = '';
-      banner.className = 'banner pass';
     } else {
-      reasonEl.textContent = (sellChoice.basis || '') + reasonSuffix;
-
       if (profit !== null) {
         const sign = profit < 0 ? '-$' : '$';
         profitEl.textContent = sign + Math.abs(profit).toFixed(2);
       } else {
         profitEl.textContent = '--';
       }
-
       if (roiBand) {
         const likely = roiBand.likely.roi;
         roiLikelyEl.textContent = `Likely ROI ~ ${likely.toFixed(0)}%`;
@@ -1072,26 +1079,20 @@
         document.getElementById('intelROI').textContent = 'N/A';
         document.getElementById('intelROISub').textContent = 'No ROI band available';
       }
-
-      if (decision === 'BUY') {
-        banner.className = 'banner buy';
-      } else if (decision === 'HOLD CANDIDATE') {
-        banner.className = 'banner hold';
-      } else {
-        banner.className = 'banner pass';
-      }
     }
 
-    // Intel visibility by mode
+    banner.className = 'banner ' + actionBannerClass;
     intelSection.style.display = (mode === 'analysis' || mode === 'hold') ? 'block' : 'none';
 
     card.style.display = 'block';
 
     if (navigator.vibrate) {
-      if (decision.startsWith('BUY')) {
+      if (action === 'BUY NOW') {
         navigator.vibrate([60]);
-      } else if (decision.startsWith('HOLD')) {
+      } else if (action === 'HOLD BIN CANDIDATE') {
         navigator.vibrate([30,30]);
+      } else if (action === 'CHECK SCOUTLY') {
+        navigator.vibrate([20,40,20]);
       } else {
         navigator.vibrate([20]);
       }
@@ -1103,7 +1104,6 @@
     }, 650);
   }
 
-  // Prompt for API key if missing
   if (!apiKey) {
     const entered = prompt('Enter Keepa API key:','');
     if (entered) {
