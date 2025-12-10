@@ -1,82 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ScoutPro Radar v2.0</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ScoutPro Radar v2.2</title>
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Mono&display=swap" rel="stylesheet">
 
 <style>
-:root{
-  --bg:#05060a; --panel:#121728; --card:#171c33; --soft:#222855;
+:root {
+  --bg:#05060a; --panel:#121728; --card:#171c33;
   --border:rgba(255,255,255,.12);
   --text:#f6f7ff; --muted:#9aa3c7;
   --green:#00d68f; --yellow:#ffd166; --red:#ff6b6b; --blue:#5aa9ff;
 }
-*{box-sizing:border-box}
-body{
-  margin:0;font-family:'DM Sans',sans-serif;
+* { box-sizing:border-box; }
+body {
+  margin:0; font-family:'DM Sans',sans-serif;
   background:radial-gradient(circle at top,#0f1430,#05060a 70%);
   color:var(--text);
 }
-.app{max-width:500px;margin:auto;padding-bottom:40px;}
+.app { max-width:520px; margin:auto; padding-bottom:100px; }
 
-header{
-  position:sticky;top:0;z-index:50;
-  background:rgba(7,10,22,.95);
+header {
+  position:sticky; top:0; z-index:50;
+  background:#060918; padding:12px;
   border-bottom:1px solid var(--border);
-  padding:12px;display:flex;gap:8px;
+  display:flex; gap:8px;
 }
 
-input{
-  flex:1;padding:12px;border-radius:12px;
-  background:#050711;border:1px solid var(--border);
-  color:var(--text);font-family:'DM Mono';
+input {
+  flex:1; padding:12px; border-radius:12px;
+  background:#050711; border:1px solid var(--border);
+  color:var(--text); font-family:'DM Mono';
 }
-button{
-  padding:0 16px;border:none;border-radius:12px;
-  background:var(--blue);font-weight:700;
+button {
+  padding:10px 16px; border:none; border-radius:12px;
+  font-weight:700; cursor:pointer;
 }
 
-.card{
-  margin:14px;background:var(--panel);
-  border-radius:24px;border:1px solid var(--border);
+.card {
+  margin:12px; background:var(--panel);
+  border-radius:24px; border:1px solid var(--border);
   overflow:hidden;
 }
 
-/* Decision */
-.command{padding:18px;border-bottom:1px solid var(--border);}
-.buy{background:linear-gradient(135deg,rgba(0,214,143,.25),#0a0e22)}
-.check{background:linear-gradient(135deg,rgba(255,209,102,.25),#0a0e22)}
-.pass{background:linear-gradient(135deg,rgba(255,107,107,.25),#0a0e22)}
-.action{font-size:26px;font-weight:800}
-.sub{font-size:12px;color:var(--muted)}
-.kpis{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.kpi span{font-size:11px;color:var(--muted)}
-.kpi strong{display:block;font-family:'DM Mono';font-size:15px}
+.command { padding:18px; }
+.buy { background:linear-gradient(135deg,rgba(0,214,143,.25),#0a0e22); }
+.check { background:linear-gradient(135deg,rgba(255,209,102,.25),#0a0e22); }
+.pass { background:linear-gradient(135deg,rgba(255,107,107,.25),#0a0e22); }
 
-.section{padding:14px 18px;border-top:1px solid var(--border)}
-.section h4{
-  margin:0 0 6px;font-size:11px;
-  text-transform:uppercase;letter-spacing:.12em;color:var(--muted)
+.flash { animation:flash 300ms; }
+@keyframes flash {
+  0% { box-shadow:0 0 0 rgba(0,255,150,.8); }
+  100% { box-shadow:0 0 30px rgba(0,255,150,0); }
 }
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.cell{
-  background:var(--card);border-radius:12px;
-  padding:10px;border:1px solid var(--border)
-}
-.cell span{font-size:10px;color:var(--muted)}
-.cell strong{display:block;margin-top:4px;font-family:'DM Mono'}
 
-.badge{
-  display:inline-block;padding:3px 8px;
-  font-size:10px;border-radius:999px;font-weight:700
+.section { padding:14px 18px; border-top:1px solid var(--border); }
+h4 {
+  margin:0 0 6px;
+  font-size:11px; text-transform:uppercase;
+  color:var(--muted);
 }
-.fba{background:rgba(0,214,143,.25);color:var(--green)}
-.fbm{background:rgba(255,209,102,.25);color:var(--yellow)}
-.amazon{background:rgba(255,107,107,.25);color:var(--red)}
-.rotate{background:rgba(90,169,255,.25);color:var(--blue)}
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+.cell {
+  background:var(--card);
+  border-radius:12px;
+  padding:10px;
+  border:1px solid var(--border);
+}
+.cell span { font-size:10px; color:var(--muted); }
+.cell strong { display:block; margin-top:4px; font-family:'DM Mono'; }
+
+#isbnBar {
+  padding:6px 10px; font-family:'DM Mono';
+  font-size:13px; color:var(--muted);
+}
+
+/* History */
+#historyPage { display:none; }
+.historyRow {
+  border-bottom:1px solid var(--border);
+  padding:8px;
+}
+.historyRow div { font-size:12px; }
+
+/* Advanced toggle */
+#advancedSection { display:none; }
+
+/* Duplicate warning */
+#dupeWarning {
+  padding:6px 12px;
+  color:var(--yellow);
+  font-size:12px;
+  display:none;
+}
 </style>
 </head>
 
@@ -84,64 +103,125 @@ button{
 <div class="app">
 
 <header>
-  <input
-    id="scanInput"
-    type="text"
-    inputmode="text"
-    pattern="[0-9X]*"
-    placeholder="Scan ISBN…"
-    autocomplete="off"
-  >
-  <button>GO</button>
+  <input id="scanInput" type="text" pattern="[0-9X]*" placeholder="Scan ISBN…" autocomplete="off" />
+  <button id="historyBtn" style="background:var(--yellow);color:#000;">History</button>
 </header>
 
-<div class="card">
+<div id="isbnBar">ISBN: —</div>
+<div id="dupeWarning">Duplicate detected — ignored.</div>
 
-<div id="banner" class="command buy">
-  <div class="action" id="decision">READY</div>
-  <div class="sub" id="reason">Waiting for scan</div>
-  <div class="kpis">
-    <div class="kpi"><span>Median FBA</span><strong id="medianFba">—</strong></div>
-    <div class="kpi"><span>Profit</span><strong id="profit">—</strong></div>
-    <div class="kpi"><span>ROI</span><strong id="roi">—</strong></div>
-    <div class="kpi"><span>Buy Box</span><strong id="bb">—</strong></div>
+<!-- MAIN CARD -->
+<div class="card" id="mainPage">
+
+  <div id="banner" class="command check">
+    <div class="action" id="decision" style="font-size:26px;font-weight:800">READY</div>
+    <div id="reason" style="font-size:12px;color:var(--muted)">Waiting for scan</div>
+
+    <div class="kpis" style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+      <div class="kpi"><span>Median FBA</span><strong id="medianFba">—</strong></div>
+      <div class="kpi"><span>Profit</span><strong id="profit">—</strong></div>
+      <div class="kpi"><span>ROI</span><strong id="roi">—</strong></div>
+      <div class="kpi"><span>Buy Box</span><strong id="bb">—</strong></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="section">
+    <h4>Controls</h4>
+    <label>Buy Cost: $<span id="buyCostVal">1.00</span></label>
+    <input type="range" min="0.10" max="10" step="0.10" id="buyCostSlider" />
+
+    <br><br>
+
+    <label>Profit Floor: $<span id="profitFloorVal">5.00</span></label>
+    <input type="range" min="1" max="20" step="1" id="profitFloorSlider" />
+
+    <br><br>
+
+    <button id="toggleAdvanced" style="background:var(--blue);color:#000;width:100%;">Show Advanced</button>
+  </div>
+
+  <!-- Advanced Section -->
+  <div id="advancedSection" class="section">
+    <h4>Market Signals</h4>
+    <div class="grid">
+      <div class="cell"><span>Buy Box Type</span><strong id="bbType"></strong></div>
+      <div class="cell"><span>Price Stability</span><strong id="stability"></strong></div>
+      <div class="cell"><span>Velocity</span><strong id="velocity"></strong></div>
+      <div class="cell"><span>False Floor</span><strong id="floor"></strong></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BUTTONS -->
+<div style="padding:16px;display:flex;gap:10px;justify-content:center;">
+  <button id="downloadBtn" style="background:var(--green);color:#000;">Download CSV</button>
+  <button id="clearBtn" style="background:var(--red);color:#000;">Clear Scan Data</button>
+</div>
+
+<!-- HISTORY PAGE -->
+<div id="historyPage" class="card">
+  <div class="section">
+    <h4>Scan History</h4>
+    <div id="historyList"></div>
+    <button id="backBtn" style="margin-top:10px;background:var(--blue);color:#000;width:100%;">Back</button>
   </div>
 </div>
 
-<div class="section">
-<h4>Market Signals</h4>
-<div class="grid">
-  <div class="cell"><span>Buy Box Type</span><strong id="bbType"></strong></div>
-  <div class="cell"><span>Price Stability</span><strong id="stability"></strong></div>
-  <div class="cell"><span>Velocity</span><strong id="velocity"></strong></div>
-  <div class="cell"><span>False Floor</span><strong id="floor"></strong></div>
-</div>
-</div>
-
-</div>
 </div>
 
 <script>
-/* =============================
-   CONFIG
-============================= */
-const BUY_COST = 1.00;
-const PROFIT_FLOOR = 5.00;
-const SCAN_DELAY = 60; // Nadamoo-safe
-
-/* =============================
-   NADAMOO-SAFE SCAN BUFFER
-============================= */
-const scanInput = document.getElementById("scanInput");
+/* ====================
+    CONFIG
+==================== */
+let BUY_COST = 1.00;
+let PROFIT_FLOOR = 5.00;
 let buffer = "";
 let timer = null;
+let SCAN_DELAY = 60;
 
+/* Dedupe Sets */
+const seenISBNs = new Set();
+const seenSKUs = new Set();
+const seenFull = new Set();
+
+/* Data storage */
+let scanHistory = [];
+let buyList = [];
+
+/* Elements */
+const scanInput = document.getElementById("scanInput");
 scanInput.focus();
 
+/* ============== SLIDERS ============== */
+const bcSlider = document.getElementById("buyCostSlider");
+const pfSlider = document.getElementById("profitFloorSlider");
+
+bcSlider.value = BUY_COST;
+pfSlider.value = PROFIT_FLOOR;
+
+bcSlider.oninput = () => {
+  BUY_COST = parseFloat(bcSlider.value);
+  buyCostVal.textContent = BUY_COST.toFixed(2);
+};
+pfSlider.oninput = () => {
+  PROFIT_FLOOR = parseFloat(pfSlider.value);
+  profitFloorVal.textContent = PROFIT_FLOOR.toFixed(2);
+};
+
+/* ============== ADVANCED TOGGLE ============== */
+document.getElementById("toggleAdvanced").onclick = () => {
+  const sec = document.getElementById("advancedSection");
+  const open = sec.style.display === "block";
+  sec.style.display = open ? "none" : "block";
+  toggleAdvanced.textContent = open ? "Show Advanced" : "Hide Advanced";
+};
+
+/* ============== SCAN LISTENERS ============== */
 scanInput.addEventListener("input", e => {
   buffer += e.data || "";
   scanInput.value = buffer;
-
   clearTimeout(timer);
   timer = setTimeout(finalizeScan, SCAN_DELAY);
 });
@@ -154,71 +234,182 @@ scanInput.addEventListener("keydown", e => {
   }
 });
 
-function finalizeScan(){
-  const isbn = buffer.replace(/[^0-9X]/gi,"");
+/* ============== FINALIZE SCAN ============== */
+function finalizeScan() {
+  const isbn = buffer.replace(/[^0-9X]/gi, "");
   buffer = "";
   scanInput.value = "";
   scanInput.focus();
 
-  if (isbn.length === 10 || isbn.length === 13) {
-    // ✅ HAPTIC FEEDBACK
-    if (navigator.vibrate) navigator.vibrate(40);
-    processScan(isbn);
-  }
+  if (isbn.length !== 10 && isbn.length !== 13) return;
+
+  if (navigator.vibrate) navigator.vibrate(40);
+
+  isbnBar.textContent = "ISBN: " + isbn;
+
+  // dedupe safety net
+  if (checkDuplicate(isbn)) return;
+
+  banner.classList.add("flash");
+  setTimeout(() => banner.classList.remove("flash"), 300);
+
+  fetchKeepaData(isbn).then(data => processScan(isbn, data));
 }
 
-/* =============================
-   MOCK KEEPA DATA
-============================= */
-function mockKeepa(){
-  const bb = ["FBA","FBM","ROTATE","AMAZON"][Math.floor(Math.random()*4)];
-  return {
-    medianFBA: +(Math.random()*22+14).toFixed(2),
-    fbmBB: +(Math.random()*12+9).toFixed(2),
-    falseFloor: Math.random()<0.3,
-    velocity:["Strong","Moderate","Weak"][Math.floor(Math.random()*3)],
-    bbType: bb
-  }
+/* =======================
+    MOCK KEEPA (replace later)
+======================= */
+function fetchKeepaData(isbn) {
+  return new Promise(resolve => {
+    const d = {
+      title: "Sample Keepa Title for ISBN " + isbn,
+      medianFBA: +(Math.random()*22+14).toFixed(2),
+      bbType:["FBA","FBM","ROTATE","AMAZON"][Math.random()*4|0],
+      falseFloor: Math.random()<0.3,
+      velocity:["Strong","Moderate","Weak"][Math.random()*3|0]
+    };
+    resolve(d);
+  });
 }
 
-/* =============================
-   CORE DECISION ENGINE
-============================= */
-function processScan(isbn){
-  const d = mockKeepa();
+/* ============== DUPLICATE CHECK ============== */
+function checkDuplicate(isbn) {
+  const day = new Date();
+  const sku = `${String(day.getMonth()+1).padStart(2,'0')}${String(day.getDate()).padStart(2,'0')}-${isbn}-VG`;
+  const unique = isbn + "|" + sku;
+
+  if (seenISBNs.has(isbn) || seenSKUs.has(sku) || seenFull.has(unique)) {
+    dupeWarning.style.display = "block";
+    setTimeout(()=>dupeWarning.style.display="none",2000);
+    return true;
+  }
+
+  seenISBNs.add(isbn);
+  seenSKUs.add(sku);
+  seenFull.add(unique);
+  return false;
+}
+
+/* ============== DECISION ENGINE ============== */
+function processScan(isbn, d) {
   const sell = d.medianFBA;
-  const fees = sell*0.15 + 5;
-  const profit = sell - BUY_COST - fees;
-  const roi = profit/BUY_COST*100;
+  const fees = sell * 0.15 + 5;
+  const profitVal = sell - BUY_COST - fees;
+  const roiVal = (profitVal / BUY_COST * 100);
 
   medianFba.textContent = `$${sell}`;
-  profit.textContent = `$${profit.toFixed(2)}`;
-  roi.textContent = `${roi.toFixed(0)}%`;
+  profit.textContent = `$${profitVal.toFixed(2)}`;
+  roi.textContent = `${roiVal.toFixed(0)}%`;
   bb.textContent = d.bbType;
 
-  bbType.innerHTML =
-    `<span class="badge ${d.bbType==='FBA'?'fba':d.bbType==='FBM'?'fbm':d.bbType==='AMAZON'?'amazon':'rotate'}">${d.bbType}</span>`;
-
+  bbType.textContent = d.bbType;
   stability.textContent = d.falseFloor ? "False Floor" : "Stable";
   velocity.textContent = d.velocity;
   floor.textContent = d.falseFloor ? "Detected" : "Clear";
 
-  let cls="check",txt="CHECK",why="Manual review recommended";
+  let cls = "check", txt = "CHECK", why = "Manual review recommended";
 
-  if (d.bbType==="AMAZON"){
-    cls="pass";txt="PASS";why="Amazon controls Buy Box";
+  if (d.bbType === "AMAZON") {
+    cls="pass"; txt="PASS"; why="Amazon controls Buy Box";
   }
-  else if (profit<=0){
-    cls="pass";txt="PASS";why="Not profitable";
+  else if (profitVal <= 0) {
+    cls="pass"; txt="PASS"; why="Not profitable";
   }
-  else if (profit>=PROFIT_FLOOR && !d.falseFloor && d.velocity!=="Weak"){
-    cls="buy";txt="BUY";why="Healthy FBA margin";
+  else if (profitVal >= PROFIT_FLOOR && !d.falseFloor && d.velocity!=="Weak") {
+    cls="buy"; txt="BUY"; why="Strong margin & stable";
   }
 
   banner.className = `command ${cls}`;
   decision.textContent = txt;
   reason.textContent = why;
+
+  // SKU
+  const dt = new Date();
+  const sku = `${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}-${isbn}-VG`;
+
+  // Add to history + export
+  const record = {
+    title: d.title,
+    isbn,
+    sku,
+    price: sell.toFixed(2),
+    decision: txt,
+    time: new Date().toLocaleTimeString()
+  };
+
+  scanHistory.push(record);
+  buyList.push(record);
+  addHistoryRow(record);
 }
+
+/* ============== HISTORY UI ============== */
+function addHistoryRow(rec) {
+  const list = document.getElementById("historyList");
+  const div = document.createElement("div");
+  div.className="historyRow";
+  div.innerHTML = `
+    <div><strong>${rec.decision}</strong> — ${rec.title}</div>
+    <div>ISBN: ${rec.isbn} | SKU: ${rec.sku}</div>
+    <div>Price: $${rec.price} | ${rec.time}</div>
+  `;
+  list.prepend(div);
+}
+
+historyBtn.onclick = () => {
+  mainPage.style.display = "none";
+  historyPage.style.display = "block";
+};
+
+backBtn.onclick = () => {
+  historyPage.style.display = "none";
+  mainPage.style.display = "block";
+};
+
+/* ============== CSV DOWNLOAD ============== */
+downloadBtn.onclick = () => {
+  if (buyList.length === 0) return alert("No data to export.");
+
+  let csv = "Title,SKU,ISBN,SuggestedPrice,Decision\n";
+
+  buyList.forEach(r => {
+    csv += `"${r.title}","${r.sku}",${r.isbn},${r.price},${r.decision}\n`;
+  });
+
+  const blob = new Blob([csv], { type:"text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "scoutpro_buylist.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+/* ============== CLEAR DATA ============== */
+clearBtn.onclick = () => {
+  if (!confirm("Clear all scan & export data?")) return;
+
+  scanHistory.length = 0;
+  buyList.length = 0;
+
+  seenFull.clear();
+  seenISBNs.clear();
+  seenSKUs.clear();
+
+  historyList.innerHTML = "";
+
+  isbnBar.textContent = "ISBN: —";
+  banner.className="command check";
+  decision.textContent="READY";
+  reason.textContent="Waiting for scan";
+
+  medianFba.textContent="—";
+  profit.textContent="—";
+  roi.textContent="—";
+  bb.textContent="—";
+
+  dupeWarning.style.display="none";
+};
 </script>
 
 </body>
