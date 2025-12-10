@@ -1,186 +1,785 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>ScoutPro – Book Sourcing (Final)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>ScoutPro – Radar v1</title>
 
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Mono&display=swap" rel="stylesheet">
 
-<style>
-:root{
-  --bg:#0d0f12;
-  --card:#1e2329;
-  --border:rgba(255,255,255,.08);
-  --text:#f0f2f5;
-  --muted:#9aa3ad;
-  --green:#00d68f;
-  --red:#ff6b6b;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:'DM Sans'}
-.app{max-width:430px;margin:auto;min-height:100vh}
-header{
-  padding:14px 16px;
-  border-bottom:1px solid var(--border);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-input{
-  width:100%;
-  padding:16px;
-  font-size:17px;
-  border-radius:14px;
-  border:2px solid var(--border);
-  background:#12151a;
-  color:white;
-}
-.card{
-  margin:16px;
-  background:var(--card);
-  border-radius:18px;
-  border:1px solid var(--border);
-  display:none;
-  overflow:hidden;
-}
-.banner{
-  padding:18px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.buy{background:rgba(0,214,143,.12);border-bottom:2px solid var(--green)}
-.pass{background:rgba(255,107,107,.12);border-bottom:2px solid var(--red)}
-.grid{display:grid;grid-template-columns:1fr 1fr}
-.cell{
-  padding:14px;
-  border-top:1px solid var(--border);
-  border-right:1px solid var(--border)
-}
-.cell:nth-child(even){border-right:none}
-.lbl{font-size:11px;color:var(--muted);text-transform:uppercase}
-.val{font-family:'DM Mono';font-size:15px;margin-top:4px}
-.meta{font-size:11px;color:var(--muted)}
-.toggle{display:flex;gap:8px;padding:8px 16px}
-.toggle button{
-  flex:1;padding:10px;border-radius:10px;
-  border:1px solid var(--border);
-  background:#12151a;color:var(--muted);font-weight:600
-}
-.toggle .active{background:rgba(0,214,143,.15);color:var(--green)}
-</style>
+  <style>
+    :root{
+      --bg:#0d0f12;
+      --card:#1e2329;
+      --border:rgba(255,255,255,.08);
+      --text:#f0f2f5;
+      --muted:#9aa3ad;
+      --green:#00d68f;
+      --yellow:#ffd166;
+      --red:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:'DM Sans',sans-serif;
+    }
+    .app{
+      max-width:430px;
+      margin:auto;
+      min-height:100vh;
+    }
+    header{
+      padding:12px 16px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+    .hdr-left{display:flex;flex-direction:column;gap:2px}
+    .hdr-title{font-weight:700;font-size:18px}
+    .hdr-sub{font-size:11px;color:var(--muted)}
+    .hdr-right{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+    .pill-btn{
+      border:none;
+      background:#181c23;
+      color:var(--muted);
+      border-radius:999px;
+      padding:4px 8px;
+      font-size:11px;
+      cursor:pointer;
+    }
+    input{
+      width:100%;
+      padding:14px 16px;
+      font-size:17px;
+      border-radius:14px;
+      border:2px solid var(--border);
+      background:#12151a;
+      color:white;
+    }
+    .row{padding:10px 16px 0}
+    .toggles{
+      display:flex;
+      gap:8px;
+      padding:6px 16px 0;
+      flex-wrap:wrap;
+    }
+    .toggle-group{
+      display:flex;
+      gap:6px;
+      flex:1;
+    }
+    .toggle-btn{
+      flex:1;
+      padding:8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#12151a;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:600;
+      cursor:pointer;
+      text-align:center;
+      white-space:nowrap;
+    }
+    .toggle-btn.active{
+      background:rgba(0,214,143,.15);
+      color:var(--green);
+      border-color:rgba(0,214,143,.6);
+    }
+
+    .card{
+      margin:14px 16px 18px;
+      background:var(--card);
+      border-radius:18px;
+      border:1px solid var(--border);
+      display:none;
+      overflow:hidden;
+    }
+    .banner{
+      padding:16px 16px 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+    .banner.buy{
+      background:rgba(0,214,143,.12);
+      border-bottom:2px solid var(--green);
+    }
+    .banner.pass{
+      background:rgba(255,107,107,.12);
+      border-bottom:2px solid var(--red);
+    }
+    .banner.hold{
+      background:rgba(255,209,102,.12);
+      border-bottom:2px solid var(--yellow);
+    }
+    .banner-main{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .decision-text{
+      font-size:22px;
+      font-weight:700;
+    }
+    .decision-sub{
+      font-size:11px;
+      color:var(--muted);
+    }
+    .profit-text{
+      font-size:22px;
+      font-family:'DM Mono',monospace;
+      text-align:right;
+    }
+    .confidence-pill{
+      display:inline-block;
+      padding:2px 6px;
+      border-radius:999px;
+      font-size:10px;
+      font-weight:600;
+      margin-top:4px;
+    }
+    .conf-high{background:rgba(0,214,143,.2);color:var(--green);}
+    .conf-med{background:rgba(255,209,102,.2);color:var(--yellow);}
+    .conf-low{background:rgba(255,107,107,.2);color:var(--red);}
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+    }
+    .cell{
+      padding:12px;
+      border-top:1px solid var(--border);
+      border-right:1px solid var(--border);
+    }
+    .cell:nth-child(even){border-right:none;}
+    .lbl{
+      font-size:11px;
+      color:var(--muted);
+      text-transform:uppercase;
+    }
+    .val{
+      font-family:'DM Mono',monospace;
+      font-size:15px;
+      margin-top:4px;
+    }
+    .meta{
+      font-size:10px;
+      color:var(--muted);
+      margin-top:2px;
+    }
+
+    .intel{
+      border-top:1px solid var(--border);
+      padding:10px 12px 12px;
+      display:none;
+      font-size:11px;
+    }
+    .intel-row{
+      display:flex;
+      justify-content:space-between;
+      gap:6px;
+      margin-bottom:4px;
+    }
+    .intel-label{color:var(--muted);}
+    .intel-value{font-weight:500;}
+    .intel-small{font-size:10px;color:var(--muted);margin-top:2px;}
+  </style>
 </head>
-
 <body>
 <div class="app">
 
-<header>
-  <strong>ScoutPro</strong>
-  <span id="tokenDisplay" style="font-size:11px;color:var(--muted)"></span>
-</header>
-
-<div style="padding:16px">
-  <input id="barcodeInput" placeholder="Scan barcode…" inputmode="numeric">
-</div>
-
-<div class="toggle">
-  <button id="usedBtn" class="active">USED</button>
-  <button id="newBtn">NEW</button>
-</div>
-
-<div id="card" class="card">
-  <div id="banner" class="banner">
-    <div>
-      <div id="decision" style="font-size:22px;font-weight:700"></div>
-      <div id="reason" class="meta"></div>
+  <header>
+    <div class="hdr-left">
+      <div class="hdr-title">ScoutPro Radar</div>
+      <div class="hdr-sub">See what other scanners miss</div>
     </div>
-    <div id="profit" style="font-size:22px;font-family:'DM Mono'"></div>
+    <div class="hdr-right">
+      <span id="tokenDisplay"></span>
+      <button id="apiBtn" class="pill-btn">⚙ API</button>
+    </div>
+  </header>
+
+  <div class="row">
+    <input id="barcodeInput" placeholder="Scan barcode…" inputmode="numeric" autocomplete="off">
   </div>
 
-  <div class="grid">
-    <div class="cell"><div class="lbl">Used FBA</div><div id="usedFBA" class="val">--</div><div id="usedFBA_src" class="meta"></div></div>
-    <div class="cell"><div class="lbl">Used FBM</div><div id="usedFBM" class="val">--</div><div id="usedFBM_src" class="meta"></div></div>
-    <div class="cell"><div class="lbl">New FBA</div><div id="newFBA" class="val">--</div><div id="newFBA_src" class="meta"></div></div>
-    <div class="cell"><div class="lbl">New FBM</div><div id="newFBM" class="val">--</div><div id="newFBM_src" class="meta"></div></div>
-    <div class="cell"><div class="lbl">Amazon Retail</div><div id="amazon" class="val">--</div><div id="amazon_src" class="meta"></div></div>
-    <div class="cell"><div class="lbl">Avg Rank</div><div id="rank" class="val">--</div><div id="rank_src" class="meta"></div></div>
+  <div class="toggles">
+    <div class="toggle-group">
+      <button id="modeSpeed" class="toggle-btn active">⚡ Speed</button>
+      <button id="modeAnalysis" class="toggle-btn">🧠 Analysis</button>
+      <button id="modeHold" class="toggle-btn">🕰 Hold</button>
+    </div>
+    <div class="toggle-group">
+      <button id="condUsed" class="toggle-btn active">USED</button>
+      <button id="condNew" class="toggle-btn">NEW</button>
+    </div>
   </div>
-</div>
+
+  <div id="card" class="card">
+    <div id="banner" class="banner">
+      <div class="banner-main">
+        <div id="decision" class="decision-text"></div>
+        <div id="reason" class="decision-sub"></div>
+        <div id="confidenceTag" class="confidence-pill" style="display:none"></div>
+      </div>
+      <div class="banner-main" style="align-items:flex-end;">
+        <div id="profit" class="profit-text"></div>
+        <div id="roiLikely" class="decision-sub"></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="cell">
+        <div class="lbl">Used FBA</div>
+        <div id="usedFBA" class="val">--</div>
+        <div id="usedFBA_src" class="meta"></div>
+      </div>
+      <div class="cell">
+        <div class="lbl">Used FBM</div>
+        <div id="usedFBM" class="val">--</div>
+        <div id="usedFBM_src" class="meta"></div>
+      </div>
+
+      <div class="cell">
+        <div class="lbl">New FBA</div>
+        <div id="newFBA" class="val">--</div>
+        <div id="newFBA_src" class="meta"></div>
+      </div>
+      <div class="cell">
+        <div class="lbl">New FBM (Landed)</div>
+        <div id="newFBM" class="val">--</div>
+        <div id="newFBM_src" class="meta"></div>
+      </div>
+
+      <div class="cell">
+        <div class="lbl">Amazon Retail</div>
+        <div id="amazon" class="val">--</div>
+        <div id="amazon_src" class="meta"></div>
+      </div>
+      <div class="cell">
+        <div class="lbl">Avg Rank</div>
+        <div id="rank" class="val">--</div>
+        <div id="rank_src" class="meta"></div>
+      </div>
+    </div>
+
+    <div id="intel" class="intel">
+      <div class="intel-row">
+        <div>
+          <div class="intel-label">Velocity</div>
+          <div id="intelVelocity" class="intel-value"></div>
+          <div id="intelVelocitySub" class="intel-small"></div>
+        </div>
+        <div>
+          <div class="intel-label">Offer Stack</div>
+          <div id="intelStack" class="intel-value"></div>
+          <div id="intelStackSub" class="intel-small"></div>
+        </div>
+      </div>
+      <div class="intel-row">
+        <div>
+          <div class="intel-label">Amazon Behavior</div>
+          <div id="intelAmazon" class="intel-value"></div>
+          <div id="intelAmazonSub" class="intel-small"></div>
+        </div>
+        <div>
+          <div class="intel-label">ROI Band</div>
+          <div id="intelROI" class="intel-value"></div>
+          <div id="intelROISub" class="intel-small"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div>
 
 <script>
-let condition='used';
-usedBtn.onclick=()=>{condition='used';usedBtn.classList.add('active');newBtn.classList.remove('active')}
-newBtn.onclick=()=>{condition='new';newBtn.classList.add('active');usedBtn.classList.remove('active')}
-const apiKey=localStorage.getItem('scoutProKey')||prompt('Enter Keepa API key');
-localStorage.setItem('scoutProKey',apiKey);
+  // --- STATE
+  let apiKey = localStorage.getItem('scoutProKey') || '';
+  let mode = 'speed'; // 'speed' | 'analysis' | 'hold'
+  let condition = 'used'; // 'used' | 'new'
 
-function getStat(stats,idx){
-  const sets=['current','avg30','avg90','avg180'];
-  for(const s of sets) if(stats[s]&&stats[s][idx]>0) return {v:stats[s][idx],src:s};
-  return null;
-}
-function getCsv(csv,idx){
-  if(!csv||!csv[idx]||csv[idx].length<2) return null;
-  const v=csv[idx][csv[idx].length-1];
-  return v>0?{v,src:'csv'}:null;
-}
-function show(id,obj){
-  document.getElementById(id).textContent=obj?`$${(obj.v/100).toFixed(2)}`:'--';
-  document.getElementById(id+'_src').textContent=obj?`[${obj.src}]`:'';
-}
+  const input = document.getElementById('barcodeInput');
+  const card = document.getElementById('card');
+  const banner = document.getElementById('banner');
+  const decisionEl = document.getElementById('decision');
+  const reasonEl = document.getElementById('reason');
+  const profitEl = document.getElementById('profit');
+  const roiLikelyEl = document.getElementById('roiLikely');
+  const confidenceTag = document.getElementById('confidenceTag');
+  const tokenDisplay = document.getElementById('tokenDisplay');
+  const intel = document.getElementById('intel');
 
-barcodeInput.addEventListener('keypress',e=>{if(e.key==='Enter') load(barcodeInput.value.trim())});
+  // --- UI HOOKS
+  document.getElementById('apiBtn').onclick = () => {
+    const entered = prompt('Enter Keepa API key:', apiKey || '');
+    if (entered) {
+      apiKey = entered.trim();
+      localStorage.setItem('scoutProKey', apiKey);
+      alert('API key saved.');
+    }
+  };
 
-async function load(code){
-  card.style.display='none';
-  const r=await fetch(`https://api.keepa.com/product?key=${apiKey}&domain=1&code=${code}&stats=1&offers=20`);
-  const d=await r.json();
-  tokenDisplay.textContent=d.tokensLeft?`${d.tokensLeft} tokens`:'';
-  if(!d.products?.[0]) return;
-  render(d.products[0]);
-}
+  const modeButtons = {
+    speed: document.getElementById('modeSpeed'),
+    analysis: document.getElementById('modeAnalysis'),
+    hold: document.getElementById('modeHold')
+  };
 
-function render(p){
-  const s=p.stats,c=p.csv||{};
-  let usedFBA=getStat(s,11)||getCsv(c,11);
-  let usedFBM=getStat(s,7)||getCsv(c,7);
-  let newFBA=getStat(s,10)||getCsv(c,10);
-  let newFBM=getStat(s,18)||getStat(s,1)||getCsv(c,18)||getCsv(c,1);
-  let amazon=getStat(s,0)||getCsv(c,0);
-  let rank=getStat(s,3);
+  const condButtons = {
+    used: document.getElementById('condUsed'),
+    new: document.getElementById('condNew')
+  };
 
-  show('usedFBA',usedFBA);
-  show('usedFBM',usedFBM);
-  show('newFBA',newFBA);
-  show('newFBM',newFBM);
-  show('amazon',amazon);
-
-  document.getElementById('rank').textContent=rank?rank.v.toLocaleString():'--';
-  document.getElementById('rank_src').textContent=rank?`[${rank.src}]`:'';
-
-  const prices=condition==='used'?[usedFBA,usedFBM]:[newFBA,amazon,newFBM];
-  const sell=prices.find(x=>x?.v);
-  if(!sell){
-    decision.textContent='PASS';
-    reason.textContent='No active offers (suppressed or OOP)';
-    profit.textContent='--';
-    banner.className='banner pass';
-  }else{
-    const sellP=sell.v/100,fees=sellP*0.15+4.5,buy=1,net=sellP-buy-fees;
-    decision.textContent=net>=5?'BUY':'PASS';
-    profit.textContent=`$${net.toFixed(2)}`;
-    reason.textContent=`Using ${sell.src} price`;
-    banner.className='banner '+(net>=5?'buy':'pass');
+  function setMode(m) {
+    mode = m;
+    Object.entries(modeButtons).forEach(([key, btn]) => {
+      btn.classList.toggle('active', key === m);
+    });
   }
 
-  card.style.display='block';
-  navigator.vibrate?.(sell&&sell.v>=500?[60]:[20,20]);
-  setTimeout(()=>{barcodeInput.value='';barcodeInput.focus()},600);
-}
+  function setCondition(c) {
+    condition = c;
+    Object.entries(condButtons).forEach(([key, btn]) => {
+      btn.classList.toggle('active', key === c);
+    });
+  }
+
+  modeButtons.speed.onclick = () => setMode('speed');
+  modeButtons.analysis.onclick = () => setMode('analysis');
+  modeButtons.hold.onclick = () => setMode('hold');
+
+  condButtons.used.onclick = () => setCondition('used');
+  condButtons.new.onclick = () => setCondition('new');
+
+  // --- INPUT
+  input.focus();
+  input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const code = input.value.trim();
+      if (!code) return;
+      fetchKeepa(code);
+    }
+  });
+
+  // --- HELPERS
+  function getStat(stats, idx) {
+    const chain = ['current','avg30','avg90','avg180'];
+    for (const key of chain) {
+      if (stats[key] && stats[key][idx] > 0) {
+        return { v: stats[key][idx], src: key, inferred:false };
+      }
+    }
+    return null;
+  }
+
+  function getCsv(csv, idx) {
+    if (!csv || !csv[idx] || csv[idx].length < 2) return null;
+    const last = csv[idx][csv[idx].length - 1];
+    if (last > 0) return { v:last, src:'csv', inferred:false };
+    return null;
+  }
+
+  function sanitizePrice(obj) {
+    if (!obj || !obj.v) return null;
+    if (obj.v < 150) return null; // under $1.50 = junk for books
+    return obj;
+  }
+
+  function formatPrice(obj) {
+    if (!obj || !obj.v) return '--';
+    return '$' + (obj.v / 100).toFixed(2);
+  }
+
+  function sourceTag(obj) {
+    if (!obj || !obj.v) return '';
+    const inf = obj.inferred ? ', inferred' : '';
+    return `[${obj.src}${inf}]`;
+  }
+
+  function showPrice(idBase, obj) {
+    document.getElementById(idBase).textContent = formatPrice(obj);
+    document.getElementById(idBase + '_src').textContent = sourceTag(obj);
+  }
+
+  function computeConfidence(priceObj) {
+    if (!priceObj || !priceObj.v) return { score:0, label:'No price', level:'low' };
+    let base = 0;
+    switch (priceObj.src) {
+      case 'current': base = 85; break;
+      case 'avg30': base = 75; break;
+      case 'avg90': base = 60; break;
+      case 'avg180': base = 45; break;
+      case 'csv': base = 35; break;
+      default: base = 40; break;
+    }
+    if (priceObj.inferred) base -= 10;
+    if (base < 0) base = 0;
+    if (base > 100) base = 100;
+    let label, level;
+    if (base >= 70) { label = 'HIGH CONFIDENCE'; level = 'high'; }
+    else if (base >= 45) { label = 'MEDIUM CONFIDENCE'; level = 'med'; }
+    else { label = 'LOW CONFIDENCE'; level = 'low'; }
+    return { score:base, label, level };
+  }
+
+  function classifyVelocity(rank) {
+    if (!rank || !rank.v) return { label:'Unknown', sub:'No rank signal', tier:'unknown' };
+    const r = rank.v;
+    if (r <= 100000) return { label:'🔥 Fast', sub:'High turnover', tier:'fast' };
+    if (r <= 300000) return { label:'Strong', sub:'Consistent sales', tier:'strong' };
+    if (r <= 1000000) return { label:'Decent', sub:'Steady but slower', tier:'decent' };
+    if (r <= 2500000) return { label:'Slow', sub:'Occasional sales', tier:'slow' };
+    return { label:'Dead-ish', sub:'Very infrequent sales', tier:'dead' };
+  }
+
+  function analyzeOfferStack(product, targetCondition) {
+    const res = { label:'Unknown', sub:'No offer data', depth:0 };
+    const offers = product.offers;
+    if (!Array.isArray(offers) || offers.length === 0) return res;
+
+    const prices = [];
+    for (const off of offers) {
+      if (!off.isShippable) continue;
+      const cond = off.condition; // 0 = new, 1 = used (Keepa convention)
+      if (targetCondition === 'used' && cond !== 1) continue;
+      if (targetCondition === 'new' && cond !== 0) continue;
+      if (off.price <= 0) continue;
+      prices.push(off.price);
+    }
+    if (prices.length === 0) return res;
+
+    prices.sort((a,b)=>a-b);
+    const depth = prices.length;
+    const first = prices[0];
+    const second = prices[1] ?? null;
+
+    res.depth = depth;
+
+    if (depth === 1) {
+      res.label = '⚠ Fragile';
+      res.sub = 'Only one meaningful seller';
+      return res;
+    }
+
+    if (second && second >= first * 1.5) {
+      res.label = '⚠ Price Cliff';
+      res.sub = `Next seller ~${((second/first)-1)*100|0}% higher`;
+      return res;
+    }
+
+    if (depth >= 8) {
+      res.label = 'Deep Stack';
+      res.sub = `${depth} sellers in range`;
+      return res;
+    }
+
+    res.label = 'Moderate';
+    res.sub = `${depth} sellers, no big cliff`;
+    return res;
+  }
+
+  function analyzeAmazonBehavior(amazonPriceObj) {
+    if (!amazonPriceObj || !amazonPriceObj.v) {
+      return { label:'Absent', sub:'Amazon not on listing' };
+    }
+    switch (amazonPriceObj.src) {
+      case 'current':
+      case 'avg30':
+        return { label:'Active', sub:'Amazon recently on offer' };
+      case 'avg90':
+        return { label:'Intermittent', sub:'Amazon appears occasionally' };
+      case 'avg180':
+      case 'csv':
+      default:
+        return { label:'Past Only', sub:'Historical Amazon presence' };
+    }
+  }
+
+  function computeROIBand(sellPrice, buyCost) {
+    if (!sellPrice || !buyCost) return null;
+    const sell = sellPrice;
+    const feeBase = (p) => p * 0.15 + 4.50; // 15% referral + $4.50 FBA
+
+    const bestSell = sell;
+    const likelySell = sell * 0.9;
+    const worstSell = sell * 0.8;
+
+    const bestProfit = bestSell - buyCost - feeBase(bestSell);
+    const likelyProfit = likelySell - buyCost - feeBase(likelySell);
+    const worstProfit = worstSell - buyCost - feeBase(worstSell);
+
+    const ROI = (profit) => (profit / buyCost) * 100;
+
+    return {
+      best: { profit:bestProfit, roi:ROI(bestProfit) },
+      likely:{ profit:likelyProfit, roi:ROI(likelyProfit) },
+      worst:{ profit:worstProfit, roi:ROI(worstProfit) }
+    };
+  }
+
+  function chooseSellPrice(condition, prices) {
+    const { usedFBA, usedFBM, newFBA, newFBM, amazon } = prices;
+
+    if (condition === 'used') {
+      const uFBA = sanitizePrice(usedFBA);
+      const uFBM = sanitizePrice(usedFBM);
+
+      if (uFBA && uFBM) {
+        if (uFBA.v <= uFBM.v * 1.15) {
+          return { price:uFBA, basis:'Used FBA (within 15% of Used FBM)' };
+        } else {
+          return { price:uFBM, basis:'Used FBM (FBA > 15% higher)' };
+        }
+      }
+      if (uFBA) return { price:uFBA, basis:'Used FBA (Buy Box approx.)' };
+      if (uFBM) return { price:uFBM, basis:'Used FBM (no FBA)' };
+      return { price:null, basis:'No used offers' };
+    }
+
+    if (condition === 'new') {
+      const nFBA = sanitizePrice(newFBA);
+      const nFBM = sanitizePrice(newFBM);
+      const amz = sanitizePrice(amazon);
+
+      if (nFBA && nFBM) {
+        if (nFBA.v <= nFBM.v * 1.15) {
+          return { price:nFBA, basis:'New FBA (within 15% of New FBM)' };
+        } else {
+          return { price:nFBM, basis:'New FBM (FBA > 15% higher)' };
+        }
+      }
+      if (nFBA) return { price:nFBA, basis:'New FBA (Buy Box approx.)' };
+
+      if (amz && nFBM) {
+        if (amz.v <= nFBM.v * 1.15) {
+          return { price:amz, basis:'Amazon Retail (within 15% of New FBM)' };
+        } else {
+          return { price:nFBM, basis:'New FBM (cheaper than Amazon)' };
+        }
+      }
+      if (amz) return { price:amz, basis:'Amazon Retail' };
+      if (nFBM) return { price:nFBM, basis:'New FBM (no FBA/Amazon)' };
+
+      return { price:null, basis:'No new offers' };
+    }
+
+    return { price:null, basis:'Unknown condition' };
+  }
+
+  async function fetchKeepa(code) {
+    if (!apiKey) {
+      alert('Set Keepa API key first (⚙ API).');
+      return;
+    }
+    card.style.display = 'none';
+
+    try {
+      const res = await fetch(`https://api.keepa.com/product?key=${encodeURIComponent(apiKey)}&domain=1&code=${encodeURIComponent(code)}&stats=1&offers=20`);
+      const data = await res.json();
+
+      if (data.tokensLeft !== undefined) {
+        tokenDisplay.textContent = data.tokensLeft + ' tokens';
+      }
+
+      if (!data.products || !data.products[0]) {
+        alert('No product found for that code.');
+        return;
+      }
+
+      renderProduct(data.products[0]);
+    } catch (err) {
+      alert('Error contacting Keepa: ' + err.message);
+    }
+  }
+
+  function renderProduct(p) {
+    const s = p.stats;
+    const csv = p.csv || {};
+
+    // Base prices
+    let usedFBA = getStat(s,11) || getCsv(csv,11);
+    let usedFBM = getStat(s,7)  || getCsv(csv,7);
+    let newFBA  = getStat(s,10) || getCsv(csv,10);
+    let newFBM  = getStat(s,18) || getStat(s,1) || getCsv(csv,18) || getCsv(csv,1);
+    let amazon  = getStat(s,0)  || getCsv(csv,0);
+    let rank    = getStat(s,3);
+
+    // Inference: if no used FBM but Amazon exists, infer used ~72% of Amazon
+    if ((!usedFBM || !usedFBM.v) && amazon && amazon.v) {
+      usedFBM = { v: Math.round(amazon.v * 0.72), src: amazon.src, inferred:true };
+    }
+    // Inference: if no new FBA but Amazon exists, treat Amazon as FBA-ish
+    if ((!newFBA || !newFBA.v) && amazon && amazon.v) {
+      newFBA = { v: amazon.v, src: amazon.src, inferred:true };
+    }
+
+    // Show metrics
+    showPrice('usedFBA', usedFBA);
+    showPrice('usedFBM', usedFBM);
+    showPrice('newFBA', newFBA);
+    showPrice('newFBM', newFBM);
+    showPrice('amazon', amazon);
+
+    if (rank && rank.v) {
+      document.getElementById('rank').textContent = rank.v.toLocaleString();
+      document.getElementById('rank_src').textContent = `[${rank.src}]`;
+    } else {
+      document.getElementById('rank').textContent = '--';
+      document.getElementById('rank_src').textContent = '';
+    }
+
+    // Choose sell price
+    const sellChoice = chooseSellPrice(condition, { usedFBA, usedFBM, newFBA, newFBM, amazon });
+    const sellObj = sellChoice.price;
+
+    const confidence = computeConfidence(sellObj);
+    if (sellObj && sellObj.v) {
+      confidenceTag.style.display = 'inline-block';
+      confidenceTag.textContent = confidence.label;
+      confidenceTag.className = 'confidence-pill ' + (
+        confidence.level === 'high' ? 'conf-high' :
+        confidence.level === 'med' ? 'conf-med' : 'conf-low'
+      );
+    } else {
+      confidenceTag.style.display = 'none';
+    }
+
+    // Velocity, stack, amazon behavior
+    const velocity = classifyVelocity(rank);
+    const stack = analyzeOfferStack(p, condition);
+    const amzBeh = analyzeAmazonBehavior(amazon);
+
+    document.getElementById('intelVelocity').textContent = velocity.label;
+    document.getElementById('intelVelocitySub').textContent = velocity.sub;
+    document.getElementById('intelStack').textContent = stack.label;
+    document.getElementById('intelStackSub').textContent = stack.sub;
+    document.getElementById('intelAmazon').textContent = amzBeh.label;
+    document.getElementById('intelAmazonSub').textContent = amzBeh.sub;
+
+    // Profit / ROI
+    const buyCost = 1.00; // placeholder for now
+    let profit = null;
+    let roiBand = null;
+    if (sellObj && sellObj.v) {
+      const sell = sellObj.v / 100;
+      const fees = sell * 0.15 + 4.50;
+      profit = sell - buyCost - fees;
+      roiBand = computeROIBand(sell, buyCost);
+    }
+
+    if (!sellObj || !sellObj.v) {
+      decisionEl.textContent = 'PASS';
+      reasonEl.textContent = sellChoice.basis || 'No usable price';
+      profitEl.textContent = '--';
+      roiLikelyEl.textContent = '';
+      banner.className = 'banner pass';
+    } else {
+      // Mode-based decision logic
+      let decision = 'PASS';
+      let reasonSuffix = '';
+
+      const baseProfOK = profit !== null && profit >= 5;
+      const looserProfOK = profit !== null && profit >= 3;
+      const longTailProfOK = profit !== null && profit >= 8;
+      const velTier = velocity.tier;
+      const rankVal = rank?.v || null;
+
+      if (mode === 'speed') {
+        if (baseProfOK &&
+            (velTier === 'fast' || velTier === 'strong' || velTier === 'decent') &&
+            confidence.score >= 45 &&
+            (!rankVal || rankVal < 1500000)) {
+          decision = 'BUY';
+        } else {
+          decision = 'PASS';
+          reasonSuffix = ' (Speed mode filters applied)';
+        }
+      } else if (mode === 'analysis') {
+        decision = looserProfOK ? 'BUY' : 'PASS';
+        reasonSuffix = ' (Analysis mode)';
+      } else if (mode === 'hold') {
+        if (longTailProfOK &&
+            (velTier === 'slow' || velTier === 'dead') &&
+            rankVal && rankVal > 1000000) {
+          decision = 'HOLD CANDIDATE';
+        } else if (baseProfOK && velTier !== 'dead') {
+          decision = 'BUY';
+        } else {
+          decision = 'PASS';
+        }
+        reasonSuffix = ' (Hold mode)';
+      }
+
+      decisionEl.textContent = decision;
+      reasonEl.textContent = (sellChoice.basis || '') + reasonSuffix;
+
+      if (profit !== null) {
+        const sign = profit < 0 ? '-$' : '$';
+        profitEl.textContent = sign + Math.abs(profit).toFixed(2);
+      } else {
+        profitEl.textContent = '--';
+      }
+
+      if (roiBand) {
+        const likely = roiBand.likely.roi;
+        roiLikelyEl.textContent = `Likely ROI ~ ${likely.toFixed(0)}%`;
+        document.getElementById('intelROI').textContent =
+          `Best ${roiBand.best.roi.toFixed(0)}% / Likely ${roiBand.likely.roi.toFixed(0)}% / Worst ${roiBand.worst.roi.toFixed(0)}%`;
+        document.getElementById('intelROISub').textContent =
+          'Assumes 10–20% price compression & FBA fee model';
+      } else {
+        roiLikelyEl.textContent = '';
+        document.getElementById('intelROI').textContent = 'N/A';
+        document.getElementById('intelROISub').textContent = 'No ROI band available';
+      }
+
+      if (decision === 'BUY') {
+        banner.className = 'banner buy';
+      } else if (decision === 'HOLD CANDIDATE') {
+        banner.className = 'banner hold';
+      } else {
+        banner.className = 'banner pass';
+      }
+    }
+
+    // Intel visibility by mode
+    intel.style.display = (mode === 'analysis' || mode === 'hold') ? 'block' : 'none';
+
+    card.style.display = 'block';
+
+    // Haptics
+    if (navigator.vibrate) {
+      if (decisionEl.textContent.startsWith('BUY')) {
+        navigator.vibrate([60]);
+      } else if (decisionEl.textContent.startsWith('HOLD')) {
+        navigator.vibrate([30, 30]);
+      } else {
+        navigator.vibrate([20]);
+      }
+    }
+
+    setTimeout(() => {
+      input.value = '';
+      input.focus();
+    }, 650);
+  }
+
+  // Prompt for API on first load if missing
+  if (!apiKey) {
+    const entered = prompt('Enter Keepa API key:','');
+    if (entered) {
+      apiKey = entered.trim();
+      localStorage.setItem('scoutProKey', apiKey);
+    }
+  }
 </script>
 </body>
 </html>
