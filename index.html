@@ -10,10 +10,11 @@
 <style>
 :root{
   --bg:#05060a;
-  --card:#151821;
-  --soft:#1c2130;
+  --panel:#131726;
+  --card:#161b2e;
+  --soft:#1f2540;
   --border:rgba(255,255,255,.12);
-  --text:#f4f6fb;
+  --text:#f5f7ff;
   --muted:#9aa2b3;
 
   --green:#00d68f;
@@ -23,135 +24,188 @@
   --red:#ff6b6b;
   --redBg:rgba(255,107,107,.18);
 }
+
 *{box-sizing:border-box}
 body{
   margin:0;
-  background:radial-gradient(circle at top,#121723,#05060a 55%);
+  background:radial-gradient(circle at top,#0f1430,#05060a 65%);
   color:var(--text);
   font-family:'DM Sans',sans-serif;
 }
-.app{max-width:440px;margin:auto;padding-bottom:40px}
 
-/* header */
-header{
-  padding:14px 16px;
-  position:sticky;top:0;z-index:10;
-  background:rgba(7,9,16,.85);
-  backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--border);
+.app{
+  max-width:460px;
+  margin:auto;
+  padding-bottom:40px;
 }
-h1{margin:0;font-size:18px}
-.sub{font-size:11px;color:var(--muted)}
 
-/* scan */
-.scan-row{display:flex;gap:8px;margin-top:8px}
-input[type=text]{
+/* HEADER */
+header{
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:rgba(7,9,20,.95);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:14px 16px;
+}
+.h-title{
+  font-size:18px;
+  font-weight:700;
+}
+.h-sub{
+  font-size:11px;
+  color:var(--muted);
+}
+
+/* SCAN BAR */
+.scan-row{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+.scan-row input{
   flex:1;
   background:#050711;
   border:1px solid var(--border);
+  border-radius:14px;
+  padding:13px;
   color:var(--text);
-  border-radius:12px;
-  padding:12px;
   font-family:'DM Mono',monospace;
+  font-size:15px;
 }
-button{
+.scan-row button{
   background:var(--blue);
   border:none;
-  border-radius:12px;
-  padding:0 16px;
+  border-radius:14px;
+  padding:0 18px;
   font-weight:700;
-  cursor:pointer;
 }
 
-/* empty */
+/* EMPTY */
 .empty{
   text-align:center;
-  padding:80px 20px;
+  padding:90px 20px;
   color:var(--muted);
 }
-.empty div{font-size:48px;margin-bottom:8px}
+.empty .icon{
+  font-size:52px;
+  margin-bottom:12px;
+}
 
-/* card */
+/* CARD */
 .card{
   margin:16px;
-  background:var(--card);
-  border-radius:22px;
+  background:var(--panel);
+  border-radius:24px;
   border:1px solid var(--border);
+  box-shadow:0 24px 60px rgba(0,0,0,.7);
   overflow:hidden;
-  box-shadow:0 18px 40px rgba(0,0,0,.6);
   display:none;
 }
 
-/* banner */
-.banner{
+/* COMMAND PANEL */
+.command{
   padding:18px;
   border-bottom:1px solid var(--border);
 }
-.banner.buy{background:linear-gradient(135deg,var(--greenBg),#0b0e16)}
-.banner.check{background:linear-gradient(135deg,var(--blueBg),#0b0e16)}
-.banner.pass{background:linear-gradient(135deg,var(--redBg),#0b0e16)}
+.command.buy{background:linear-gradient(135deg,var(--greenBg),#0a0e1f)}
+.command.check{background:linear-gradient(135deg,var(--blueBg),#0a0e1f)}
+.command.pass{background:linear-gradient(135deg,var(--redBg),#0a0e1f)}
 
-.decision{
-  font-size:24px;
-  font-weight:700;
-  letter-spacing:.06em;
+.action{
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:.05em;
 }
-.decision.buy{color:var(--green)}
-.decision.check{color:var(--blue)}
-.decision.pass{color:var(--red)}
-.reason{
-  margin-top:6px;
-  font-size:12px;
+.action.buy{color:var(--green)}
+.action.check{color:var(--blue)}
+.action.pass{color:var(--red)}
+
+.command-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px 14px;
+  margin-top:12px;
+}
+.kpi{
+  font-size:11px;
   color:var(--muted);
 }
+.kpi strong{
+  display:block;
+  font-size:16px;
+  font-family:'DM Mono',monospace;
+  color:var(--text);
+}
 
-/* sections */
+/* MARKET SNAPSHOT */
+.snapshot{
+  padding:14px 18px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  border-bottom:1px solid var(--border);
+  background:var(--card);
+}
+.snap{
+  background:var(--soft);
+  border-radius:14px;
+  padding:10px;
+  border:1px solid var(--border);
+}
+.snap span{
+  font-size:10px;
+  color:var(--muted);
+}
+.snap strong{
+  display:block;
+  font-family:'DM Mono',monospace;
+  font-size:14px;
+  margin-top:4px;
+}
+
+/* SECTIONS */
 .section{
-  padding:14px 16px;
+  padding:16px 18px;
   border-top:1px solid var(--border);
 }
-.section-title{
+.section h4{
+  margin:0 0 8px 0;
   font-size:11px;
   text-transform:uppercase;
-  letter-spacing:.1em;
+  letter-spacing:.12em;
   color:var(--muted);
-  margin-bottom:6px;
-}
-.row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:8px;
-}
-.label{font-size:12px;color:var(--muted)}
-.value{
-  font-family:'DM Mono',monospace;
-  font-size:16px;
 }
 
-/* controls */
+/* CONTROLS */
 .control{
   background:var(--soft);
-  padding:10px;
-  border-radius:14px;
+  border-radius:16px;
+  padding:12px;
+  margin-bottom:10px;
 }
 .control-head{
   display:flex;
   justify-content:space-between;
-  align-items:center;
   font-size:12px;
   color:var(--muted);
 }
-input[type=range]{width:100%;margin-top:8px}
-input[type=number]{
+.control input[type=range]{
+  width:100%;
+  margin-top:10px;
+}
+.control input[type=number]{
   width:80px;
   background:#050711;
   border:1px solid var(--border);
-  color:var(--text);
   border-radius:8px;
-  padding:4px;
+  color:var(--text);
   font-family:'DM Mono',monospace;
 }
+
+/* HIDE */
+.hidden{display:none}
 </style>
 </head>
 
@@ -159,55 +213,77 @@ input[type=number]{
 <div class="app">
 
 <header>
-  <h1>ScoutPro Radar</h1>
-  <div class="sub">Scan first. Decide instantly.</div>
+  <div class="h-title">ScoutPro Radar</div>
+  <div class="h-sub">Scan • Decide • Execute</div>
   <div class="scan-row">
-    <input id="scan" type="text" placeholder="Scan ISBN / UPC">
+    <input id="scanInput" placeholder="Scan ISBN / UPC">
     <button onclick="scan()">GO</button>
   </div>
 </header>
 
 <div id="empty" class="empty">
-  <div>📡</div>
+  <div class="icon">📡</div>
   Ready to scan
 </div>
 
 <div id="card" class="card">
 
-  <div id="banner" class="banner buy">
-    <div id="decision" class="decision buy">BUY NOW</div>
-    <div id="reason" class="reason">Profit meets your rule</div>
+  <!-- COMMAND PANEL -->
+  <div id="command" class="command buy">
+    <div id="action" class="action buy">BUY NOW</div>
+
+    <div class="command-grid">
+      <div class="kpi">
+        Sell FBA
+        <strong id="sell">$24.99</strong>
+      </div>
+      <div class="kpi">
+        Net Profit
+        <strong id="profit">+$0.00</strong>
+      </div>
+      <div class="kpi">
+        ROI
+        <strong id="roi">0%</strong>
+      </div>
+      <div class="kpi">
+        Decision Basis
+        <strong id="basis">Meets profit rule</strong>
+      </div>
+    </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Outcome</div>
-    <div class="row">
-      <span class="label">Sell FBA for</span>
-      <span class="value" id="sell">$24.99</span>
+  <!-- SNAPSHOT -->
+  <div class="snapshot">
+    <div class="snap">
+      <span>Market Anchor</span>
+      <strong>$26–$30</strong>
     </div>
-    <div class="row">
-      <span class="label">Profit</span>
-      <span class="value" id="profit">+$0.00</span>
+    <div class="snap">
+      <span>Amazon</span>
+      <strong>Present</strong>
     </div>
-    <div class="row">
-      <span class="label">ROI</span>
-      <span class="value" id="roi">0%</span>
+    <div class="snap">
+      <span>Rank Band</span>
+      <strong>300k–600k</strong>
+    </div>
+    <div class="snap">
+      <span>Velocity</span>
+      <strong>Steady</strong>
     </div>
   </div>
 
+  <!-- RULES -->
   <div class="section">
-    <div class="section-title">Your costs</div>
+    <h4>Your Rules</h4>
+
     <div class="control">
       <div class="control-head">
         <span>Buy cost</span>
-        <span>$ <input id="buyCost" type="number" step=".25"></span>
+        <span>$ <input id="buy" type="number" step=".25"></span>
       </div>
       <input id="buySlider" type="range" min=".25" max="25" step=".25">
     </div>
-  </div>
 
-  <div class="section">
-    <div class="section-title">Rules</div>
     <div class="control">
       <div class="control-head">
         <span>Minimum profit</span>
@@ -225,17 +301,10 @@ let sellPrice = 24.99
 let buy = parseFloat(localStorage.getItem('buy')||'1')
 let floor = parseFloat(localStorage.getItem('floor')||'5')
 
-const card = document.getElementById('card')
-const empty = document.getElementById('empty')
-const buyInput = document.getElementById('buyCost')
-const buySlider = document.getElementById('buySlider')
-const floorInput = document.getElementById('floor')
-const floorSlider = document.getElementById('floorSlider')
-
 function scan(){
   sellPrice = 15 + Math.random()*30
-  empty.style.display='none'
-  card.style.display='block'
+  document.getElementById('empty').style.display='none'
+  document.getElementById('card').style.display='block'
   recalc()
 }
 
@@ -252,39 +321,40 @@ function recalc(){
     (profit>=0?'+':'-')+`$${Math.abs(profit).toFixed(2)}`
   document.getElementById('roi').textContent = roi.toFixed(0)+'%'
 
-  const banner = document.getElementById('banner')
-  const dec = document.getElementById('decision')
-  const reason = document.getElementById('reason')
+  const cmd = document.getElementById('command')
+  const act = document.getElementById('action')
+  const basis = document.getElementById('basis')
 
   if(profit >= floor){
-    banner.className='banner buy'
-    dec.className='decision buy'
-    dec.textContent='BUY NOW'
-    reason.textContent='Profit meets your rule'
+    cmd.className='command buy'
+    act.className='action buy'
+    act.textContent='BUY NOW'
+    basis.textContent='Meets profit rule'
   }else if(profit > 0){
-    banner.className='banner check'
-    dec.className='decision check'
-    dec.textContent='CHECK SCOUTLY'
-    reason.textContent='Below profit target — verify'
+    cmd.className='command check'
+    act.className='action check'
+    act.textContent='CHECK SCOUTLY'
+    basis.textContent='Below profit threshold'
   }else{
-    banner.className='banner pass'
-    dec.className='decision pass'
-    dec.textContent='SKIP'
-    reason.textContent='Projected loss'
+    cmd.className='command pass'
+    act.className='action pass'
+    act.textContent='SKIP'
+    basis.textContent='Projected loss'
   }
 }
 
-buyInput.value = buy.toFixed(2)
-buySlider.value = buy
-floorInput.value = floor
-floorSlider.value = floor
+document.getElementById('buy').value = buy
+document.getElementById('buySlider').value = buy
+document.getElementById('floor').value = floor
+document.getElementById('floorSlider').value = floor
 
-buyInput.oninput = e=>{buy=parseFloat(e.target.value)||0;buySlider.value=buy;recalc()}
-buySlider.oninput = e=>{buy=parseFloat(e.target.value);buyInput.value=buy;recalc()}
-floorInput.oninput = e=>{floor=parseFloat(e.target.value)||0;floorSlider.value=floor;recalc()}
-floorSlider.oninput = e=>{floor=parseFloat(e.target.value);floorInput.value=floor;recalc()}
+document.getElementById('buy').oninput=e=>{buy=parseFloat(e.target.value)||0;document.getElementById('buySlider').value=buy;recalc()}
+document.getElementById('buySlider').oninput=e=>{buy=parseFloat(e.target.value);document.getElementById('buy').value=buy;recalc()}
+document.getElementById('floor').oninput=e=>{floor=parseFloat(e.target.value)||0;document.getElementById('floorSlider').value=floor;recalc()}
+document.getElementById('floorSlider').oninput=e=>{floor=parseFloat(e.target.value);document.getElementById('floor').value=floor;recalc()}
 
 recalc()
 </script>
+
 </body>
 </html>
