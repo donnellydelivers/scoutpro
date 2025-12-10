@@ -22,7 +22,6 @@
 --blueBg:rgba(90,169,255,.22);
 --red:#ff6b6b;
 --redBg:rgba(255,107,107,.22);
---yellow:#ffd166;
 }
 
 *{box-sizing:border-box}
@@ -186,7 +185,7 @@ accent-color:var(--blue)
 <h4>Item</h4>
 <div class="grid">
 <div class="cell"><span>ISBN</span><strong id="dispIsbn">---</strong></div>
-<div class="cell"><span>Title</span><strong id="dispTitle">Waiting…</strong></div>
+<div class="cell"><span>Title</span><strong id="dispTitle">Waiting for scan…</strong></div>
 </div>
 </div>
 
@@ -225,11 +224,11 @@ let buyCost = 1.0;
 let profitFloor = 5.0;
 let scanLock = false;
 
-/* MODE TOGGLE */
+/* MODE */
 function applyMode(){
   card.className = mode === 'focus' ? 'card focus' : 'card';
-  document.getElementById('tFocus').className = mode === 'focus' ? 'on' : '';
-  document.getElementById('tDetail').className = mode === 'detail' ? 'on' : '';
+  tFocus.className = mode === 'focus' ? 'on' : '';
+  tDetail.className = mode === 'detail' ? 'on' : '';
 }
 toggle.onclick = () => {
   mode = mode === 'focus' ? 'detail' : 'focus';
@@ -238,7 +237,7 @@ toggle.onclick = () => {
 };
 applyMode();
 
-/* ✅ SCANNER HANDLING (ROBUST) */
+/* SCANNER */
 scanInput.focus();
 
 function tryScan(v){
@@ -250,28 +249,26 @@ function tryScan(v){
   }
 }
 
-scanInput.addEventListener('input', e=>{
-  tryScan(e.target.value.trim());
+scanInput.addEventListener('input', e => tryScan(e.target.value.trim()));
+scanInput.addEventListener('keyup', e => {
+  if(e.key === 'Enter') tryScan(scanInput.value.trim());
 });
-
-scanInput.addEventListener('keyup', e=>{
-  if(e.key === 'Enter'){
-    tryScan(scanInput.value.trim());
-  }
-});
-
 scanBtn.onclick = () => tryScan(scanInput.value.trim());
 
 function handleScan(isbn){
-  if(!isbn) return;
+  dispIsbn.textContent = isbn;
+  dispTitle.textContent = "Looking up title…";
+
+  fetch(`https://openlibrary.org/isbn/${isbn}.json`)
+    .then(r => { if(!r.ok) throw 0; return r.json(); })
+    .then(b => dispTitle.textContent = b.title || "Title unavailable")
+    .catch(() => dispTitle.textContent = "Title not found");
 
   const sell = Math.random()*18 + 12;
   const fees = sell*0.15 + 5;
   const profit = sell - buyCost - fees;
   const roi = (profit / buyCost) * 100;
 
-  dispIsbn.textContent = isbn;
-  dispTitle.textContent = "Simulated Scan Result";
   dispSell.textContent = `$${sell.toFixed(2)}`;
   dispProfit.textContent = `$${profit.toFixed(2)}`;
   dispRoi.textContent = `${roi.toFixed(0)}%`;
