@@ -2,144 +2,81 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ScoutPro Radar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScoutPro Radar v2.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Mono&display=swap" rel="stylesheet">
 
 <style>
 :root{
---bg:#05060a;
---panel:#121728;
---card:#171c33;
---soft:#222855;
---border:rgba(255,255,255,.12);
---text:#f6f7ff;
---muted:#9aa3c7;
---green:#00d68f;
---greenBg:rgba(0,214,143,.22);
---blue:#5aa9ff;
---blueBg:rgba(90,169,255,.22);
---red:#ff6b6b;
---redBg:rgba(255,107,107,.22);
+  --bg:#05060a; --panel:#121728; --card:#171c33; --soft:#222855;
+  --border:rgba(255,255,255,.12);
+  --text:#f6f7ff; --muted:#9aa3c7;
+  --green:#00d68f; --yellow:#ffd166; --red:#ff6b6b; --blue:#5aa9ff;
 }
-
 *{box-sizing:border-box}
 body{
-margin:0;font-family:'DM Sans',sans-serif;
-background:radial-gradient(circle at top,#0f1430,#05060a 70%);
-color:var(--text);
-padding-bottom:50px;
+  margin:0;font-family:'DM Sans',sans-serif;
+  background:radial-gradient(circle at top,#0f1430,#05060a 70%);
+  color:var(--text);
 }
-.app{max-width:480px;margin:auto;}
+.app{max-width:500px;margin:auto;padding-bottom:40px;}
 
 header{
-position:sticky;top:0;z-index:50;
-background:rgba(7,10,22,.95);
-backdrop-filter:blur(12px);
-border-bottom:1px solid var(--border);
-padding:14px;
-display:flex;gap:10px;align-items:center;
+  position:sticky;top:0;z-index:50;
+  background:rgba(7,10,22,.95);
+  border-bottom:1px solid var(--border);
+  padding:12px;display:flex;gap:8px;
 }
 
-.scan{display:flex;gap:10px;flex:1}
-.scan input{
-flex:1;padding:12px;border-radius:14px;
-background:#050711;border:1px solid var(--border);
-color:var(--text);
-font-family:'DM Mono',monospace;
-outline:none;
+input{
+  flex:1;padding:12px;border-radius:12px;
+  background:#050711;border:1px solid var(--border);
+  color:var(--text);font-family:'DM Mono';
 }
-.scan input:focus{
-border-color:var(--blue);
-box-shadow:0 0 0 2px var(--blueBg);
+button{
+  padding:0 16px;border:none;border-radius:12px;
+  background:var(--blue);font-weight:700;
 }
-.scan button{
-border:none;background:var(--blue);
-border-radius:14px;padding:0 16px;
-font-weight:700;cursor:pointer;
-}
-
-.toggle{
-background:var(--soft);
-border-radius:16px;
-padding:6px;
-font-size:11px;
-font-weight:700;
-cursor:pointer;
-user-select:none;
-}
-.toggle span{opacity:.5;padding:4px 8px}
-.toggle .on{opacity:1;color:var(--green)}
 
 .card{
-margin:14px;
-background:var(--panel);
-border-radius:26px;
-border:1px solid var(--border);
-box-shadow:0 25px 60px rgba(0,0,0,.65);
-overflow:hidden;
+  margin:14px;background:var(--panel);
+  border-radius:24px;border:1px solid var(--border);
+  overflow:hidden;
 }
 
-.command{
-padding:18px;border-bottom:1px solid var(--border);
-}
-.command.buy{background:linear-gradient(135deg,var(--greenBg),#0a0e22)}
-.command.check{background:linear-gradient(135deg,var(--blueBg),#0a0e22)}
-.command.pass{background:linear-gradient(135deg,var(--redBg),#0a0e22)}
+/* Decision */
+.command{padding:18px;border-bottom:1px solid var(--border);}
+.buy{background:linear-gradient(135deg,rgba(0,214,143,.25),#0a0e22)}
+.check{background:linear-gradient(135deg,rgba(255,209,102,.25),#0a0e22)}
+.pass{background:linear-gradient(135deg,rgba(255,107,107,.25),#0a0e22)}
+.action{font-size:26px;font-weight:800}
+.sub{font-size:12px;color:var(--muted)}
+.kpis{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi span{font-size:11px;color:var(--muted)}
+.kpi strong{display:block;font-family:'DM Mono';font-size:15px}
 
-.action{font-size:28px;font-weight:800;letter-spacing:.08em}
-.subreason{font-size:12px;color:var(--muted);margin-top:4px}
-
-.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-.kpi{font-size:11px;color:var(--muted)}
-.kpi strong{display:block;font-size:17px;font-family:'DM Mono',monospace}
-
-.section{padding:16px 18px;border-top:1px solid var(--border)}
+.section{padding:14px 18px;border-top:1px solid var(--border)}
 .section h4{
-margin:0 0 8px;
-font-size:11px;
-text-transform:uppercase;
-letter-spacing:.12em;
-color:var(--muted)
+  margin:0 0 6px;font-size:11px;
+  text-transform:uppercase;letter-spacing:.12em;color:var(--muted)
 }
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cell{
-background:var(--card);
-border-radius:14px;
-padding:10px;
-border:1px solid var(--border);
-font-size:11px
+  background:var(--card);border-radius:12px;
+  padding:10px;border:1px solid var(--border)
 }
-.cell span{display:block;color:var(--muted);font-size:10px}
-.cell strong{display:block;margin-top:4px;font-family:'DM Mono',monospace}
+.cell span{font-size:10px;color:var(--muted)}
+.cell strong{display:block;margin-top:4px;font-family:'DM Mono'}
 
-.control{
-background:var(--soft);
-border-radius:16px;
-padding:12px;margin-bottom:10px
+.badge{
+  display:inline-block;padding:3px 8px;
+  font-size:10px;border-radius:999px;font-weight:700
 }
-.control-head{
-display:flex;
-justify-content:space-between;
-font-size:12px;
-color:var(--muted)
-}
-.control input[type=number]{
-width:80px;
-background:#050711;
-border:1px solid var(--border);
-border-radius:8px;
-color:var(--text);
-font-family:'DM Mono',monospace;
-}
-.control input[type=range]{
-width:100%;margin-top:10px;
-accent-color:var(--blue)
-}
-
-.focus .detail{display:none}
-.focus .kpis{grid-template-columns:1fr}
+.fba{background:rgba(0,214,143,.25);color:var(--green)}
+.fbm{background:rgba(255,209,102,.25);color:var(--yellow)}
+.amazon{background:rgba(255,107,107,.25);color:var(--red)}
+.rotate{background:rgba(90,169,255,.25);color:var(--blue)}
 </style>
 </head>
 
@@ -147,169 +84,141 @@ accent-color:var(--blue)
 <div class="app">
 
 <header>
-<div class="scan">
-<input
-  id="scanInput"
-  type="text"
-  inputmode="text"
-  pattern="[0-9]*"
-  placeholder="Scan ISBN…"
-  autocomplete="off"
-  autofocus
->
-<button id="scanBtn">GO</button>
-</div>
-
-<div class="toggle" id="toggle">
-<span id="tFocus">FOCUS</span>
-<span id="tDetail" class="on">DETAILS</span>
-</div>
+  <input
+    id="scanInput"
+    type="text"
+    inputmode="text"
+    pattern="[0-9X]*"
+    placeholder="Scan ISBN…"
+    autocomplete="off"
+  >
+  <button>GO</button>
 </header>
 
-<div class="card" id="card">
+<div class="card">
 
-<div class="command buy" id="banner">
-<div class="action" id="decisionText">READY</div>
-<div class="subreason" id="decisionReason">Scan a book to begin</div>
-<div class="kpis">
-<div class="kpi">Sell<strong id="dispSell">--</strong></div>
-<div class="kpi">Profit<strong id="dispProfit">--</strong></div>
-<div class="kpi">ROI<strong id="dispRoi">--</strong></div>
-<div class="kpi">Floor<strong id="dispFloor">--</strong></div>
+<div id="banner" class="command buy">
+  <div class="action" id="decision">READY</div>
+  <div class="sub" id="reason">Waiting for scan</div>
+  <div class="kpis">
+    <div class="kpi"><span>Median FBA</span><strong id="medianFba">—</strong></div>
+    <div class="kpi"><span>Profit</span><strong id="profit">—</strong></div>
+    <div class="kpi"><span>ROI</span><strong id="roi">—</strong></div>
+    <div class="kpi"><span>Buy Box</span><strong id="bb">—</strong></div>
+  </div>
 </div>
-</div>
-
-<div class="detail">
 
 <div class="section">
-<h4>Item</h4>
+<h4>Market Signals</h4>
 <div class="grid">
-<div class="cell"><span>ISBN</span><strong id="dispIsbn">---</strong></div>
-<div class="cell"><span>Title</span><strong id="dispTitle">Waiting for scan…</strong></div>
+  <div class="cell"><span>Buy Box Type</span><strong id="bbType"></strong></div>
+  <div class="cell"><span>Price Stability</span><strong id="stability"></strong></div>
+  <div class="cell"><span>Velocity</span><strong id="velocity"></strong></div>
+  <div class="cell"><span>False Floor</span><strong id="floor"></strong></div>
 </div>
 </div>
 
-<div class="section">
-<h4>Your Rules</h4>
-
-<div class="control">
-<div class="control-head">
-<span>Buy cost</span>
-<span>$<input id="buyInput" type="number" value="1.00"></span>
-</div>
-<input id="buySlider" type="range" min="0" max="20" step="0.25" value="1">
-</div>
-
-<div class="control">
-<div class="control-head">
-<span>Profit floor</span>
-<span>$<input id="floorInput" type="number" value="5"></span>
-</div>
-<input id="floorSlider" type="range" min="1" max="50" value="5">
-</div>
-</div>
-
-</div>
 </div>
 </div>
 
 <script>
-const scanInput = document.getElementById('scanInput');
-const scanBtn = document.getElementById('scanBtn');
-const toggle = document.getElementById('toggle');
-const card = document.getElementById('card');
+/* =============================
+   CONFIG
+============================= */
+const BUY_COST = 1.00;
+const PROFIT_FLOOR = 5.00;
+const SCAN_DELAY = 60; // Nadamoo-safe
 
-let mode = localStorage.getItem('radarMode') || 'detail';
-let buyCost = 1.0;
-let profitFloor = 5.0;
-let scanLock = false;
+/* =============================
+   NADAMOO-SAFE SCAN BUFFER
+============================= */
+const scanInput = document.getElementById("scanInput");
+let buffer = "";
+let timer = null;
 
-/* MODE */
-function applyMode(){
-  card.className = mode === 'focus' ? 'card focus' : 'card';
-  tFocus.className = mode === 'focus' ? 'on' : '';
-  tDetail.className = mode === 'detail' ? 'on' : '';
-}
-toggle.onclick = () => {
-  mode = mode === 'focus' ? 'detail' : 'focus';
-  localStorage.setItem('radarMode', mode);
-  applyMode();
-};
-applyMode();
-
-/* SCANNER */
 scanInput.focus();
 
-function tryScan(v){
-  if(scanLock) return;
-  if(v.length === 10 || v.length === 13){
-    scanLock = true;
-    handleScan(v);
-    setTimeout(()=>scanLock=false,300);
-  }
-}
+scanInput.addEventListener("input", e => {
+  buffer += e.data || "";
+  scanInput.value = buffer;
 
-scanInput.addEventListener('input', e => tryScan(e.target.value.trim()));
-scanInput.addEventListener('keyup', e => {
-  if(e.key === 'Enter') tryScan(scanInput.value.trim());
+  clearTimeout(timer);
+  timer = setTimeout(finalizeScan, SCAN_DELAY);
 });
-scanBtn.onclick = () => tryScan(scanInput.value.trim());
 
-function handleScan(isbn){
-  dispIsbn.textContent = isbn;
-  dispTitle.textContent = "Looking up title…";
-
-  fetch(`https://openlibrary.org/isbn/${isbn}.json`)
-    .then(r => { if(!r.ok) throw 0; return r.json(); })
-    .then(b => dispTitle.textContent = b.title || "Title unavailable")
-    .catch(() => dispTitle.textContent = "Title not found");
-
-  const sell = Math.random()*18 + 12;
-  const fees = sell*0.15 + 5;
-  const profit = sell - buyCost - fees;
-  const roi = (profit / buyCost) * 100;
-
-  dispSell.textContent = `$${sell.toFixed(2)}`;
-  dispProfit.textContent = `$${profit.toFixed(2)}`;
-  dispRoi.textContent = `${roi.toFixed(0)}%`;
-  dispFloor.textContent = `$${profitFloor.toFixed(2)}`;
-
-  if(profit >= profitFloor){
-    banner.className = 'command buy';
-    decisionText.textContent = 'BUY';
-    decisionReason.textContent = 'Meets profit floor';
-  } else if(profit > 0){
-    banner.className = 'command check';
-    decisionText.textContent = 'CHECK';
-    decisionReason.textContent = 'Low margin';
-  } else {
-    banner.className = 'command pass';
-    decisionText.textContent = 'PASS';
-    decisionReason.textContent = 'Loss projected';
+scanInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" || e.key === "Tab") {
+    e.preventDefault();
+    clearTimeout(timer);
+    finalizeScan();
   }
+});
 
-  scanInput.value = '';
+function finalizeScan(){
+  const isbn = buffer.replace(/[^0-9X]/gi,"");
+  buffer = "";
+  scanInput.value = "";
   scanInput.focus();
+
+  if (isbn.length === 10 || isbn.length === 13) {
+    // ✅ HAPTIC FEEDBACK
+    if (navigator.vibrate) navigator.vibrate(40);
+    processScan(isbn);
+  }
 }
 
-/* SLIDERS */
-buySlider.oninput = e => {
-  buyInput.value = e.target.value;
-  buyCost = parseFloat(e.target.value);
-};
-buyInput.onchange = e => {
-  buySlider.value = e.target.value;
-  buyCost = parseFloat(e.target.value);
-};
+/* =============================
+   MOCK KEEPA DATA
+============================= */
+function mockKeepa(){
+  const bb = ["FBA","FBM","ROTATE","AMAZON"][Math.floor(Math.random()*4)];
+  return {
+    medianFBA: +(Math.random()*22+14).toFixed(2),
+    fbmBB: +(Math.random()*12+9).toFixed(2),
+    falseFloor: Math.random()<0.3,
+    velocity:["Strong","Moderate","Weak"][Math.floor(Math.random()*3)],
+    bbType: bb
+  }
+}
 
-floorSlider.oninput = e => {
-  floorInput.value = e.target.value;
-  profitFloor = parseFloat(e.target.value);
-};
-floorInput.onchange = e => {
-  floorSlider.value = e.target.value;
-  profitFloor = parseFloat(e.target.value);
-};
+/* =============================
+   CORE DECISION ENGINE
+============================= */
+function processScan(isbn){
+  const d = mockKeepa();
+  const sell = d.medianFBA;
+  const fees = sell*0.15 + 5;
+  const profit = sell - BUY_COST - fees;
+  const roi = profit/BUY_COST*100;
+
+  medianFba.textContent = `$${sell}`;
+  profit.textContent = `$${profit.toFixed(2)}`;
+  roi.textContent = `${roi.toFixed(0)}%`;
+  bb.textContent = d.bbType;
+
+  bbType.innerHTML =
+    `<span class="badge ${d.bbType==='FBA'?'fba':d.bbType==='FBM'?'fbm':d.bbType==='AMAZON'?'amazon':'rotate'}">${d.bbType}</span>`;
+
+  stability.textContent = d.falseFloor ? "False Floor" : "Stable";
+  velocity.textContent = d.velocity;
+  floor.textContent = d.falseFloor ? "Detected" : "Clear";
+
+  let cls="check",txt="CHECK",why="Manual review recommended";
+
+  if (d.bbType==="AMAZON"){
+    cls="pass";txt="PASS";why="Amazon controls Buy Box";
+  }
+  else if (profit<=0){
+    cls="pass";txt="PASS";why="Not profitable";
+  }
+  else if (profit>=PROFIT_FLOOR && !d.falseFloor && d.velocity!=="Weak"){
+    cls="buy";txt="BUY";why="Healthy FBA margin";
+  }
+
+  banner.className = `command ${cls}`;
+  decision.textContent = txt;
+  reason.textContent = why;
+}
 </script>
 
 </body>
