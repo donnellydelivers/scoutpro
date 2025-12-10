@@ -36,15 +36,15 @@ body{
   margin:auto;
 }
 
-/* --- HEADER & SCANNER --- */
+/* --- 1. STICKY SCANNER HEADER --- */
 header{
   position: sticky;
   top: 0;
-  background: rgba(7,9,15,0.95);
+  background: rgba(7,9,15,0.95); /* Dark semi-transparent background */
   padding: 16px;
   border-bottom: 1px solid var(--border);
-  z-index: 100;
-  backdrop-filter: blur(5px);
+  z-index: 999; /* Ensures it sits ON TOP of everything */
+  backdrop-filter: blur(8px);
 }
 
 .input-group {
@@ -77,24 +77,34 @@ input[type=text]:focus {
   cursor: pointer;
 }
 
-/* --- RESULT CARD --- */
+/* --- 2. EMPTY STATE --- */
+#emptyState {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--muted);
+  transition: opacity 0.3s;
+}
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+
+/* --- 3. RESULT CARD --- */
 .card{
   margin:16px;
   background:var(--card);
   border-radius:18px;
   border:1px solid var(--border);
   overflow:hidden;
-  animation: fadeIn 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.hidden { display: none; }
+.hidden { display: none !important; }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- BANNER --- */
+/* BANNER */
 .banner{
   padding:18px 14px;
   border-bottom:1px solid var(--border);
@@ -114,28 +124,12 @@ input[type=text]:focus {
 .decision.check{color:var(--blue)}
 .decision.pass{color:var(--red)}
 
-.basis{
-  font-size:13px;
-  margin-top:6px;
-  color:var(--muted);
-}
+.basis{ font-size:13px; margin-top:6px; color:var(--muted); }
 
-/* --- BLOCKS & STATS --- */
+/* STATS GRID */
 .block{
   padding:14px 16px;
   border-top:1px solid var(--border);
-}
-
-.product-title {
-  font-size: 15px;
-  margin-bottom: 4px;
-  font-weight: 600;
-  color: #fff;
-}
-.product-asin {
-  font-size: 12px;
-  color: var(--muted);
-  font-family: 'DM Mono', monospace;
 }
 
 .row{
@@ -148,8 +142,9 @@ input[type=text]:focus {
 
 .label{ font-size:13px; color:var(--muted); }
 .value{ font-family:'DM Mono',monospace; font-size:16px; font-weight: 600; }
+.value.edit { border-bottom: 1px dashed var(--muted); cursor: pointer;}
 
-/* --- CONTROLS (SLIDERS) --- */
+/* SLIDERS & INPUTS */
 .control-block {
   padding: 14px 16px;
   background: rgba(255,255,255,0.02);
@@ -163,6 +158,7 @@ input[type=text]:focus {
   margin-bottom: 8px;
   font-size: 13px;
   color: var(--muted);
+  font-weight: 600;
 }
 
 .control {
@@ -175,10 +171,21 @@ input[type=range]{
   flex: 1;
   accent-color: var(--blue);
   cursor: pointer;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  appearance: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--blue);
+  border-radius: 50%;
 }
 
 input[type=number]{
-  width: 70px;
+  width: 75px;
   padding: 6px;
   border-radius: 6px;
   border: 1px solid var(--border);
@@ -187,15 +194,13 @@ input[type=number]{
   text-align: right;
   font-family: 'DM Mono', monospace;
   font-size: 14px;
+  outline: none;
 }
+input[type=number]:focus { border-color: var(--blue); }
 
-/* --- EMPTY STATE --- */
-#emptyState {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--muted);
-}
-.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.product-title { font-size: 15px; margin-bottom: 4px; font-weight: 600; color: #fff; line-height: 1.4; }
+.product-asin { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
 </style>
 </head>
 
@@ -211,44 +216,51 @@ input[type=number]{
 
   <div id="emptyState">
     <div class="empty-icon">📡</div>
-    <h3>Ready to Scout</h3>
-    <p style="font-size: 14px; opacity: 0.7;">Scan a barcode to see stats</p>
+    <h3>Scout Radar</h3>
+    <p style="font-size: 14px; opacity: 0.7;">Ready to scan.</p>
   </div>
 
   <div id="resultCard" class="card hidden">
     
     <div id="banner" class="banner buy">
-      <div id="decision" class="decision buy">BUY NOW</div>
-      <div id="basis" class="basis">Based on Live Trigger</div>
+      <div id="decision" class="decision buy">BUY</div>
+      <div id="basis" class="basis">Profit > Goal</div>
     </div>
 
     <div class="block">
-      <div class="product-title">Harry Potter and the Sorcerer's Stone</div>
+      <div class="product-title">Harry Potter & The Example Book</div>
       <div class="product-asin">ISBN: <span id="displayIsbn">---</span></div>
     </div>
 
     <div class="block">
+      
       <div class="row">
         <span class="label">Sell Price</span>
-        <span class="value" id="sellPrice">$19.99</span>
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="color:var(--muted); font-size:14px;">$</span>
+          <input type="number" id="sellInput" value="19.99" style="width:70px; text-align:right;">
+        </div>
       </div>
+
       <div class="row">
-        <span class="label">Fees (Est)</span>
-        <span class="value" id="fees">-$7.50</span>
+        <span class="label">Fees (Est 15% + FBA)</span>
+        <span class="value" id="feesVal">-$7.50</span>
       </div>
+
       <div class="row">
-        <span class="label" style="color:#fff">Net Profit</span>
-        <span class="value" id="profit" style="color:var(--green)">+$10.69</span>
+        <span class="label" style="color:#fff; font-weight:600;">Net Profit</span>
+        <span class="value" id="profitVal" style="color:var(--green); font-size: 18px;">+$10.69</span>
       </div>
+
       <div class="row">
         <span class="label">ROI</span>
-        <span class="value" id="roi">117%</span>
+        <span class="value" id="roiVal">117%</span>
       </div>
     </div>
 
     <div class="control-block">
       <div class="control-header">
-        <span>Buy Cost</span>
+        <span>Buy Cost ($)</span>
         <input type="number" step="0.25" id="buyInput">
       </div>
       <div class="control">
@@ -258,147 +270,147 @@ input[type=number]{
 
     <div class="control-block">
       <div class="control-header">
-        <span>Min Profit Goal</span>
-        <input type="number" step="1" id="floorInput">
+        <span>Min Profit Goal ($)</span>
+        <input type="number" step="1" id="goalInput">
       </div>
       <div class="control">
-        <input type="range" min="1" max="50" step="1" id="floorSlider">
+        <input type="range" min="1" max="50" step="1" id="goalSlider">
       </div>
     </div>
 
   </div> </div>
 
 <script>
-/* ====== STATE ====== */
-// In a real app, 'sellPrice' comes from the API. 
-// Here we mock it so you can test the sliders.
-let sellPrice = 24.99; 
-
-// Load settings from local storage or default
+/* ====== STATE MANAGEMENT ====== */
+let sellPrice = 24.99; // Default starting price for demo
 let buyCost = parseFloat(localStorage.getItem('buyCost') || '1.00');
 let profitFloor = parseFloat(localStorage.getItem('profitFloor') || '5.00');
 
-/* ====== DOM ELEMENTS ====== */
-const scanInput = document.getElementById('scanInput');
-const scanBtn = document.getElementById('scanBtn');
-const emptyState = document.getElementById('emptyState');
-const resultCard = document.getElementById('resultCard');
+/* ====== ELEMENT REFS ====== */
+const els = {
+  scanInput: document.getElementById('scanInput'),
+  scanBtn: document.getElementById('scanBtn'),
+  emptyState: document.getElementById('emptyState'),
+  resultCard: document.getElementById('resultCard'),
+  
+  // Inputs
+  sellInput: document.getElementById('sellInput'),
+  buySlider: document.getElementById('buySlider'),
+  buyInput: document.getElementById('buyInput'),
+  goalSlider: document.getElementById('goalSlider'),
+  goalInput: document.getElementById('goalInput'),
+  
+  // Outputs
+  feesVal: document.getElementById('feesVal'),
+  profitVal: document.getElementById('profitVal'),
+  roiVal: document.getElementById('roiVal'),
+  
+  // Banner
+  banner: document.getElementById('banner'),
+  decision: document.getElementById('decision'),
+  basis: document.getElementById('basis'),
+  displayIsbn: document.getElementById('displayIsbn')
+};
 
-const buySlider = document.getElementById('buySlider');
-const buyInput = document.getElementById('buyInput');
-const floorSlider = document.getElementById('floorSlider');
-const floorInput = document.getElementById('floorInput');
+/* ====== INITIALIZATION ====== */
+// Set initial values from memory
+els.buySlider.value = buyCost;
+els.buyInput.value = buyCost.toFixed(2);
+els.goalSlider.value = profitFloor;
+els.goalInput.value = profitFloor.toFixed(0);
+els.sellInput.value = sellPrice.toFixed(2);
 
-// Initialize Inputs
-buySlider.value = buyCost;
-buyInput.value = buyCost.toFixed(2);
-floorSlider.value = profitFloor;
-floorInput.value = profitFloor.toFixed(0);
-
-/* ====== CORE LOGIC ====== */
+/* ====== LOGIC ====== */
 function recalc() {
-  // Save settings
+  // 1. Get current values
+  sellPrice = parseFloat(els.sellInput.value) || 0;
+  buyCost = parseFloat(els.buyInput.value) || 0;
+  profitFloor = parseFloat(els.goalInput.value) || 0;
+
+  // Save preferences
   localStorage.setItem('buyCost', buyCost);
   localStorage.setItem('profitFloor', profitFloor);
 
-  // 1. Calculate Fees (Rough Estimate: 15% + $4.50 fixed)
-  const estFees = (sellPrice * 0.15) + 4.50;
-  
-  // 2. Calculate Profit
-  const profit = sellPrice - buyCost - estFees;
-  
-  // 3. Calculate ROI
+  // 2. Math
+  // Simple FBA Estimator: 15% referral + flat $4.50 pick/pack (approx)
+  const fees = (sellPrice * 0.15) + 4.50;
+  const profit = sellPrice - buyCost - fees;
   const roi = buyCost > 0 ? (profit / buyCost) * 100 : 0;
 
-  // Update UI Text
-  document.getElementById('sellPrice').textContent = `$${sellPrice.toFixed(2)}`;
-  document.getElementById('fees').textContent = `-$${estFees.toFixed(2)}`;
+  // 3. Update DOM
+  els.feesVal.textContent = `-$${fees.toFixed(2)}`;
   
-  const profitEl = document.getElementById('profit');
-  profitEl.textContent = (profit >= 0 ? '+' : '-') + '$' + Math.abs(profit).toFixed(2);
-  profitEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+  els.profitVal.textContent = (profit >= 0 ? '+' : '-') + '$' + Math.abs(profit).toFixed(2);
+  els.profitVal.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+  
+  els.roiVal.textContent = roi.toFixed(0) + '%';
+  els.roiVal.style.color = roi >= 100 ? 'var(--green)' : (roi > 30 ? 'var(--blue)' : 'var(--muted)');
 
-  document.getElementById('roi').textContent = roi.toFixed(0) + '%';
-
-  // Update Decision Banner
-  updateBanner(profit);
+  updateBanner(profit, profitFloor);
 }
 
-function updateBanner(profit) {
-  const banner = document.getElementById('banner');
-  const decision = document.getElementById('decision');
-  const basis = document.getElementById('basis');
-
-  if (profit >= profitFloor) {
-    banner.className = 'banner buy';
-    decision.textContent = 'BUY';
-    decision.className = 'decision buy';
-    basis.textContent = 'Profit meets target';
-  } else if (profit >= 0) {
-    banner.className = 'banner check';
-    decision.textContent = 'CHECK';
-    decision.className = 'decision check';
-    basis.textContent = 'Profit positive but low';
+function updateBanner(profit, floor) {
+  if (profit >= floor) {
+    setBanner('buy', 'BUY', 'Profit meets target');
+  } else if (profit > 0) {
+    setBanner('check', 'CHECK', 'Low Profit');
   } else {
-    banner.className = 'banner pass';
-    decision.textContent = 'SKIP';
-    decision.className = 'decision pass';
-    basis.textContent = 'Projected loss';
+    setBanner('pass', 'SKIP', 'Projected Loss');
   }
 }
 
-/* ====== EVENT LISTENERS ====== */
-
-// 1. Slider Logic
-buySlider.oninput = (e) => {
-  buyCost = parseFloat(e.target.value);
-  buyInput.value = buyCost.toFixed(2);
-  recalc();
-};
-buyInput.onchange = (e) => {
-  buyCost = parseFloat(e.target.value);
-  buySlider.value = buyCost;
-  recalc();
-};
-
-floorSlider.oninput = (e) => {
-  profitFloor = parseFloat(e.target.value);
-  floorInput.value = profitFloor.toFixed(0);
-  recalc();
-};
-floorInput.onchange = (e) => {
-  profitFloor = parseFloat(e.target.value);
-  floorSlider.value = profitFloor;
-  recalc();
-};
-
-// 2. Scan Logic
-function handleScan() {
-  const code = scanInput.value.trim();
-  if (!code) return; // Don't scan empty
-
-  // Simulate a Fetch
-  // In real life: fetch(API_URL + code)...
-  
-  // Mock Data change to prove it works
-  // Randomize sell price between $10 and $40
-  sellPrice = (Math.random() * (40 - 10) + 10);
-  
-  // Update UI
-  document.getElementById('displayIsbn').textContent = code;
-  emptyState.classList.add('hidden');
-  resultCard.classList.remove('hidden');
-  
-  // Clear input for next scan (optional, usually good for barcode scanners)
-  scanInput.value = '';
-  scanInput.focus();
-
-  recalc();
+function setBanner(type, text, sub) {
+  els.banner.className = `banner ${type}`;
+  els.decision.className = `decision ${type}`;
+  els.decision.textContent = text;
+  els.basis.textContent = sub;
 }
 
-scanBtn.onclick = handleScan;
+/* ====== EVENT HANDLERS ====== */
 
-scanInput.addEventListener('keypress', (e) => {
+// Sliders Sync
+function linkInputAndSlider(input, slider) {
+  slider.addEventListener('input', () => {
+    input.value = parseFloat(slider.value).toFixed(input.id === 'goalInput' ? 0 : 2);
+    recalc();
+  });
+  input.addEventListener('change', () => {
+    slider.value = input.value;
+    recalc();
+  });
+}
+
+linkInputAndSlider(els.buyInput, els.buySlider);
+linkInputAndSlider(els.goalInput, els.goalSlider);
+
+// Sell Price Input Listener
+els.sellInput.addEventListener('input', recalc);
+
+// Scan Action
+function handleScan() {
+  const code = els.scanInput.value.trim();
+  if (!code) return;
+
+  // Simulate API Data Fetch
+  // Random price for demo purposes
+  sellPrice = (Math.random() * (45 - 12) + 12);
+  els.sellInput.value = sellPrice.toFixed(2);
+
+  els.displayIsbn.textContent = code;
+  
+  // Show Card / Hide Empty State
+  els.emptyState.style.display = 'none';
+  els.resultCard.classList.remove('hidden');
+
+  recalc();
+  
+  // Reset input focus for next scan
+  els.scanInput.value = '';
+  els.scanInput.focus();
+}
+
+els.scanBtn.addEventListener('click', handleScan);
+els.scanInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') handleScan();
 });
 
