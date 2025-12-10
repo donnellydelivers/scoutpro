@@ -1,521 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>ScoutPro v5.2 (Pro)</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            /* Dark Mode Palette */
-            --bg-base: #0d0f12;
-            --bg-primary: #12151a;
-            --bg-secondary: #181c23;
-            --bg-card: #1e2329;
-            --bg-elevated: #252b33;
-            --bg-input: #1a1e24;
-            
-            --text-primary: #f0f2f5;
-            --text-secondary: #a0a8b3;
-            --text-muted: #5c6370;
-            
-            /* Accents */
-            --accent-primary: #00d68f;
-            --accent-primary-dim: #00b377;
-            --accent-primary-glow: rgba(0, 214, 143, 0.15);
-            
-            --accent-danger: #ff6b6b;
-            --accent-warning: #ffc107;
-            --accent-info: #4dabf7;
-            
-            --border-color: rgba(255, 255, 255, 0.08);
-            --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.4);
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ScoutPro v5.3</title>
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--bg-base);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex; flex-direction: column;
-        }
+<style>
+:root {
+  --bg: #0d0f12;
+  --card: #1e2329;
+  --border: rgba(255,255,255,.08);
+  --text: #f0f2f5;
+  --muted: #9aa3ad;
+  --green: #00d68f;
+  --red: #ff6b6b;
+}
 
-        .app-container {
-            max-width: 430px; margin: 0 auto;
-            min-height: 100vh; display: flex; flex-direction: column;
-            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-base) 100%);
-            position: relative;
-        }
+* { box-sizing:border-box; }
 
-        /* HEADER */
-        .header {
-            padding: 16px 20px;
-            display: flex; align-items: center; justify-content: space-between;
-            background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
-        }
-        
-        .logo { display: flex; align-items: center; gap: 10px; }
-        .logo-icon {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dim) 100%);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            font-size: 18px; box-shadow: 0 0 15px var(--accent-primary-glow);
-        }
-        .logo-text { font-weight: 700; font-size: 20px; letter-spacing: -0.5px; }
-        .logo-text span { color: var(--accent-primary); }
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+}
 
-        .header-controls { display: flex; align-items: center; gap: 12px; }
-        .token-display { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
-        .settings-btn { 
-            background: none; border: none; font-size: 22px; cursor: pointer; 
-            padding: 4px; transition: transform 0.3s;
-        }
-        .settings-btn:hover { transform: rotate(45deg); }
-        .lock-indicator { font-size: 14px; }
+.app {
+  max-width:430px;
+  margin:auto;
+  min-height:100vh;
+}
 
-        /* SCAN SECTION */
-        .scan-section { padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
-        
-        .scan-input-row { display: flex; gap: 10px; margin-bottom: 14px; }
-        .isbn-input {
-            width: 100%; padding: 14px 16px;
-            font-family: 'DM Mono', monospace; font-size: 16px;
-            background: var(--bg-input); border: 2px solid var(--border-color);
-            border-radius: 12px; color: var(--text-primary); outline: none;
-        }
-        .isbn-input:focus { border-color: var(--accent-primary); }
-        
-        .camera-btn {
-            width: 52px; background: var(--bg-card); border: 2px solid var(--border-color);
-            border-radius: 12px; font-size: 20px; cursor: pointer; color: var(--text-secondary);
-        }
+header {
+  padding:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid var(--border);
+}
 
-        .control-row { display: flex; gap: 12px; }
-        .cost-control {
-            flex: 1; display: flex; align-items: center; gap: 12px;
-            background: var(--bg-card); padding: 10px 14px;
-            border-radius: 12px; border: 1px solid var(--border-color);
-        }
-        .cost-display { text-align: center; min-width: 50px; }
-        .cost-val { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; }
-        .cost-lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
-        
-        .cost-slider {
-            flex: 1; height: 4px; -webkit-appearance: none; background: var(--bg-input); border-radius: 2px;
-        }
-        .cost-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 20px; height: 20px;
-            background: var(--accent-primary); border-radius: 50%;
-            cursor: pointer; box-shadow: 0 2px 8px rgba(0, 214, 143, 0.4);
-        }
+input {
+  width:100%;
+  padding:14px;
+  font-size:16px;
+  border-radius:12px;
+  border:2px solid var(--border);
+  background:#12151a;
+  color:white;
+}
 
-        .condition-toggle {
-            display: flex; background: var(--bg-card); border-radius: 12px;
-            border: 1px solid var(--border-color); overflow: hidden;
-        }
-        .cond-btn {
-            padding: 0 16px; background: transparent; border: none;
-            color: var(--text-muted); cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .cond-btn.active { background: rgba(0, 214, 143, 0.1); color: var(--accent-primary); }
-        .cond-btn.active.used { background: rgba(255, 193, 7, 0.1); color: var(--accent-warning); }
+.card {
+  margin:16px;
+  border-radius:16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  overflow:hidden;
+  display:none;
+}
 
-        /* RESULTS */
-        .result-section { flex: 1; padding: 16px; overflow-y: auto; }
-        .result-card {
-            background: var(--bg-card); border-radius: 16px;
-            border: 1px solid var(--border-color); overflow: hidden;
-            box-shadow: var(--shadow-card); display: none;
-            animation: slideUp 0.3s ease-out;
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.banner {
+  padding:18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
 
-        .banner { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .banner.buy { background: rgba(0, 214, 143, 0.08); border-bottom: 2px solid var(--accent-primary); }
-        .banner.pass { background: rgba(255, 107, 107, 0.08); border-bottom: 2px solid var(--accent-danger); }
-        
-        .decision-wrap { display: flex; gap: 14px; align-items: center; }
-        .d-icon {
-            width: 48px; height: 48px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; font-weight: 700;
-        }
-        .buy .d-icon { background: var(--accent-primary); color: #000; box-shadow: 0 4px 12px rgba(0, 214, 143, 0.3); }
-        .pass .d-icon { background: var(--accent-danger); color: #fff; box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3); }
-        
-        .d-text div:first-child { font-size: 24px; font-weight: 700; }
-        .buy .d-text { color: var(--accent-primary); }
-        .pass .d-text { color: var(--accent-danger); }
-        
-        .profit-display { text-align: right; }
-        .profit-val { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; }
+.buy { background:rgba(0,214,143,.1); border-bottom:2px solid var(--green); }
+.pass { background:rgba(255,107,107,.1); border-bottom:2px solid var(--red); }
 
-        .item-data { padding: 16px; border-bottom: 1px solid var(--border-color); }
-        .item-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; line-height: 1.3; }
-        .item-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+.metric {
+  padding:12px;
+  border-top:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+}
+.small { font-size:12px; color:var(--muted); }
+.big { font-family:'DM Mono'; font-size:18px; }
 
-        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; }
-        .metric-cell {
-            padding: 12px 16px; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);
-        }
-        .metric-cell:nth-child(2n) { border-right: none; }
-        .metric-lbl { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
-        .metric-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; }
-        
-        .val-good { color: var(--accent-primary); }
-        .val-warn { color: var(--accent-warning); }
-        .val-bad { color: var(--accent-danger); }
-
-        /* SETTINGS MODAL */
-        .modal {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85); z-index: 100;
-            display: none; align-items: center; justify-content: center;
-        }
-        .modal.active { display: flex; }
-        .modal-card {
-            background: var(--bg-card); width: 90%; max-width: 350px;
-            padding: 24px; border-radius: 16px; border: 1px solid var(--border-color);
-        }
-        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
-        .api-input {
-            width: 100%; padding: 12px; margin-bottom: 16px;
-            background: var(--bg-input); border: 1px solid var(--border-color);
-            border-radius: 8px; color: var(--text-primary); font-family: 'DM Mono', monospace;
-        }
-        .save-btn {
-            width: 100%; padding: 12px; background: var(--accent-primary);
-            border: none; border-radius: 8px; color: #000; font-weight: 700; cursor: pointer;
-        }
-
-        /* Loading Spinner */
-        .loader {
-            display: none; margin: 40px auto; width: 40px; height: 40px;
-            border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent-primary);
-            border-radius: 50%; animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-    </style>
+</style>
 </head>
+
 <body>
-    <div class="app-container">
-        <header class="header">
-            <div class="logo">
-                <div class="logo-icon">📦</div>
-                <div class="logo-text">Scout<span>Pro</span></div>
-            </div>
-            <div class="header-controls">
-                <div class="token-display" id="tokenDisplay"></div>
-                <div class="lock-indicator" id="lockIcon">🔴</div>
-                <button class="settings-btn" id="settingsBtn">⚙️</button>
-            </div>
-        </header>
+<div class="app">
 
-        <section class="scan-section">
-            <div class="scan-input-row">
-                <input type="text" class="isbn-input" id="barcodeInput" placeholder="Scan barcode (ISBN/UPC)..." inputmode="numeric" autocomplete="off">
-                <button class="camera-btn">📷</button>
-            </div>
-            <div class="control-row">
-                <div class="cost-control">
-                    <div class="cost-display">
-                        <div class="cost-val" id="costDisplay">$1.00</div>
-                        <div class="cost-lbl">Cost</div>
-                    </div>
-                    <input type="range" class="cost-slider" id="costSlider" min="0" max="25" step="0.25" value="1">
-                </div>
-                <div class="condition-toggle">
-                    <button class="cond-btn active" data-cond="new">✨<span style="font-size:9px">NEW</span></button>
-                    <button class="cond-btn" data-cond="used">📖<span style="font-size:9px">USED</span></button>
-                </div>
-            </div>
-        </section>
+<header>
+  <strong>ScoutPro</strong>
+  <span id="tokenDisplay" class="small"></span>
+</header>
 
-        <section class="result-section">
-            <div class="loader" id="loader"></div>
-            
-            <div class="result-card" id="resultCard">
-                <div class="banner" id="decisionBanner">
-                    <div class="decision-wrap">
-                        <div class="d-icon" id="decisionIcon">✓</div>
-                        <div class="d-text">
-                            <div id="decisionLabel">BUY</div>
-                            <div style="font-size:11px; opacity:0.8" id="decisionReason">Profit > $3.00</div>
-                        </div>
-                    </div>
-                    <div class="profit-display">
-                        <div style="font-size:9px; font-weight:600; opacity:0.7">NET PROFIT</div>
-                        <div class="profit-val" id="profitValue">$12.50</div>
-                    </div>
-                </div>
+<div style="padding:16px">
+  <input id="barcodeInput" placeholder="Scan barcode..." inputmode="numeric" autocomplete="off" />
+</div>
 
-                <div class="item-data">
-                    <div class="item-title" id="itemTitle">Loading Title...</div>
-                    <div class="item-meta" id="itemMeta">ASIN: B0000000 · Rank #0</div>
-                </div>
-
-                <div class="metrics-grid">
-                    <div class="metric-cell">
-                        <div class="metric-lbl">Lowest FBA (True)</div>
-                        <div class="metric-val" id="lowFBA">--</div>
-                    </div>
-                    <div class="metric-cell">
-                        <div class="metric-lbl">Lowest FBM (+Ship)</div>
-                        <div class="metric-val" id="lowFBM">--</div>
-                    </div>
-                    <div class="metric-cell">
-                        <div class="metric-lbl">Amazon Price</div>
-                        <div class="metric-val" id="amzPrice">--</div>
-                    </div>
-                    <div class="metric-cell">
-                        <div class="metric-lbl">Avg Rank (180d)</div>
-                        <div class="metric-val" id="avgRank">--</div>
-                    </div>
-                    <div class="metric-cell">
-                        <div class="metric-lbl">Est. Fees (FBA)</div>
-                        <div class="metric-val" id="estFees">--</div>
-                    </div>
-                    <div class="metric-cell">
-                        <div class="metric-lbl">ROI</div>
-                        <div class="metric-val" id="roiVal">--</div>
-                    </div>
-                </div>
-            </div>
-        </section>
+<div id="resultCard" class="card">
+  <div id="decisionBanner" class="banner">
+    <div>
+      <div id="decisionLabel" class="big"></div>
+      <div id="decisionReason" class="small"></div>
     </div>
+    <div id="profitValue" class="big"></div>
+  </div>
 
-    <div class="modal" id="settingsModal">
-        <div class="modal-card">
-            <div class="modal-title">API Settings</div>
-            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Enter Private Keepa API Key:</p>
-            <input type="text" class="api-input" id="apiKeyInput" placeholder="Paste key here...">
-            <button class="save-btn" id="saveKeyBtn">Save & Verify</button>
-            <button style="width:100%; margin-top:8px; padding:10px; background:transparent; border:none; color:var(--text-muted);" id="closeModal">Cancel</button>
-        </div>
-    </div>
+  <div class="metric">
+    <span class="small">Lowest New (Prime)</span>
+    <span id="lowFBA"></span>
+  </div>
+  <div class="metric">
+    <span class="small">Lowest New (Landed)</span>
+    <span id="lowFBM"></span>
+  </div>
+  <div class="metric">
+    <span class="small">Amazon Price</span>
+    <span id="amzPrice"></span>
+  </div>
+  <div class="metric">
+    <span class="small">Avg Rank</span>
+    <span id="avgRank"></span>
+  </div>
+  <div class="metric">
+    <span class="small">ROI</span>
+    <span id="roiVal"></span>
+  </div>
+</div>
 
-    <script>
-        // --- STATE & CONFIG ---
-        const state = {
-            apiKey: localStorage.getItem('scoutProKey') || '',
-            buyCost: 1.00,
-            condition: 'new' // 'new' or 'used'
-        };
+</div>
 
-        // --- DOM ELEMENTS ---
-        const els = {
-            input: document.getElementById('barcodeInput'),
-            slider: document.getElementById('costSlider'),
-            costDisplay: document.getElementById('costDisplay'),
-            card: document.getElementById('resultCard'),
-            loader: document.getElementById('loader'),
-            modal: document.getElementById('settingsModal'),
-            lock: document.getElementById('lockIcon'),
-            tokens: document.getElementById('tokenDisplay')
-        };
+<script>
+const apiKey = localStorage.getItem('scoutProKey');
+const input = document.getElementById('barcodeInput');
+const card = document.getElementById('resultCard');
 
-        // --- INITIALIZATION ---
-        init();
+input.focus();
 
-        function init() {
-            updateLockStatus();
-            
-            // Event Listeners
-            document.getElementById('settingsBtn').onclick = () => els.modal.classList.add('active');
-            document.getElementById('closeModal').onclick = () => els.modal.classList.remove('active');
-            
-            document.getElementById('saveKeyBtn').onclick = () => {
-                const key = document.getElementById('apiKeyInput').value.trim();
-                if(key) {
-                    state.apiKey = key;
-                    localStorage.setItem('scoutProKey', key);
-                    updateLockStatus();
-                    els.modal.classList.remove('active');
-                    alert('Key saved! Try scanning.');
-                }
-            };
+input.addEventListener('keypress', e => {
+  if (e.key === 'Enter') {
+    fetchKeepa(input.value.trim());
+  }
+});
 
-            els.slider.addEventListener('input', (e) => {
-                state.buyCost = parseFloat(e.target.value);
-                els.costDisplay.textContent = '$' + state.buyCost.toFixed(2);
-                // In a future update, we could re-calc the currently loaded product here
-            });
+async function fetchKeepa(code) {
+  card.style.display = 'none';
 
-            document.querySelectorAll('.cond-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.cond-btn').forEach(b => b.classList.remove('active', 'used'));
-                    btn.classList.add('active');
-                    if(btn.dataset.cond === 'used') btn.classList.add('used');
-                    state.condition = btn.dataset.cond;
-                });
-            });
+  const url = `https://api.keepa.com/product?key=${apiKey}&domain=1&code=${code}&stats=1`;
+  const res = await fetch(url);
+  const data = await res.json();
 
-            els.input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    const code = els.input.value.trim();
-                    if(code.length >= 10) fetchKeepa(code);
-                }
-            });
-        }
+  document.getElementById('tokenDisplay').textContent =
+    data.tokensLeft ? `${data.tokensLeft} tokens` : '';
 
-        function updateLockStatus() {
-            if(state.apiKey && state.apiKey.length > 20) {
-                els.lock.textContent = '🟢';
-                document.getElementById('apiKeyInput').value = state.apiKey;
-            } else {
-                els.lock.textContent = '🔴';
-            }
-        }
+  if (!data.products || !data.products[0]) return;
+  render(data.products[0]);
+}
 
-        // --- CORE KEEPA LOGIC ---
-        async function fetchKeepa(code) {
-            if(!state.apiKey) {
-                alert("Please enter API Key in settings ⚙️");
-                return;
-            }
+function render(p) {
+  const c = p.stats.current;
 
-            els.card.style.display = 'none';
-            els.loader.style.display = 'block';
-            els.input.blur();
+  const priceAmazon = c[0] > 0 ? c[0]/100 : null;
+  const priceFBMraw = c[1] > 0 ? c[1]/100 : null;
+  const priceFBA = c[10] > 0 ? c[10]/100 : null;
+  const priceLandedNew = c[18] > 0 ? c[18]/100 : null;
 
-            try {
-                // We request stats=1 to get the 'current' price array
-                // We also get the full product object which contains fbaFees
-                const url = `https://api.keepa.com/product?key=${state.apiKey}&domain=1&code=${code}&stats=1`;
-                
-                const response = await fetch(url);
-                const data = await response.json();
+  const priceUsedLanded = c[17] > 0 ? c[17]/100 : null;
+  const priceUsedRaw = c[7] > 0 ? c[7]/100 : null;
 
-                els.loader.style.display = 'none';
+  const lowestNew =
+    priceFBA ??
+    priceAmazon ??
+    priceLandedNew ??
+    priceFBMraw ??
+    null;
 
-                if(data.error) {
-                    alert('Keepa Error: ' + data.error.message);
-                    return;
-                }
-                
-                if(data.tokensLeft) els.tokens.textContent = `${data.tokensLeft} tokens`;
+  const lowestUsed =
+    priceUsedLanded ??
+    priceUsedRaw ??
+    null;
 
-                const product = data.products[0];
-                if(!product) {
-                    alert('Product not found.');
-                    return;
-                }
+  const buyCost = 1.00;
+  const sellPrice = lowestNew || 0;
 
-                renderProduct(product);
+  const fees = sellPrice * 0.15 + 4.5;
+  const profit = sellPrice - buyCost - fees;
+  const roi = buyCost ? (profit / buyCost * 100) : 0;
 
-            } catch (err) {
-                els.loader.style.display = 'none';
-                alert('Network Error: ' + err.message);
-            }
-        }
+  const decision = profit >= 5 ? 'BUY' : 'PASS';
 
-        function renderProduct(p) {
-            const stats = p.stats;
-            if (!stats || !stats.current) {
-                alert("No price history available for this item.");
-                return;
-            }
+  document.getElementById('decisionLabel').textContent = decision;
+  document.getElementById('decisionReason').textContent = profit >= 5 ? 'Profitable' : 'Low margin';
+  document.getElementById('profitValue').textContent = '$' + profit.toFixed(2);
 
-            const current = stats.current;
-            const avg180 = stats.avg180 || stats.current; 
+  document.getElementById('decisionBanner').className =
+    'banner ' + (decision === 'BUY' ? 'buy' : 'pass');
 
-            // --- 1. EXTRACT PRICES (Index 0, 10, 18) ---
-            const priceAmz = current[0] > 0 ? current[0] / 100 : null; // Index 0: Amazon
-            const priceFBA = current[10] > 0 ? current[10] / 100 : null; // Index 10: FBA
-            // Index 18: New Landed (Price+Ship). Fallback to Index 1 (New)
-            let priceFBM = current[18] > 0 ? current[18] / 100 : (current[1] > 0 ? current[1] / 100 : null);
+  document.getElementById('lowFBA').textContent = priceFBA ? `$${priceFBA.toFixed(2)}` : '--';
+  document.getElementById('lowFBM').textContent =
+    priceLandedNew ? `$${priceLandedNew.toFixed(2)}` :
+    priceFBMraw ? `$${priceFBMraw.toFixed(2)}` : '--';
 
-            // --- 2. EXTRACT RANK ---
-            const rankCurrent = current[3];
-            const rankAvg = avg180[3] > 0 ? avg180[3] : (rankCurrent > 0 ? rankCurrent : 0);
+  document.getElementById('amzPrice').textContent =
+    priceAmazon ? `$${priceAmazon.toFixed(2)}` : '--';
 
-            // --- 3. DETERMINE TARGET SELL PRICE ---
-            let targetSellPrice = 0;
-            
-            if (state.condition === 'new') {
-                if (priceFBA) targetSellPrice = priceFBA;
-                else if (priceAmz) targetSellPrice = priceAmz;
-                else if (priceFBM) targetSellPrice = priceFBM;
-            } else {
-                // Used Strategy: 10% below lowest new
-                const base = priceFBA || priceAmz || priceFBM;
-                targetSellPrice = base ? base * 0.90 : 0;
-            }
+  document.getElementById('avgRank').textContent =
+    c[3] ? c[3].toLocaleString() : '--';
 
-            // --- 4. CALCULATE REAL FEES ---
-            // A. Pick & Pack Fee (from Keepa Object)
-            // It sits in product.fbaFees.pickAndPackFee (in cents)
-            let pickAndPack = 0;
-            if (p.fbaFees && p.fbaFees.pickAndPackFee) {
-                pickAndPack = p.fbaFees.pickAndPackFee / 100;
-            } else {
-                pickAndPack = 4.50; // Fallback if data missing
-            }
+  document.getElementById('roiVal').textContent = roi.toFixed(0) + '%';
 
-            // B. Referral Fee (15% Standard)
-            // Amazon charges 15% on the TOTAL sell price
-            const referralFee = targetSellPrice * 0.15;
+  card.style.display = 'block';
 
-            // Total Estimated Fees
-            const totalFees = pickAndPack + referralFee;
+  navigator.vibrate(decision === 'BUY' ? [60] : [20,20]);
 
-            // --- 5. PROFIT CALC ---
-            const netProfit = targetSellPrice - state.buyCost - totalFees;
-            const roi = state.buyCost > 0 ? (netProfit / state.buyCost) * 100 : 0;
-
-            // --- 6. DECISION LOGIC ---
-            let decision = 'PASS';
-            let reason = 'Low Profit';
-            
-            if (netProfit >= 5.00 && rankAvg > 0 && rankAvg < 1000000) {
-                decision = 'BUY';
-                reason = 'Good Rank & Profit';
-            } else if (netProfit >= 10.00 && rankAvg < 3000000) {
-                decision = 'BUY';
-                reason = 'High Profit Long Tail';
-            } else if (rankAvg === 0 || rankAvg > 3000000) {
-                reason = 'Rank too high';
-            } else if (netProfit < 3.00) {
-                reason = `Profit only $${netProfit.toFixed(2)}`;
-            } else if (targetSellPrice === 0) {
-                reason = 'No pricing data';
-            }
-
-            // --- 7. RENDER UI ---
-            document.getElementById('itemTitle').textContent = p.title ? p.title.substr(0, 60) : 'Unknown Title';
-            document.getElementById('itemMeta').textContent = `ASIN: ${p.asin} · Rank: ${rankCurrent ? rankCurrent.toLocaleString() : 'N/A'}`;
-            
-            // Metrics
-            document.getElementById('lowFBA').textContent = priceFBA ? `$${priceFBA.toFixed(2)}` : '--';
-            document.getElementById('lowFBM').textContent = priceFBM ? `$${priceFBM.toFixed(2)}` : '--';
-            document.getElementById('amzPrice').textContent = priceAmz ? `$${priceAmz.toFixed(2)}` : '--';
-            document.getElementById('avgRank').textContent = rankAvg ? rankAvg.toLocaleString() : '--';
-            
-            // Fee Breakdown Tooltip (Optional visual tweak could go here)
-            document.getElementById('estFees').textContent = `$${totalFees.toFixed(2)}`;
-            document.getElementById('roiVal').textContent = roi.toFixed(0) + '%';
-            
-            // Color Coding
-            document.getElementById('lowFBA').className = 'metric-val ' + (priceFBA ? 'val-good' : '');
-
-            // Banner
-            const ban = document.getElementById('decisionBanner');
-            ban.className = 'banner ' + decision.toLowerCase();
-            document.getElementById('decisionLabel').textContent = decision;
-            document.getElementById('decisionIcon').textContent = decision === 'BUY' ? '✓' : '✗';
-            document.getElementById('decisionReason').textContent = reason;
-            document.getElementById('profitValue').textContent = (netProfit<0?'-':'') + '$' + Math.abs(netProfit).toFixed(2);
-
-            els.card.style.display = 'block';
-        }
-    </script>
+  setTimeout(() => {
+    input.value = '';
+    input.focus();
+  }, 700);
+}
+</script>
 </body>
 </html>
