@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>ScoutPro Radar – Focus Mode</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ScoutPro Radar</title>
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Mono&display=swap" rel="stylesheet">
 
@@ -22,14 +22,17 @@
 --blueBg:rgba(90,169,255,.22);
 --red:#ff6b6b;
 --redBg:rgba(255,107,107,.22);
+--yellow:#ffd166;
 }
+
 *{box-sizing:border-box}
 body{
 margin:0;font-family:'DM Sans',sans-serif;
 background:radial-gradient(circle at top,#0f1430,#05060a 70%);
 color:var(--text);
+padding-bottom: 50px; /* Space for scrolling */
 }
-.app{max-width:480px;margin:auto;padding-bottom:50px}
+.app{max-width:480px;margin:auto;}
 
 /* HEADER */
 header{
@@ -38,56 +41,97 @@ background:rgba(7,10,22,.95);
 backdrop-filter:blur(12px);
 border-bottom:1px solid var(--border);
 padding:14px;
-display:flex;align-items:center;gap:10px;
+display:flex;justify-content:space-between;align-items:center;
 }
-.scan{
-display:flex;gap:10px;flex:1;
-}
+.scan{display:flex;gap:10px;flex:1;margin-left:10px}
+
+/* INPUT STYLING */
 .scan input{
-flex:1;
-padding:12px;
-border-radius:14px;
-background:#050711;
-border:1px solid var(--border);
-color:var(--text);
-font-family:'DM Mono',monospace;
-font-size:16px;
+flex:1;padding:12px;border-radius:14px;
+background:#050711;border:1px solid var(--border);
+color:var(--text);font-family:'DM Mono',monospace;
+outline: none;
+transition: border-color 0.2s;
 }
-.scan button{
-border:none;background:var(--blue);
-border-radius:14px;padding:0 16px;font-weight:700;
+.scan input:focus{
+border-color: var(--blue);
+box-shadow: 0 0 0 2px var(--blueBg);
 }
+
+.scan button{border:none;background:var(--blue);border-radius:14px;padding:0 16px;font-weight:700; cursor: pointer;}
+
+/* TOGGLE */
 .toggle{
 background:var(--soft);
 border-radius:16px;
-padding:6px;font-size:11px;font-weight:700;
+padding:6px;
+font-size:11px;
+font-weight:700;
 cursor:pointer;
 user-select:none;
 }
 .toggle span{opacity:.5;padding:4px 8px}
 .toggle .on{opacity:1;color:var(--green)}
+
+/* CARD */
 .card{
-margin:14px;background:var(--panel);
-border-radius:26px;border:1px solid var(--border);
+margin:14px;
+background:var(--panel);
+border-radius:26px;
+border:1px solid var(--border);
 box-shadow:0 25px 60px rgba(0,0,0,.65);
 overflow:hidden;
+transition: transform 0.2s;
 }
+
+/* COMMAND */
 .command{
 padding:18px;border-bottom:1px solid var(--border);
 }
 .command.buy{background:linear-gradient(135deg,var(--greenBg),#0a0e22)}
+.command.check{background:linear-gradient(135deg,var(--blueBg),#0a0e22)}
+.command.pass{background:linear-gradient(135deg,var(--redBg),#0a0e22)}
 .action{font-size:28px;font-weight:800;letter-spacing:.08em}
 .subreason{font-size:12px;color:var(--muted);margin-top:4px}
+
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .kpi{font-size:11px;color:var(--muted)}
-.kpi strong{display:block;font-size:17px;font-family:'DM Mono',monospace;color:var(--text)}
-.section{padding:16px 18px;border-top:1px solid var(--border)}
-.section h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.kpi strong{
+display:block;font-size:17px;font-family:'DM Mono',monospace;color:var(--text)
+}
+
+/* SECTION */
+.section{
+padding:16px 18px;border-top:1px solid var(--border)
+}
+.section h4{
+margin:0 0 8px;font-size:11px;text-transform:uppercase;
+letter-spacing:.12em;color:var(--muted)
+}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.cell{background:var(--card);border-radius:14px;padding:10px;border:1px solid var(--border);font-size:11px}
+.cell{
+background:var(--card);
+border-radius:14px;padding:10px;border:1px solid var(--border);font-size:11px
+}
 .cell span{display:block;color:var(--muted);font-size:10px}
 .cell strong{display:block;margin-top:4px;font-family:'DM Mono',monospace;font-size:14px}
+
+/* CONTROLS */
+.control{
+background:var(--soft);
+border-radius:16px;padding:12px;margin-bottom:10px
+}
+.control-head{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.control input[type=number]{
+width:80px;background:#050711;border:1px solid var(--border);
+border-radius:8px;color:var(--text);font-family:'DM Mono',monospace
+}
+.control input[type=range]{width:100%;margin-top:10px; accent-color: var(--blue);}
+
+/* FOCUS MODE */
 .focus .detail{display:none}
+.focus .command{border-bottom:none}
+.focus .kpis{grid-template-columns:1fr}
 </style>
 </head>
 
@@ -95,84 +139,162 @@ padding:18px;border-bottom:1px solid var(--border);
 <div class="app">
 
 <header>
-  <div class="scan">
-    <input id="scanInput" placeholder="Scan ISBN / UPC" inputmode="numeric" autocomplete="off">
-    <button id="scanBtn">GO</button>
-  </div>
-  <div class="toggle" id="toggle">
-    <span id="tFocus">FOCUS</span>
-    <span id="tDetail" class="on">DETAILS</span>
-  </div>
+<div style="font-weight:700; display:none;">ScoutPro</div> <div class="scan">
+  <input id="scanInput" type="text" inputmode="numeric" placeholder="Scan ISBN..." autocomplete="off" autofocus>
+  <button id="scanBtn">GO</button>
+</div>
+<div class="toggle" id="toggle">
+<span id="tFocus">FOCUS</span>
+<span id="tDetail" class="on">DETAILS</span>
+</div>
 </header>
 
-<div class="card focus" id="card">
+<div class="card" id="card">
 
-  <div class="command buy">
-    <div class="action">READY</div>
-    <div class="subreason">Scan an item</div>
-    <div class="kpis">
-      <div class="kpi">Sell<strong>—</strong></div>
-      <div class="kpi">Profit<strong>—</strong></div>
-    </div>
-  </div>
-
-  <div class="detail">
-
-    <div class="section">
-      <h4>Item</h4>
-      <div class="grid">
-        <div class="cell"><span>Code</span><strong id="code">—</strong></div>
-        <div class="cell"><span>Status</span><strong>Waiting</strong></div>
-      </div>
-    </div>
-
-  </div>
-
+<div class="command buy" id="banner">
+<div class="action" id="decisionText">READY</div>
+<div class="subreason" id="decisionReason">Scan a book to begin</div>
+<div class="kpis">
+<div class="kpi">Sell<strong id="dispSell">--</strong></div>
+<div class="kpi">Profit<strong id="dispProfit">--</strong></div>
+<div class="kpi">ROI<strong id="dispRoi">--</strong></div>
+<div class="kpi">Floor<strong id="dispFloor">--</strong></div>
 </div>
+</div>
+
+<div class="detail">
+
+<div class="section">
+<h4>Item</h4>
+<div class="grid">
+<div class="cell"><span>ISBN</span><strong id="dispIsbn">---</strong></div>
+<div class="cell"><span>Title</span><strong id="dispTitle">Waiting for scan...</strong></div>
+</div>
+</div>
+
+<div class="section">
+<h4>Market Prices</h4>
+<div class="grid">
+<div class="cell"><span>Used FBM</span><strong>$14.34</strong></div>
+<div class="cell"><span>Used FBA</span><strong>$0.10 ⚠</strong></div>
+<div class="cell"><span>New FBM</span><strong>$9.99</strong></div>
+<div class="cell"><span>Amazon</span><strong>$9.99</strong></div>
+</div>
+</div>
+
+<div class="section">
+<h4>Velocity & Rank</h4>
+<div class="grid">
+<div class="cell"><span>Rank</span><strong>1.7M</strong></div>
+<div class="cell"><span>Velocity</span><strong>Steady</strong></div>
+<div class="cell"><span>Rank Drops</span><strong>6 / 30d</strong></div>
+<div class="cell"><span>Signal</span><strong>Hidden Likely</strong></div>
+</div>
+</div>
+
+<div class="section">
+<h4>Your Rules</h4>
+<div class="control">
+<div class="control-head"><span>Buy cost</span><span>$<input id="buyInput" type="number" value="1.00"></span></div>
+<input id="buySlider" type="range" min="0" max="20" step="0.25" value="1">
+</div>
+<div class="control">
+<div class="control-head"><span>Profit floor</span><span>$<input id="floorInput" type="number" value="5"></span></div>
+<input id="floorSlider" type="range" min="1" max="50" value="5">
+</div>
+</div>
+
+</div></div>
 </div>
 
 <script>
+// --- ELEMENTS ---
 const scanInput = document.getElementById('scanInput');
-const scanBtn   = document.getElementById('scanBtn');
-const codeEl    = document.getElementById('code');
+const scanBtn = document.getElementById('scanBtn');
+const toggle = document.getElementById('toggle');
+const card = document.getElementById('card');
 
-// 🔑 Always keep focus for scanners
-function focusScan(){
-  scanInput.focus();
+// --- STATE ---
+let mode = localStorage.getItem('radarMode')||'detail';
+let buyCost = 1.00;
+let profitFloor = 5.00;
+
+// --- INITIALIZE ---
+function applyMode(){
+  card.className = mode==='focus'?'card focus':'card';
+  document.getElementById('tFocus').className = mode==='focus'?'on':'';
+  document.getElementById('tDetail').className = mode==='detail'?'on':'';
 }
-window.addEventListener('load', focusScan);
-document.addEventListener('click', focusScan);
-
-// ✅ Core scan handler
-function processScan(raw){
-  const code = raw.trim();
-  if(code.length < 8) return; // ignore junk
-  codeEl.textContent = code;
-
-  // simulate processing
-  document.querySelector('.action').textContent = 'SCANNED';
-  document.querySelector('.subreason').textContent = 'Code received';
-
-  scanInput.value = '';
-  setTimeout(focusScan, 50);
+toggle.onclick=()=>{
+  mode = mode==='focus'?'detail':'focus';
+  localStorage.setItem('radarMode',mode);
+  applyMode();
 }
+applyMode();
 
-// ✅ Handle Enter / Tab / newline (scanners differ)
-scanInput.addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter' || e.key === 'Tab'){
-    e.preventDefault();
-    processScan(scanInput.value);
+// --- SCANNER LOGIC (THE FIX) ---
+scanInput.focus(); // Focus immediately on load
+
+// 1. Listen for the "Enter" key (which scanners send after typing numbers)
+scanInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    handleScan(scanInput.value);
   }
 });
 
-scanBtn.onclick = () => processScan(scanInput.value);
+// 2. Button fallback
+scanBtn.onclick = () => handleScan(scanInput.value);
 
-// ✅ Restore focus if Chrome tries to steal it
-setInterval(()=>{
-  if(document.activeElement !== scanInput){
-    scanInput.focus();
+function handleScan(isbn) {
+  if(!isbn || isbn.length < 3) return;
+
+  // -- SIMULATE DATA FETCHING (Replace this with API later) --
+  // Randomize Sell Price to prove it's working
+  const randomSell = (Math.random() * (30 - 12) + 12);
+  const fees = (randomSell * 0.15) + 5.00; 
+  const profit = randomSell - buyCost - fees;
+  const roi = (profit / buyCost) * 100;
+
+  // -- UPDATE DOM --
+  document.getElementById('dispIsbn').textContent = isbn;
+  document.getElementById('dispTitle').textContent = "Simulated Scan Result";
+  document.getElementById('dispSell').textContent = `$${randomSell.toFixed(2)}`;
+  document.getElementById('dispProfit').textContent = `$${profit.toFixed(2)}`;
+  document.getElementById('dispRoi').textContent = `${roi.toFixed(0)}%`;
+  document.getElementById('dispFloor').textContent = `$${profitFloor.toFixed(2)}`;
+
+  // Update Color/Banner
+  const banner = document.getElementById('banner');
+  const decisionText = document.getElementById('decisionText');
+  const decisionReason = document.getElementById('decisionReason');
+
+  if(profit >= profitFloor) {
+    banner.className = 'command buy';
+    decisionText.textContent = 'BUY';
+    decisionReason.textContent = 'Great profit potential';
+  } else if (profit > 0) {
+    banner.className = 'command check';
+    decisionText.textContent = 'CHECK';
+    decisionReason.textContent = 'Low profit margin';
+  } else {
+    banner.className = 'command pass';
+    decisionText.textContent = 'PASS';
+    decisionReason.textContent = 'Projected loss';
   }
-}, 1000);
+
+  // -- CRITICAL FOR SCANNERS --
+  // Clear the input so the next book doesn't append (e.g. 978...978...)
+  scanInput.value = '';
+  // Keep focus so you don't have to tap the screen again
+  scanInput.focus();
+}
+
+// --- SLIDER LOGIC ---
+const buyIn = document.getElementById('buyInput');
+const buySl = document.getElementById('buySlider');
+buySl.oninput = (e) => { buyIn.value = e.target.value; buyCost = parseFloat(e.target.value); };
+buyIn.onchange = (e) => { buySl.value = e.target.value; buyCost = parseFloat(e.target.value); };
+
 </script>
 
 </body>
