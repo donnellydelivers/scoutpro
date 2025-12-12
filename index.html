@@ -627,7 +627,7 @@ input[type="range"]::-moz-range-thumb {
 <!-- Processing State -->
 <div class="processing" id="processing">
   <div class="spinner"></div>
-  <div class="processing-text">Analyzing with AI...</div>
+  <div class="processing-text" id="processingText">Analyzing...</div>
 </div>
 
 <!-- MAIN PAGE -->
@@ -1024,7 +1024,8 @@ async function finalizeScan() {
   if (checkDuplicate(identifier)) return;
   
   const engineName = CONFIG.useGemini ? 'Gemini AI' : 'Local Engine';
-  document.getElementById("statusText").textContent = `Analyzing with ${engineName}...`;
+  document.getElementById("statusText").textContent = `Looking up: ${identifier}`;
+  document.getElementById("processingText").textContent = `Decision Engine: ${engineName}`;
   
   // Show processing state
   document.getElementById("processing").style.display = "block";
@@ -1138,35 +1139,42 @@ async function queryKeepa(identifier, rawInput) {
     const isNumeric = /^[0-9X]+$/i.test(identifier);
     
     if (isNumeric) {
-      // ISBN/UPC/EAN
-      queryParam = `code=${encodeURIComponent(identifier)}`;
+      // ISBN/UPC/EAN - Keepa uses 'asin' parameter for all product lookups
+      queryParam = `asin=${encodeURIComponent(identifier)}`;
     } else if (/^B[0-9A-Z]{9}$/i.test(identifier)) {
       // ASIN
       queryParam = `asin=${encodeURIComponent(identifier)}`;
     } else {
-      // Title search - need to get ASIN first
-      // For now, throw error - title search is complex
+      // Title search - not supported yet
       throw new Error('Title search not yet implemented. Please scan ISBN/UPC or enter ASIN.');
     }
     
-    // Stats parameter: 0 = current prices, 1 = sales rank history
-    // We want current prices (Amazon, New, Used, etc.) and basic stats
-    const stats = 0; // Current prices only
-    const history = 0; // No historical data (saves tokens)
-    
-    const url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&stats=${stats}&history=${history}`;
+    // Keepa API call - limit to 1 product to save tokens
+    // offers=0 means don't include marketplace offers (saves tokens)
+    const url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&offers=0`;
     
     console.log('Keepa API call:', url.replace(CONFIG.keepaKey, 'HIDDEN'));
     
     const response = await fetch(url);
     
+    console.log('Keepa response status:', response.status);
+    console.log('Keepa response headers:', {
+      'x-keepa-tokens-left': response.headers.get('x-keepa-tokens-left'),
+      'x-keepa-tokens-consumed': response.headers.get('x-keepa-tokens-consumed')
+    });
+    
     if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('Keepa error body:', errorBody);
+      
       if (response.status === 429) {
-        throw new Error('Rate limit reached. Please wait a moment.');
+        throw new Error('⏱️ Keepa rate limit (20/min). Wait 60 seconds or scan slower.');
       } else if (response.status === 401) {
-        throw new Error('Invalid Keepa API key. Check Settings.');
+        throw new Error('❌ Invalid Keepa API key. Check Settings.');
+      } else if (response.status === 402) {
+        throw new Error('💳 Keepa subscription issue. Check your account at keepa.com');
       }
-      throw new Error(`Keepa API error: ${response.status}`);
+      throw new Error(`Keepa API error ${response.status}: ${errorBody}`);
     }
     
     const data = await response.json();
