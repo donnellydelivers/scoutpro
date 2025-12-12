@@ -604,6 +604,7 @@ input[type="range"]::-moz-range-thumb {
   </div>
   <div class="input-row">
     <input id="scanInput" type="text" placeholder="ISBN, UPC, ASIN, or Title..." autocomplete="off" />
+    <button id="settingsBtn" class="btn-settings" style="background:var(--card);color:var(--muted);padding:12px;min-width:48px;" title="Settings">⚙️</button>
     <button id="historyBtn" class="btn-history">History</button>
   </div>
 </header>
@@ -693,35 +694,49 @@ input[type="range"]::-moz-range-thumb {
 <!-- SETTINGS PAGE -->
 <div id="settingsPage" class="card">
   <div class="section">
-    <div class="section-title">API Configuration</div>
+    <div class="section-title">⚙️ Settings</div>
     
-    <div class="settings-group">
-      <label class="settings-label">Keepa API Key</label>
-      <input type="text" id="keepaKey" class="settings-input" placeholder="Enter your Keepa API key" />
-      <div class="settings-hint">Get your key at <a href="https://keepa.com/#!api" target="_blank" style="color:var(--blue)">keepa.com/#!api</a></div>
+    <div style="background:rgba(59,130,246,0.1); padding:12px; border-radius:8px; margin-bottom:20px; border:1px solid rgba(59,130,246,0.3);">
+      <div style="font-size:13px; color:var(--text); line-height:1.6;">
+        <strong style="color:var(--blue);">🔑 API Keys Required</strong><br>
+        ScoutPro needs your API keys to fetch real product data and provide AI analysis.
+      </div>
     </div>
     
     <div class="settings-group">
-      <label class="settings-label">Gemini API Key</label>
-      <input type="text" id="geminiKey" class="settings-input" placeholder="Enter your Gemini API key" />
-      <div class="settings-hint">Get your key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue)">aistudio.google.com</a></div>
+      <label class="settings-label">Keepa API Key <span style="color:var(--red);">*</span></label>
+      <input type="password" id="keepaKey" class="settings-input" placeholder="Enter your Keepa API key" />
+      <div class="settings-hint">
+        Required for product lookups. Get your key at <a href="https://keepa.com/#!api" target="_blank" style="color:var(--blue);text-decoration:underline;">keepa.com/#!api</a><br>
+        <span style="font-size:11px;">Tip: Your keys are stored locally on this device only.</span>
+      </div>
+    </div>
+    
+    <div class="settings-group">
+      <label class="settings-label">Gemini API Key <span style="color:var(--muted);">(Optional)</span></label>
+      <input type="password" id="geminiKey" class="settings-input" placeholder="Enter your Gemini API key (optional)" />
+      <div class="settings-hint">
+        Only needed for "Ask Gemini Why" feature. Get free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);text-decoration:underline;">aistudio.google.com</a>
+      </div>
     </div>
     
     <div class="settings-group">
       <label class="settings-label">Decision Engine</label>
       <select id="useGemini" style="width:100%; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px;">
-        <option value="false">Local Engine (Fast, Free)</option>
-        <option value="true">Gemini AI (Smarter, $0.0001/scan)</option>
+        <option value="false">Local Engine (Fast, Free) ⚡</option>
+        <option value="true">Gemini AI (Smarter, requires API key) 🤖</option>
       </select>
-      <div class="settings-hint">Local engine works offline and is faster. Gemini provides more nuanced analysis.</div>
+      <div class="settings-hint">
+        Recommended: Use Local Engine for fast scanning, then click "Ask Gemini Why" on specific items you're curious about.
+      </div>
     </div>
     
-    <button id="saveSettings" style="width:100%; background:var(--green); color:var(--bg); margin-top:16px;">
-      Save Settings
+    <button id="saveSettings" style="width:100%; background:var(--green); color:var(--bg); margin-top:16px; padding:14px; font-weight:700;">
+      ✅ Save Settings
     </button>
     
-    <button id="backFromSettings" style="width:100%; background:var(--panel); color:var(--text); margin-top:8px; border:1px solid var(--border);">
-      Back
+    <button id="backFromSettings" style="width:100%; background:var(--panel); color:var(--text); margin-top:8px; border:1px solid var(--border); padding:14px;">
+      ← Back to Scanner
     </button>
   </div>
 </div>
@@ -737,7 +752,6 @@ input[type="range"]::-moz-range-thumb {
 
 <!-- Action Buttons -->
 <div class="actions">
-  <button id="settingsBtn" class="btn-settings">⚙️</button>
   <button id="downloadBtn" class="btn-download">Download</button>
   <button id="clearBtn" class="btn-clear">Clear</button>
 </div>
