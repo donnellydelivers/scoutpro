@@ -95,12 +95,14 @@ header {
 }
 
 .input-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   gap: 8px;
+  width: 100%;
 }
 
 input[type="text"] {
-  flex: 1;
+  min-width: 0;
   padding: 14px 16px;
   border-radius: 12px;
   background: var(--panel);
@@ -597,9 +599,15 @@ input[type="range"]::-moz-range-thumb {
 <header>
   <div class="brand">
     <div class="brand-title">ScoutPro AI</div>
-    <div class="brand-badge" id="engineBadge">
-      <div class="status-dot"></div>
-      <span id="engineName">Local Engine</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <div class="brand-badge" id="keepaBadge" style="display:none;background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.3);color:#10b981;">
+        <div class="status-dot" style="background:#10b981;"></div>
+        <span>Keepa API</span>
+      </div>
+      <div class="brand-badge" id="engineBadge">
+        <div class="status-dot"></div>
+        <span id="engineName">Local Engine</span>
+      </div>
     </div>
   </div>
   <div class="input-row">
@@ -655,6 +663,10 @@ input[type="range"]::-moz-range-thumb {
       
       <div class="explanation" id="explanation"></div>
       
+      <button id="askGeminiBtn" class="btn-toggle" style="background:linear-gradient(135deg,#8b5cf6,#6366f1);color:white;width:100%;margin-top:16px;display:none;padding:14px;font-weight:600;">
+        🤖 Ask Gemini Why
+      </button>
+      
       <div class="gemini-insights" id="geminiInsights">
         <div class="gemini-insights-header">
           <span>🤖</span>
@@ -683,10 +695,6 @@ input[type="range"]::-moz-range-thumb {
         </div>
         <input type="range" min="1" max="20" step="1" id="profitFloorSlider" value="5" />
       </div>
-      
-      <button id="askGeminiBtn" class="btn-toggle" style="background:linear-gradient(135deg,#8b5cf6,#6366f1);display:none;">
-        🤖 Ask Gemini Why
-      </button>
     </div>
   </div>
 </div>
@@ -733,6 +741,10 @@ input[type="range"]::-moz-range-thumb {
     
     <button id="saveSettings" style="width:100%; background:var(--green); color:var(--bg); margin-top:16px; padding:14px; font-weight:700;">
       ✅ Save Settings
+    </button>
+    
+    <button id="forceLocalEngine" style="width:100%; background:var(--blue); color:white; margin-top:8px; padding:14px; font-weight:600;">
+      ⚡ Use Local Engine (Recommended)
     </button>
     
     <button id="backFromSettings" style="width:100%; background:var(--panel); color:var(--text); margin-top:8px; border:1px solid var(--border); padding:14px;">
@@ -784,6 +796,14 @@ scanInput.focus();
 function updateEngineBadge() {
   const badge = document.getElementById("engineName");
   badge.textContent = CONFIG.useGemini ? "Gemini AI" : "Local Engine";
+  
+  // Update Keepa API status badge
+  const keepaBadge = document.getElementById("keepaBadge");
+  if (CONFIG.keepaKey) {
+    keepaBadge.style.display = "flex";
+  } else {
+    keepaBadge.style.display = "none";
+  }
 }
 
 // Update on load
@@ -946,6 +966,15 @@ document.getElementById("saveSettings").onclick = () => {
   document.getElementById("mainPage").style.display = "block";
 };
 
+document.getElementById("forceLocalEngine").onclick = () => {
+  // Set to Local Engine
+  document.getElementById("useGemini").value = "false";
+  CONFIG.useGemini = false;
+  localStorage.setItem('useGemini', 'false');
+  updateEngineBadge();
+  alert("⚡ Switched to Local Engine!\n\nThis is the recommended setting for fast, free scanning.\n\nUse 'Ask Gemini Why' button on individual scans when you want AI insights.");
+};
+
 document.getElementById("backFromSettings").onclick = () => {
   document.getElementById("settingsPage").style.display = "none";
   document.getElementById("mainPage").style.display = "block";
@@ -994,7 +1023,8 @@ async function finalizeScan() {
   
   if (checkDuplicate(identifier)) return;
   
-  document.getElementById("statusText").textContent = `Processing: ${identifier}`;
+  const engineName = CONFIG.useGemini ? 'Gemini AI' : 'Local Engine';
+  document.getElementById("statusText").textContent = `Analyzing with ${engineName}...`;
   
   // Show processing state
   document.getElementById("processing").style.display = "block";
@@ -1278,22 +1308,31 @@ function getMockKeepaData(identifier, rawInput) {
 
 /* ==================== GEMINI AI ANALYSIS ==================== */
 async function analyzeWithGemini(keepaData) {
-  const prompt = `You are an AI sourcing assistant for Amazon FBA reselling. Analyze this product and make a BUY/REJECT decision.
+  const prompt = `You are an AI sourcing assistant for Amazon FBA (Fulfillment by Amazon) reselling. You are analyzing books to send TO Amazon warehouses, NOT to ship directly to customers.
+
+CRITICAL CONTEXT:
+- This is FBA (Fulfillment By Amazon) - Amazon handles all shipping to customers
+- Buyer pays $${BUY_COST.toFixed(2)} + ~$0.75 shipping to Amazon warehouse
+- Amazon charges 15% + $5 FBA fees (already includes picking, packing, shipping to customer)
+- Weight does NOT affect profitability (FBA fees already account for it)
+- DO NOT penalize heavy books - weight is irrelevant for FBA profitability
 
 PRODUCT DATA:
 ${JSON.stringify(keepaData, null, 2)}
 
 USER THRESHOLDS:
 - Buy Cost: $${BUY_COST.toFixed(2)}
+- Shipping to Amazon: $0.75
+- Total COGS: $${(BUY_COST + 0.75).toFixed(2)}
 - Profit Floor: $${PROFIT_FLOOR.toFixed(2)}
 
 DECISION CRITERIA:
-1. Calculate target sell price based on Buy Box holder
-2. Calculate profit after 15% + $5 FBA fees
-3. REJECT if profit < $${PROFIT_FLOOR.toFixed(2)}
-4. REJECT if Amazon controls Buy Box (unless we can undercut profitably)
-5. Consider sales rank, velocity, competition
-6. ACCEPT if profitable with good market conditions
+1. Calculate target sell price based on Buy Box holder (FBA/FBM/Amazon)
+2. Calculate profit: Target Price - COGS - (Target Price * 0.15 + $5)
+3. ACCEPT if profit >= $${PROFIT_FLOOR.toFixed(2)}
+4. REJECT if profit < $${PROFIT_FLOOR.toFixed(2)}
+5. Consider sales rank and velocity
+6. Ignore weight - it's already factored into FBA fees
 
 OUTPUT FORMAT (JSON only, no markdown):
 {
@@ -1301,7 +1340,7 @@ OUTPUT FORMAT (JSON only, no markdown):
   "targetPrice": 24.99,
   "profit": 8.50,
   "roi": 425,
-  "reasoning": "Bullet point explanation with <br> tags"
+  "reasoning": "Bullet point explanation with <br> tags. DO NOT mention weight or shipping costs."
 }
 
 Make the decision now:`;
@@ -1649,10 +1688,12 @@ function localDecisionEngine(keepaData) {
     targetPrice = keepaData.currentPriceFBA * 0.97;
   }
   
-  // Calculate profit
+  // Calculate profit (FBA model: buy cost + $0.75 shipping to Amazon + FBA fees)
+  const shippingToAmazon = 0.75;
+  const totalCOGS = BUY_COST + shippingToAmazon;
   const fees = targetPrice * 0.15 + 5;
-  const profit = targetPrice - BUY_COST - fees;
-  const roi = Math.round((profit / BUY_COST) * 100);
+  const profit = targetPrice - totalCOGS - fees;
+  const roi = Math.round((profit / totalCOGS) * 100);
   
   // Make decision
   let verdict = "REJECT";
