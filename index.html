@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ScoutPro AI v3.1 (Token Saver)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>ScoutPro AI v3.4 (Auto-Scan Fix)</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
@@ -25,6 +25,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -109,7 +110,7 @@ input[type="text"] {
   border: 1px solid var(--border);
   color: var(--text);
   font-family: 'JetBrains Mono', 'Courier New', monospace;
-  font-size: 15px;
+  font-size: 16px; /* Prevents iOS zoom on focus */
   outline: none;
   transition: border-color 0.2s;
 }
@@ -120,6 +121,7 @@ input[type="text"]:focus {
 
 input[type="text"]::placeholder {
   color: var(--muted);
+  font-size: 14px;
 }
 
 button {
@@ -366,15 +368,6 @@ button:disabled {
   margin-top: 16px;
 }
 
-.banner .explanation ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.banner .explanation li {
-  margin: 6px 0;
-}
-
 /* Stats Grid */
 .stats {
   display: grid;
@@ -405,7 +398,6 @@ button:disabled {
 }
 
 .stat-value.negative { color: var(--red); }
-.stat-value.warning { color: var(--yellow); }
 
 /* Section */
 .section {
@@ -459,15 +451,6 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
   border: 3px solid var(--panel);
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--blue);
-  cursor: pointer;
-  border: 3px solid var(--panel);
 }
 
 /* Settings */
@@ -611,7 +594,7 @@ input[type="range"]::-moz-range-thumb {
   </div>
   <div class="input-row">
     <input id="scanInput" type="text" placeholder="Scan Barcode or Enter ASIN..." autocomplete="off" />
-    <button id="settingsBtn" class="btn-settings" style="background:var(--card);color:var(--muted);padding:12px;min-width:48px;" title="Settings">⚙️</button>
+    <button id="settingsBtn" class="btn-settings" style="background:var(--card);color:var(--muted);padding:12px;min-width:48px;cursor:pointer;" title="Settings">⚙️</button>
     <button id="historyBtn" class="btn-history">History</button>
   </div>
 </header>
@@ -703,7 +686,7 @@ input[type="range"]::-moz-range-thumb {
     <div style="background:rgba(59,130,246,0.1); padding:12px; border-radius:8px; margin-bottom:20px; border:1px solid rgba(59,130,246,0.3);">
       <div style="font-size:13px; color:var(--text); line-height:1.6;">
         <strong style="color:var(--blue);">🔑 API Keys Required</strong><br>
-        ScoutPro needs your API keys to fetch real product data and provide AI analysis.
+        ScoutPro needs your API keys to fetch real product data.
       </div>
     </div>
     
@@ -711,16 +694,15 @@ input[type="range"]::-moz-range-thumb {
       <label class="settings-label">Keepa API Key <span style="color:var(--red);">*</span></label>
       <input type="password" id="keepaKey" class="settings-input" placeholder="Enter your Keepa API key" />
       <div class="settings-hint">
-        Required for product lookups. Get your key at <a href="https://keepa.com/#!api" target="_blank" style="color:var(--blue);text-decoration:underline;">keepa.com/#!api</a><br>
-        <span style="font-size:11px;">Tip: Your keys are stored locally on this device only.</span>
+        Required. Keys stored locally on this device only.
       </div>
     </div>
     
     <div class="settings-group">
       <label class="settings-label">Gemini API Key <span style="color:var(--muted);">(Optional)</span></label>
-      <input type="password" id="geminiKey" class="settings-input" placeholder="Enter your Gemini API key (optional)" />
+      <input type="password" id="geminiKey" class="settings-input" placeholder="Enter your Gemini API key" />
       <div class="settings-hint">
-        Only needed for "Ask Gemini Why" feature. Get free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);text-decoration:underline;">aistudio.google.com</a>
+        For "Ask Gemini Why" feature.
       </div>
     </div>
     
@@ -730,9 +712,6 @@ input[type="range"]::-moz-range-thumb {
         <option value="false">Local Engine (Fast, Free) ⚡</option>
         <option value="true">Gemini AI (Smarter, requires API key) 🤖</option>
       </select>
-      <div class="settings-hint">
-        Recommended: Use Local Engine for fast scanning, then click "Ask Gemini Why" on specific items you're curious about.
-      </div>
     </div>
     
     <button id="saveSettings" style="width:100%; background:var(--green); color:var(--bg); margin-top:16px; padding:14px; font-weight:700;">
@@ -740,7 +719,7 @@ input[type="range"]::-moz-range-thumb {
     </button>
     
     <button id="forceLocalEngine" style="width:100%; background:var(--blue); color:white; margin-top:8px; padding:14px; font-weight:600;">
-      ⚡ Use Local Engine (Recommended)
+      ⚡ Use Local Engine
     </button>
     
     <button id="backFromSettings" style="width:100%; background:var(--panel); color:var(--text); margin-top:8px; border:1px solid var(--border); padding:14px;">
@@ -765,620 +744,524 @@ input[type="range"]::-moz-range-thumb {
 </div>
 
 <script>
-/* ==================== CONFIG & SETUP ==================== */
-let BUY_COST = 1.00;
-let PROFIT_FLOOR = 5.00;
-let buffer = "";
-let timer = null;
-const SCAN_DELAY = 100;
+document.addEventListener('DOMContentLoaded', () => {
 
-const CONFIG = {
-  keepaKey: localStorage.getItem('keepaKey') || '',
-  geminiKey: localStorage.getItem('geminiKey') || '',
-  useGemini: localStorage.getItem('useGemini') === 'true'
-};
+  /* ==================== CONFIG & SETUP ==================== */
+  let BUY_COST = 1.00;
+  let PROFIT_FLOOR = 5.00;
+  let timer = null;
+  const SCAN_DELAY = 200; // Adjusted for better scanner debounce
 
-const seenIdentifiers = new Set();
-let scanHistory = [];
-let buyList = [];
-let lastScanData = null;
+  // Safe LocalStorage Retrieval
+  const getStorage = (key, def) => {
+    try { return localStorage.getItem(key) || def; } catch (e) { return def; }
+  };
 
-const scanInput = document.getElementById("scanInput");
-scanInput.focus();
+  const CONFIG = {
+    keepaKey: getStorage('keepaKey', ''),
+    geminiKey: getStorage('geminiKey', ''),
+    useGemini: getStorage('useGemini', 'false') === 'true'
+  };
 
-/* ==================== ENGINE & BADGES ==================== */
-function updateEngineBadge() {
-  const badge = document.getElementById("engineName");
-  badge.textContent = CONFIG.useGemini ? "Gemini AI" : "Local Engine";
-  
-  const keepaBadge = document.getElementById("keepaBadge");
-  if (CONFIG.keepaKey) {
-    keepaBadge.style.display = "flex";
-  } else {
-    keepaBadge.style.display = "none";
-  }
-}
-updateEngineBadge();
+  const seenIdentifiers = new Set();
+  let scanHistory = [];
+  let buyList = [];
+  let lastScanData = null;
 
-window.useLocalEngine = function() {
-  CONFIG.useGemini = false;
-  localStorage.setItem('useGemini', 'false');
-  updateEngineBadge();
-};
-
-/* ==================== ASK GEMINI WHY ==================== */
-document.getElementById("askGeminiBtn").onclick = async () => {
-  if (!lastScanData) return;
-  if (!CONFIG.geminiKey) {
-    alert('⚠️ Please add your Gemini API key in Settings first');
-    return;
-  }
-  
-  const insightsContainer = document.getElementById("geminiInsights");
-  const insightsBody = document.getElementById("geminiInsightsBody");
-  const btn = document.getElementById("askGeminiBtn");
-  
-  btn.disabled = true;
-  btn.textContent = "🤖 Analyzing...";
-  insightsContainer.style.display = "block";
-  insightsBody.innerHTML = '<div class="gemini-loading"><div class="gemini-loading-spinner"></div><br>Gemini is analyzing this item...</div>';
-  
-  try {
-    const { decision, keepaData } = lastScanData;
-    
-    const prompt = `You are an expert Amazon FBA book reseller analyzing this item.
-
-ITEM DATA:
-- Title: ${keepaData.title}
-- ASIN: ${keepaData.asin}
-- Sales Rank: ${keepaData.salesRank.toLocaleString()}
-- Rank Drops (30d): ${keepaData.salesRankDrops30} (REAL DATA)
-- Current FBA Price: $${keepaData.currentPriceFBA}
-- Current FBM Price: $${keepaData.currentPriceFBM}
-- Amazon Price: ${keepaData.currentPriceAmazon > 0 ? '$' + keepaData.currentPriceAmazon : 'Not available'}
-- Buy Box Winner: ${keepaData.buyBoxWinner}
-- Price Volatility: ${keepaData.priceVolatility}
-
-LOCAL ENGINE DECISION:
-- Verdict: ${decision.verdict}
-- Profit: $${decision.profit}
-- ROI: ${decision.roi}%
-- Reasoning: ${decision.reasoning.replace(/<[^>]*>/g, '')}
-
-USER THRESHOLDS:
-- Buy Cost: $${BUY_COST}
-- Profit Floor: $${PROFIT_FLOOR}
-
-ANALYZE THIS:
-1. Do you agree with the ${decision.verdict} decision? Why or why not?
-2. What market dynamics or patterns do you see?
-3. What are the risks and opportunities?
-4. Would you personally buy this?
-
-Keep response conversational and under 200 words.`;
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 500
-        }
-      })
-    });
-
-    if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-
-    const data = await response.json();
-    const insights = data.candidates[0].content.parts[0].text;
-    
-    const formattedInsights = insights
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .join('<br><br>');
-    
-    insightsBody.innerHTML = formattedInsights;
-    
-  } catch (error) {
-    console.error('Gemini insights error:', error);
-    insightsBody.innerHTML = `<div style="color:var(--red);">❌ Error: ${error.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "🤖 Ask Gemini Again";
-  }
-};
-
-/* ==================== SLIDERS ==================== */
-const bcSlider = document.getElementById("buyCostSlider");
-const pfSlider = document.getElementById("profitFloorSlider");
-let sliderTimeout = null;
-
-bcSlider.oninput = () => {
-  BUY_COST = parseFloat(bcSlider.value);
-  document.getElementById("buyCostVal").textContent = BUY_COST.toFixed(2);
-  clearTimeout(sliderTimeout);
-  sliderTimeout = setTimeout(() => { if (lastScanData) reanalyzeWithNewThresholds(); }, 300);
-};
-
-pfSlider.oninput = () => {
-  PROFIT_FLOOR = parseFloat(pfSlider.value);
-  document.getElementById("profitFloorVal").textContent = PROFIT_FLOOR.toFixed(2);
-  clearTimeout(sliderTimeout);
-  sliderTimeout = setTimeout(() => { if (lastScanData) reanalyzeWithNewThresholds(); }, 300);
-};
-
-/* ==================== SETTINGS ==================== */
-document.getElementById("settingsBtn").onclick = () => {
-  document.getElementById("mainPage").style.display = "none";
-  document.getElementById("settingsPage").style.display = "block";
-  document.getElementById("keepaKey").value = CONFIG.keepaKey;
-  document.getElementById("geminiKey").value = CONFIG.geminiKey;
-  document.getElementById("useGemini").value = CONFIG.useGemini ? "true" : "false";
-};
-
-document.getElementById("saveSettings").onclick = () => {
-  CONFIG.keepaKey = document.getElementById("keepaKey").value.trim();
-  CONFIG.geminiKey = document.getElementById("geminiKey").value.trim();
-  CONFIG.useGemini = document.getElementById("useGemini").value === "true";
-  
-  localStorage.setItem('keepaKey', CONFIG.keepaKey);
-  localStorage.setItem('geminiKey', CONFIG.geminiKey);
-  localStorage.setItem('useGemini', CONFIG.useGemini);
-  
-  updateEngineBadge();
-  alert('✅ Settings saved!');
-  document.getElementById("settingsPage").style.display = "none";
-  document.getElementById("mainPage").style.display = "block";
-};
-
-document.getElementById("forceLocalEngine").onclick = () => {
-  document.getElementById("useGemini").value = "false";
-  CONFIG.useGemini = false;
-  localStorage.setItem('useGemini', 'false');
-  updateEngineBadge();
-  alert("⚡ Switched to Local Engine!");
-};
-
-document.getElementById("backFromSettings").onclick = () => {
-  document.getElementById("settingsPage").style.display = "none";
-  document.getElementById("mainPage").style.display = "block";
-};
-
-/* ==================== SCAN INPUT & BARCODE HANDLING ==================== */
-scanInput.addEventListener("input", e => {
-  buffer += e.data || "";
-  scanInput.value = buffer;
-  clearTimeout(timer);
-  timer = setTimeout(finalizeScan, SCAN_DELAY);
-});
-
-scanInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    clearTimeout(timer);
-    finalizeScan();
-  }
-});
-
-function detectInputType(input) {
-  const cleaned = input.replace(/[^0-9X]/gi, '');
-  if (cleaned.length === 10 || cleaned.length === 13) return cleaned; // ISBN
-  if (cleaned.length >= 12 && cleaned.length <= 14) return cleaned; // UPC/EAN
-  if (/^B[0-9A-Z]{9}$/i.test(input)) return input.toUpperCase(); // ASIN
-  return input; // Fallback
-}
-
-function checkDuplicate(identifier) {
-  if (seenIdentifiers.has(identifier)) {
-    document.getElementById("dupeWarning").style.display = "block";
-    setTimeout(() => document.getElementById("dupeWarning").style.display = "none", 2000);
-    return true;
-  }
-  seenIdentifiers.add(identifier);
-  return false;
-}
-
-/* ==================== MAIN SCAN LOGIC ==================== */
-async function finalizeScan() {
-  const input = buffer.trim() || scanInput.value.trim();
-  buffer = "";
-  scanInput.value = "";
+  const scanInput = document.getElementById("scanInput");
   scanInput.focus();
 
-  if (!input) return;
-  if (navigator.vibrate) navigator.vibrate(40);
-  
-  if (!CONFIG.keepaKey) console.warn('No Keepa key - using mock data');
-  
-  const identifier = detectInputType(input);
-  if (checkDuplicate(identifier)) return;
-  
-  const engineName = CONFIG.useGemini ? 'Gemini AI' : 'Local Engine';
-  document.getElementById("statusText").textContent = `Looking up: ${identifier}`;
-  document.getElementById("processingText").textContent = `Decision Engine: ${engineName}`;
-  document.getElementById("processing").style.display = "block";
-  document.getElementById("resultCard").classList.add("hidden");
-  
-  try {
-    // 1. Query Keepa (New Optimized Function)
-    const keepaData = await queryKeepa(identifier, input);
+  /* ==================== ENGINE & BADGES ==================== */
+  function updateEngineBadge() {
+    const badge = document.getElementById("engineName");
+    if(badge) badge.textContent = CONFIG.useGemini ? "Gemini AI" : "Local Engine";
     
-    // 2. Decision Logic
-    let decision;
+    const keepaBadge = document.getElementById("keepaBadge");
+    if(keepaBadge) keepaBadge.style.display = CONFIG.keepaKey ? "flex" : "none";
+  }
+  updateEngineBadge();
+
+  /* ==================== EVENT LISTENERS (UI) ==================== */
+  
+  // SCAN INPUT (Auto-detect end of scan)
+  scanInput.addEventListener("input", (e) => {
+    // Clear the timer on every keystroke
+    clearTimeout(timer);
+    
+    // Set a timer to trigger the scan if no new input comes in
+    timer = setTimeout(() => {
+        finalizeScan();
+    }, SCAN_DELAY);
+  });
+
+  // Handle "Enter" key just in case scanner sends it
+  scanInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      clearTimeout(timer);
+      finalizeScan();
+    }
+  });
+
+  // BUTTONS
+  document.getElementById("settingsBtn").onclick = () => {
+    document.getElementById("mainPage").style.display = "none";
+    document.getElementById("settingsPage").style.display = "block";
+    document.getElementById("keepaKey").value = CONFIG.keepaKey;
+    document.getElementById("geminiKey").value = CONFIG.geminiKey;
+    document.getElementById("useGemini").value = CONFIG.useGemini ? "true" : "false";
+  };
+
+  document.getElementById("historyBtn").onclick = () => {
+    document.getElementById("mainPage").style.display = "none";
+    document.getElementById("historyPage").style.display = "block";
+  };
+  
+  document.getElementById("backBtn").onclick = () => {
+    document.getElementById("historyPage").style.display = "none";
+    document.getElementById("mainPage").style.display = "block";
+  };
+  
+  document.getElementById("backFromSettings").onclick = () => {
+    document.getElementById("settingsPage").style.display = "none";
+    document.getElementById("mainPage").style.display = "block";
+  };
+
+  document.getElementById("saveSettings").onclick = () => {
+    CONFIG.keepaKey = document.getElementById("keepaKey").value.trim();
+    CONFIG.geminiKey = document.getElementById("geminiKey").value.trim();
+    CONFIG.useGemini = document.getElementById("useGemini").value === "true";
+    
+    localStorage.setItem('keepaKey', CONFIG.keepaKey);
+    localStorage.setItem('geminiKey', CONFIG.geminiKey);
+    localStorage.setItem('useGemini', CONFIG.useGemini);
+    
+    updateEngineBadge();
+    alert('✅ Settings saved!');
+    document.getElementById("settingsPage").style.display = "none";
+    document.getElementById("mainPage").style.display = "block";
+    scanInput.focus();
+  };
+  
+  document.getElementById("forceLocalEngine").onclick = () => {
+    document.getElementById("useGemini").value = "false";
+    CONFIG.useGemini = false;
+    localStorage.setItem('useGemini', 'false');
+    updateEngineBadge();
+    alert("⚡ Switched to Local Engine!");
+  };
+
+  document.getElementById("clearBtn").onclick = () => {
+    if (!confirm("Clear all data?")) return;
+    scanHistory = []; buyList = []; lastScanData = null; seenIdentifiers.clear();
+    document.getElementById("historyList").innerHTML = "";
+    document.getElementById("itemCount").innerHTML = `<span class="status-label">Queue:</span> 0`;
+    document.getElementById("resultCard").classList.add("hidden");
+    document.getElementById("statusText").textContent = "Ready to scan";
+    scanInput.focus();
+  };
+
+  document.getElementById("downloadBtn").onclick = () => {
+    if (buyList.length === 0) return alert("No items in buy queue.");
+    let csv = "Title,ASIN,TargetPrice,Profit,ROI,HiddenGem,GemReasons\n";
+    buyList.forEach(r => {
+      csv += `"${r.title}",${r.asin},${r.price},${r.profit},${r.roi}%,${r.isGem?'YES':'NO'},"${r.gemTypes}"\n`;
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `scoutpro_buylist_${Date.now()}.csv`;
+    a.click();
+  };
+
+  // Ask Gemini Button
+  document.getElementById("askGeminiBtn").onclick = async () => {
+    if (!lastScanData) return;
+    if (!CONFIG.geminiKey) {
+      alert('⚠️ Please add your Gemini API key in Settings first');
+      return;
+    }
+    
+    const insightsContainer = document.getElementById("geminiInsights");
+    const insightsBody = document.getElementById("geminiInsightsBody");
+    const btn = document.getElementById("askGeminiBtn");
+    
+    btn.disabled = true;
+    btn.textContent = "🤖 Analyzing...";
+    insightsContainer.style.display = "block";
+    insightsBody.innerHTML = '<div class="gemini-loading"><div class="gemini-loading-spinner"></div><br>Gemini is analyzing this item...</div>';
+    
     try {
-      decision = CONFIG.useGemini 
-        ? await analyzeWithGemini(keepaData)
-        : localDecisionEngine(keepaData);
-    } catch (analysisError) {
-      console.warn('Analysis failed, using local fallback:', analysisError.message);
-      decision = localDecisionEngine(keepaData);
+      const { decision, keepaData } = lastScanData;
+      const prompt = `You are an expert Amazon FBA book reseller.
+ITEM: ${keepaData.title} (ASIN: ${keepaData.asin})
+Rank: ${keepaData.salesRank} | 30d Drops: ${keepaData.salesRankDrops30}
+Price: FBA $${keepaData.currentPriceFBA} | FBM $${keepaData.currentPriceFBM} | BuyBox: ${keepaData.buyBoxWinner}
+DECISION: ${decision.verdict} | Profit: $${decision.profit} | ROI: ${decision.roi}%
+Question: Do you agree with this decision? Any hidden risks or opportunities? Short conversational response.`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 500 }
+        })
+      });
+
+      if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+      const data = await response.json();
+      const insights = data.candidates[0].content.parts[0].text;
+      insightsBody.innerHTML = insights.replace(/\n/g, '<br><br>');
+      
+    } catch (error) {
+      insightsBody.innerHTML = `<div style="color:var(--red);">❌ Error: ${error.message}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "🤖 Ask Gemini Again";
+    }
+  };
+
+  /* ==================== SLIDERS ==================== */
+  const bcSlider = document.getElementById("buyCostSlider");
+  const pfSlider = document.getElementById("profitFloorSlider");
+  let sliderTimeout = null;
+
+  bcSlider.oninput = () => {
+    BUY_COST = parseFloat(bcSlider.value);
+    document.getElementById("buyCostVal").textContent = BUY_COST.toFixed(2);
+    clearTimeout(sliderTimeout);
+    sliderTimeout = setTimeout(() => { if (lastScanData) reanalyzeWithNewThresholds(); }, 300);
+  };
+
+  pfSlider.oninput = () => {
+    PROFIT_FLOOR = parseFloat(pfSlider.value);
+    document.getElementById("profitFloorVal").textContent = PROFIT_FLOOR.toFixed(2);
+    clearTimeout(sliderTimeout);
+    sliderTimeout = setTimeout(() => { if (lastScanData) reanalyzeWithNewThresholds(); }, 300);
+  };
+
+  /* ==================== SCAN LOGIC ==================== */
+  function checkDuplicate(identifier) {
+    if (seenIdentifiers.has(identifier)) {
+      document.getElementById("dupeWarning").style.display = "block";
+      setTimeout(() => document.getElementById("dupeWarning").style.display = "none", 2000);
+      return true;
+    }
+    seenIdentifiers.add(identifier);
+    return false;
+  }
+
+  async function finalizeScan() {
+    const rawVal = scanInput.value;
+    if (!rawVal.trim()) return;
+
+    // Use input value directly, no manual buffer management
+    // Clean input just for duplicate check and identifier cleaning
+    const identifier = rawVal.replace(/[^0-9a-zA-Z]/g, '').trim();
+    
+    // Clear input immediately so user is ready for next scan
+    scanInput.value = "";
+    scanInput.focus();
+
+    if (!identifier) return;
+    if (navigator.vibrate) navigator.vibrate(40);
+    
+    if (checkDuplicate(identifier)) return;
+    
+    const engineName = CONFIG.useGemini ? 'Gemini AI' : 'Local Engine';
+    document.getElementById("statusText").textContent = `Looking up: ${identifier}`;
+    document.getElementById("processingText").textContent = `Decision Engine: ${engineName}`;
+    document.getElementById("processing").style.display = "block";
+    document.getElementById("resultCard").classList.add("hidden");
+    
+    try {
+      const keepaData = await queryKeepa(identifier);
+      
+      let decision;
+      try {
+        decision = CONFIG.useGemini 
+          ? await analyzeWithGemini(keepaData)
+          : localDecisionEngine(keepaData);
+      } catch (analysisError) {
+        console.warn('Analysis failed, using local fallback');
+        decision = localDecisionEngine(keepaData);
+      }
+      
+      displayResult(decision, keepaData);
+      addToHistory(decision, keepaData);
+      
+      document.getElementById("statusText").textContent = `${decision.verdict}: ${keepaData.title}`;
+      document.getElementById("processing").style.display = "none";
+      
+    } catch (error) {
+      console.error('Scan error:', error);
+      let errorMsg = error.message;
+      if (errorMsg.includes('Failed to fetch')) errorMsg = 'Network error.';
+      else if (errorMsg.includes('API key')) errorMsg = 'Invalid API key.';
+      
+      document.getElementById("statusText").textContent = "Error";
+      document.getElementById("processing").style.display = "none";
+      document.getElementById("resultCard").classList.remove("hidden");
+      document.getElementById("banner").className = "banner pass";
+      document.getElementById("decision").textContent = "ERROR";
+      document.getElementById("reason").textContent = errorMsg;
+      document.getElementById("explanation").innerHTML = `⚠️ ${error.message}`;
+    }
+  }
+
+  /* ==================== KEEPA API ==================== */
+  async function queryKeepa(cleanId) {
+    if (!CONFIG.keepaKey) return getMockKeepaData(cleanId);
+    
+    try {
+      const domain = 1; 
+      let queryParam = '';
+      
+      // Routing logic for code vs asin
+      if (/^B[0-9A-Z]{9}$/i.test(cleanId) || cleanId.length === 10) {
+        queryParam = `asin=${encodeURIComponent(cleanId)}`;
+      } else {
+        queryParam = `code=${encodeURIComponent(cleanId)}`;
+      }
+      
+      const url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&offers=0&history=0&rating=0&stats=1`;
+      console.log(`Fetch: ${queryParam}`);
+
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const txt = await response.text();
+        if (response.status === 400) throw new Error(`❌ Bad Request: "${cleanId}" invalid.`);
+        if (response.status === 402) throw new Error('💳 Keepa quota exceeded.');
+        if (response.status === 429) throw new Error('⏱️ Keepa rate limit.');
+        throw new Error(`Keepa error ${response.status}: ${txt}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.tokensConsumed !== undefined) {
+        document.getElementById("tokenCount").style.display = "block";
+        document.getElementById("tokenValue").textContent = data.tokensConsumed;
+      }
+      
+      if (!data.products || data.products.length === 0) {
+        throw new Error('Product not found in Keepa.');
+      }
+      
+      return parseKeepaResponse(data.products[0]);
+    } catch (error) { throw error; }
+  }
+
+  /* ==================== RESPONSE PARSING ==================== */
+  function parseKeepaResponse(product) {
+    const parsePrice = (val) => {
+      if (val === null || val === undefined || val === -1) return 0;
+      return val / 100;
+    };
+    
+    const stats = product.stats || {};
+    const current = stats.current || [];
+    
+    const amazonPrice = parsePrice(current[0]);
+    const newPrice = parsePrice(current[1]); 
+    const usedPrice = parsePrice(current[2]);
+    const salesRank = current[18] || 0;
+    const salesRankDrops30 = stats.salesRankDrops30 || 0;
+    
+    const buyBoxPrice = parsePrice(stats.buyBoxPrice);
+    let buyBoxWinner = 'UNKNOWN';
+    
+    if (buyBoxPrice > 0) {
+      if (buyBoxPrice === amazonPrice) buyBoxWinner = 'AMAZON';
+      else if (buyBoxPrice === newPrice) buyBoxWinner = 'FBA'; 
+      else buyBoxWinner = 'FBM';
+    } else {
+      if (amazonPrice > 0) buyBoxWinner = 'AMAZON';
+      else if (newPrice > 0) buyBoxWinner = 'FBA';
+      else buyBoxWinner = 'FBM';
     }
     
-    // 3. Display
-    displayResult(decision, keepaData);
-    addToHistory(decision, keepaData);
+    return {
+      asin: product.asin || 'UNKNOWN',
+      title: product.title || 'Unknown Product',
+      salesRank: salesRank,
+      salesRankDrops30: salesRankDrops30, 
+      currentPriceFBA: newPrice > 0 ? newPrice : usedPrice,
+      currentPriceFBM: usedPrice,
+      currentPriceAmazon: amazonPrice,
+      buyBoxWinner: buyBoxWinner,
+      buyBoxPrice: buyBoxPrice,
+      offerCountFBA: product.fbaFees ? 1 : 0,
+      offerCountFBM: (stats.offerCountUsed || 0) + (stats.offerCountNew || 0),
+      priceVolatility: 'Low',
+      weight: product.packageWeight ? product.packageWeight / 100 : 1.0,
+      packageQuantity: product.packageQuantity || 1,
+    };
+  }
+
+  /* ==================== MOCK & FALLBACKS ==================== */
+  function getMockKeepaData(cleanId) {
+    const rank = Math.floor(Math.random() * 900000) + 10000;
+    return {
+      asin: 'MOCK' + cleanId,
+      title: `Mock Product ${cleanId}`,
+      salesRank: rank,
+      salesRankDrops30: Math.floor(Math.random() * 40) + 2,
+      currentPriceFBA: 15.99,
+      currentPriceFBM: 12.00,
+      currentPriceAmazon: 0,
+      buyBoxWinner: 'FBA',
+      buyBoxPrice: 15.99,
+      offerCountFBA: 5,
+      offerCountFBM: 10,
+      priceVolatility: 'Low',
+      weight: 1.0
+    };
+  }
+
+  /* ==================== GEMINI ==================== */
+  async function analyzeWithGemini(keepaData) {
+    const prompt = `You are an AI sourcing assistant.
+PRODUCT: ${JSON.stringify(keepaData)}
+CONTEXT: Buy Cost $${BUY_COST} | Profit Floor $${PROFIT_FLOOR}
+TASK: Output JSON with verdict (ACCEPT/REJECT), targetPrice, profit, roi, and reasoning.`;
     
-    document.getElementById("statusText").textContent = `${decision.verdict}: ${keepaData.title}`;
-    document.getElementById("processing").style.display = "none";
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+
+      if (!response.ok) throw new Error(`Gemini Error: ${response.status}`);
+      const data = await response.json();
+      let text = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '');
+      return JSON.parse(text);
+    } catch (error) {
+      console.warn('Gemini failed, fallback');
+      return localDecisionEngine(keepaData);
+    }
+  }
+
+  /* ==================== LOCAL ENGINE ==================== */
+  function localDecisionEngine(keepaData) {
+    let targetPrice = keepaData.currentPriceFBA;
+    if (keepaData.buyBoxWinner === "AMAZON") targetPrice = keepaData.currentPriceAmazon * 0.95;
+    else if (keepaData.buyBoxWinner === "FBM") targetPrice = keepaData.currentPriceFBM * 0.98;
+    else if (keepaData.buyBoxWinner === "FBA") targetPrice = keepaData.currentPriceFBA * 0.97;
     
-  } catch (error) {
-    console.error('Scan error:', error);
-    let errorMsg = error.message;
-    if (errorMsg.includes('Failed to fetch')) errorMsg = 'Network error.';
-    else if (errorMsg.includes('API key')) errorMsg = 'Invalid API key.';
+    const totalCOGS = BUY_COST + 0.75; 
+    const fees = targetPrice * 0.15 + 5; 
+    const profit = targetPrice - totalCOGS - fees;
+    const roi = Math.round((profit / totalCOGS) * 100);
     
-    document.getElementById("statusText").textContent = "Error";
-    document.getElementById("processing").style.display = "none";
+    let verdict = "REJECT";
+    let reasoning = "";
+    
+    if (profit >= PROFIT_FLOOR) {
+      verdict = "ACCEPT";
+      reasoning = `✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>✓ Target: $${targetPrice.toFixed(2)}`;
+    } else {
+      reasoning = `✗ Low Profit: $${profit.toFixed(2)}<br>✗ Fees too high for price`;
+    }
+    
+    return { verdict, targetPrice, profit, roi, reasoning };
+  }
+
+  /* ==================== UI UTILS ==================== */
+  function detectHiddenGems(keepaData, decision) {
+    const gems = [];
+    if (decision.verdict !== 'ACCEPT') return gems;
+    if (keepaData.salesRank > 500000 && keepaData.salesRankDrops30 >= 15) gems.push({ type: 'high-velocity', icon: '🚀', label: 'High velocity', details: `${keepaData.salesRankDrops30} drops/30d` });
+    if (keepaData.offerCountFBA <= 3 && keepaData.offerCountFBA > 0 && decision.profit > 5) gems.push({ type: 'low-competition', icon: '🎯', label: 'Low competition', details: `Only ${keepaData.offerCountFBA} FBA sellers` });
+    if (keepaData.currentPriceAmazon === 0 && keepaData.buyBoxWinner !== 'AMAZON' && decision.profit > 5) gems.push({ type: 'amazon-oos', icon: '🏆', label: 'Amazon OOS', details: 'Amazon not selling' });
+    if (decision.roi > 200 && decision.profit > 8) gems.push({ type: 'high-margin', icon: '💰', label: 'Big Margin', details: `${decision.roi}% ROI` });
+    return gems;
+  }
+
+  function displayResult(decision, keepaData) {
+    lastScanData = { decision, keepaData };
+    
+    const banner = document.getElementById("banner");
+    const cls = decision.verdict === "ACCEPT" ? "buy" : "pass";
+    const gems = detectHiddenGems(keepaData, decision);
+    const isGem = gems.length > 0;
+    
+    banner.className = `banner ${cls}${isGem ? ' gem' : ''}`;
+    document.getElementById("gemBadge").style.display = isGem ? "inline-flex" : "none";
+    
+    document.getElementById("decision").textContent = decision.verdict;
+    document.getElementById("reason").textContent = keepaData.title;
+    document.getElementById("targetPrice").textContent = `$${decision.targetPrice.toFixed(2)}`;
+    document.getElementById("profit").textContent = `$${decision.profit.toFixed(2)}`;
+    document.getElementById("roi").textContent = `${decision.roi}%`;
+    document.getElementById("bb").textContent = keepaData.buyBoxWinner;
+    
+    document.getElementById("profit").className = "stat-value" + (decision.profit < 0 ? " negative" : "");
+    
+    let explanationHTML = decision.reasoning;
+    if (isGem) {
+      explanationHTML += '<div class="gem-reasons"><strong>💎 Hidden Gem:</strong>';
+      gems.forEach(gem => {
+        explanationHTML += `<div style="margin:6px 0;">${gem.icon} <strong>${gem.label}:</strong> ${gem.details}</div>`;
+      });
+      explanationHTML += '</div>';
+    }
+    
+    document.getElementById("explanation").innerHTML = explanationHTML;
+    document.getElementById("askGeminiBtn").style.display = CONFIG.geminiKey ? "block" : "none";
+    document.getElementById("geminiInsights").style.display = "none";
+    
     document.getElementById("resultCard").classList.remove("hidden");
-    document.getElementById("banner").className = "banner pass";
-    document.getElementById("decision").textContent = "ERROR";
-    document.getElementById("reason").textContent = errorMsg;
-    document.getElementById("explanation").innerHTML = `⚠️ ${error.message}`;
-  }
-}
-
-/* ==================== KEEPA API (OPTIMIZED) ==================== */
-async function queryKeepa(identifier, rawInput) {
-  if (!CONFIG.keepaKey) {
-    return getMockKeepaData(identifier, rawInput);
-  }
-  
-  try {
-    const domain = 1; // US
-    let queryParam = '';
-    
-    // 1. ASIN (B0...) -> Use 'asin' param
-    if (/^B[0-9A-Z]{9}$/i.test(identifier)) {
-      queryParam = `asin=${encodeURIComponent(identifier)}`;
-    } 
-    // 2. ISBN/UPC -> Use 'code' param (Prevents broad search token leaks)
-    else {
-      queryParam = `code=${encodeURIComponent(identifier)}`;
-    }
-    
-    // OPTIMIZATION: &offers=0, &history=0 (Saves tokens & bandwidth)
-    const url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&offers=0&history=0&rating=0&stats=1`;
-    
-    console.log('Keepa API call:', url.replace(CONFIG.keepaKey, 'HIDDEN'));
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      if (response.status === 429) throw new Error('⏱️ Keepa rate limit. Slow down.');
-      if (response.status === 402) throw new Error('💳 Keepa quota exceeded.');
-      throw new Error(`Keepa API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.tokensConsumed !== undefined) {
-      document.getElementById("tokenCount").style.display = "block";
-      document.getElementById("tokenValue").textContent = data.tokensConsumed;
-    }
-    
-    if (!data.products || data.products.length === 0) {
-      throw new Error('Product not found in Keepa database');
-    }
-    
-    return parseKeepaResponse(data.products[0]);
-    
-  } catch (error) {
-    throw error;
-  }
-}
-
-/* ==================== PARSE KEEPA RESPONSE (OPTIMIZED) ==================== */
-function parseKeepaResponse(product) {
-  const parsePrice = (val) => {
-    if (val === null || val === undefined || val === -1) return 0;
-    return val / 100;
-  };
-  
-  const stats = product.stats || {};
-  const current = stats.current || [];
-  
-  // Indices: 0: Amazon, 1: New, 2: Used, 18: Sales Rank
-  const amazonPrice = parsePrice(current[0]);
-  const newPrice = parsePrice(current[1]); 
-  const usedPrice = parsePrice(current[2]);
-  const salesRank = current[18] || 0;
-  
-  // REAL Velocity Data
-  const salesRankDrops30 = stats.salesRankDrops30 || 0;
-  const salesRankDrops90 = stats.salesRankDrops90 || (salesRankDrops30 * 3);
-  
-  // Buy Box Logic
-  const buyBoxPrice = parsePrice(stats.buyBoxPrice);
-  let buyBoxWinner = 'UNKNOWN';
-  
-  if (buyBoxPrice > 0) {
-    if (buyBoxPrice === amazonPrice) buyBoxWinner = 'AMAZON';
-    else if (buyBoxPrice === newPrice) buyBoxWinner = 'FBA'; 
-    else buyBoxWinner = 'FBM';
-  } else {
-    if (amazonPrice > 0) buyBoxWinner = 'AMAZON';
-    else if (newPrice > 0) buyBoxWinner = 'FBA';
-    else buyBoxWinner = 'FBM';
+    document.getElementById("resultCard").classList.add("flash");
+    setTimeout(() => document.getElementById("resultCard").classList.remove("flash"), 300);
   }
 
-  const totalOffers = (stats.offerCountUsed || 0) + (stats.offerCountNew || 0);
-  
-  return {
-    asin: product.asin || 'UNKNOWN',
-    title: product.title || 'Unknown Product',
-    salesRank: salesRank,
-    salesRankDrops30: salesRankDrops30, 
-    salesRankDrops90: salesRankDrops90,
-    avgRank30: stats.avg30 ? stats.avg30[18] : salesRank,
-    avgRank90: stats.avg90 ? stats.avg90[18] : salesRank,
-    currentPriceFBA: newPrice > 0 ? newPrice : usedPrice,
-    currentPriceFBM: usedPrice,
-    currentPriceAmazon: amazonPrice,
-    avgPrice30: stats.avg30 ? parsePrice(stats.avg30[2]) : usedPrice,
-    buyBoxWinner: buyBoxWinner,
-    buyBoxPrice: buyBoxPrice,
-    offerCountFBA: product.fbaFees ? 1 : 0,
-    offerCountFBM: totalOffers,
-    priceVolatility: 'Low',
-    condition: 'Used - Very Good',
-    weight: product.packageWeight ? product.packageWeight / 100 : 1.0,
-    reviewCount: product.reviewCount || 0,
-    packageQuantity: product.packageQuantity || 1,
-    outOfPrint: false 
-  };
-}
+  async function reanalyzeWithNewThresholds() {
+    if (!lastScanData) return;
+    try {
+      const decision = CONFIG.useGemini
+        ? await analyzeWithGemini(lastScanData.keepaData)
+        : localDecisionEngine(lastScanData.keepaData);
+      displayResult(decision, lastScanData.keepaData);
+    } catch (e) { console.error(e); }
+  }
 
-/* ==================== MOCK DATA FALLBACK ==================== */
-function getMockKeepaData(identifier, rawInput) {
-  const rank = Math.floor(Math.random() * 900000) + 10000;
-  const drops30 = Math.floor(Math.random() * 40) + 2;
-  return {
-    asin: 'B00' + Math.random().toString(36).substring(2, 9).toUpperCase(),
-    title: `Test Product for ${rawInput}`,
-    salesRank: rank,
-    salesRankDrops30: drops30,
-    salesRankDrops90: drops30 * 3,
-    avgRank30: rank * 1.1,
-    avgRank90: rank * 1.2,
-    currentPriceFBA: +(Math.random() * 25 + 12).toFixed(2),
-    currentPriceFBM: +(Math.random() * 20 + 10).toFixed(2),
-    currentPriceAmazon: Math.random() > 0.6 ? +(Math.random() * 28 + 15).toFixed(2) : 0,
-    avgPrice30: 15.00,
-    buyBoxWinner: ['FBA', 'FBM', 'AMAZON'][Math.floor(Math.random() * 3)],
-    offerCountFBA: 5,
-    offerCountFBM: 10,
-    priceVolatility: 'Low',
-    weight: 1.5
-  };
-}
-
-/* ==================== DECISION ENGINE (AI) ==================== */
-async function analyzeWithGemini(keepaData) {
-  const prompt = `You are an AI sourcing assistant for Amazon FBA.
-  
-PRODUCT:
-${JSON.stringify(keepaData)}
-
-CONTEXT:
-- Buy Cost: $${BUY_COST.toFixed(2)}
-- Total COGS: $${(BUY_COST + 0.75).toFixed(2)} (includes $0.75 shipping to Amazon)
-- Profit Floor: $${PROFIT_FLOOR.toFixed(2)}
-- Weight is IRRELEVANT for FBA profitability calculations (fees already account for it).
-
-TASK:
-1. Target Sell Price = Buy Box Price (or FBA price)
-2. Profit = Target Price - COGS - (Target Price * 0.15 + 5.00)
-3. Accept if Profit >= Profit Floor
-
-OUTPUT JSON:
-{
-  "verdict": "ACCEPT" or "REJECT",
-  "targetPrice": 24.99,
-  "profit": 8.50,
-  "roi": 425,
-  "reasoning": "Short HTML bullets explaining why."
-}`;
-
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      })
+  function addToHistory(decision, keepaData) {
+    const gems = detectHiddenGems(keepaData, decision);
+    const record = {
+      verdict: decision.verdict,
+      title: keepaData.title,
+      asin: keepaData.asin,
+      price: decision.targetPrice.toFixed(2),
+      profit: decision.profit.toFixed(2),
+      roi: decision.roi,
+      time: new Date().toLocaleTimeString(),
+      isGem: gems.length > 0,
+      gemTypes: gems.map(g => g.label).join(', ')
+    };
+    scanHistory.push(record);
+    if (decision.verdict === "ACCEPT") buyList.push(record);
+    
+    const list = document.getElementById("historyList");
+    list.innerHTML = '';
+    scanHistory.slice().reverse().forEach(rec => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      div.innerHTML = `
+        <div class="history-decision ${rec.verdict}">${rec.isGem?'✨ ':''}${rec.verdict}</div>
+        <div class="history-title">${rec.title}</div>
+        <div class="history-meta">ASIN: ${rec.asin} • $${rec.profit} Profit • ${rec.roi}% ROI<br>${rec.time}</div>
+      `;
+      list.appendChild(div);
     });
-
-    if (!response.ok) throw new Error(`Gemini Error: ${response.status}`);
-    const data = await response.json();
-    return JSON.parse(data.candidates[0].content.parts[0].text);
-  } catch (error) {
-    console.warn('Gemini failed, fallback to local');
-    return localDecisionEngine(keepaData);
+    document.getElementById("itemCount").innerHTML = `<span class="status-label">Queue:</span> ${buyList.length}`;
   }
-}
 
-/* ==================== HIDDEN GEM DETECTION ==================== */
-function detectHiddenGems(keepaData, decision) {
-  const gems = [];
-  if (decision.verdict !== 'ACCEPT') return gems;
-  
-  if (keepaData.salesRank > 500000 && keepaData.salesRankDrops30 >= 15) {
-    gems.push({ type: 'high-velocity', icon: '🚀', label: 'High velocity despite rank', details: `${keepaData.salesRankDrops30} drops/30d` });
-  }
-  if (keepaData.offerCountFBA <= 3 && keepaData.offerCountFBA > 0 && decision.profit > 5) {
-    gems.push({ type: 'low-competition', icon: '🎯', label: 'Low competition', details: `Only ${keepaData.offerCountFBA} FBA sellers` });
-  }
-  if (keepaData.currentPriceAmazon === 0 && keepaData.buyBoxWinner !== 'AMAZON' && decision.profit > 5) {
-    gems.push({ type: 'amazon-oos', icon: '🏆', label: 'Amazon OOS', details: 'Amazon not selling' });
-  }
-  if (decision.roi > 200 && decision.profit > 8) {
-    gems.push({ type: 'high-margin', icon: '💰', label: 'Big Margin', details: `${decision.roi}% ROI` });
-  }
-  
-  return gems;
-}
-
-/* ==================== LOCAL DECISION ENGINE ==================== */
-function localDecisionEngine(keepaData) {
-  let targetPrice = keepaData.currentPriceFBA;
-  
-  if (keepaData.buyBoxWinner === "AMAZON") targetPrice = keepaData.currentPriceAmazon * 0.95;
-  else if (keepaData.buyBoxWinner === "FBM") targetPrice = keepaData.currentPriceFBM * 0.98;
-  else if (keepaData.buyBoxWinner === "FBA") targetPrice = keepaData.currentPriceFBA * 0.97;
-  
-  const totalCOGS = BUY_COST + 0.75; // 75 cents shipping to warehouse
-  const fees = targetPrice * 0.15 + 5; // Rough FBA fee estimate
-  const profit = targetPrice - totalCOGS - fees;
-  const roi = Math.round((profit / totalCOGS) * 100);
-  
-  let verdict = "REJECT";
-  let reasoning = "";
-  
-  if (profit >= PROFIT_FLOOR) {
-    verdict = "ACCEPT";
-    reasoning = `✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>✓ Target: $${targetPrice.toFixed(2)}`;
-  } else {
-    reasoning = `✗ Low Profit: $${profit.toFixed(2)}<br>✗ Fees too high for price`;
-  }
-  
-  return {
-    verdict,
-    targetPrice: Math.round(targetPrice * 100) / 100,
-    profit: Math.round(profit * 100) / 100,
-    roi,
-    reasoning
-  };
-}
-
-/* ==================== DISPLAY & UTILS ==================== */
-function displayResult(decision, keepaData) {
-  lastScanData = { decision, keepaData };
-  
-  const banner = document.getElementById("banner");
-  const cls = decision.verdict === "ACCEPT" ? "buy" : "pass";
-  const gems = detectHiddenGems(keepaData, decision);
-  const isGem = gems.length > 0;
-  
-  banner.className = `banner ${cls}${isGem ? ' gem' : ''}`;
-  document.getElementById("gemBadge").style.display = isGem ? "inline-flex" : "none";
-  
-  document.getElementById("decision").textContent = decision.verdict;
-  document.getElementById("reason").textContent = keepaData.title;
-  document.getElementById("targetPrice").textContent = `$${decision.targetPrice.toFixed(2)}`;
-  document.getElementById("profit").textContent = `$${decision.profit.toFixed(2)}`;
-  document.getElementById("roi").textContent = `${decision.roi}%`;
-  document.getElementById("bb").textContent = keepaData.buyBoxWinner;
-  
-  document.getElementById("profit").className = "stat-value" + (decision.profit < 0 ? " negative" : "");
-  
-  let explanationHTML = decision.reasoning;
-  if (isGem) {
-    explanationHTML += '<div class="gem-reasons"><strong>💎 Hidden Gem:</strong>';
-    gems.forEach(gem => {
-      explanationHTML += `<div style="margin:6px 0;">${gem.icon} <strong>${gem.label}:</strong> ${gem.details}</div>`;
-    });
-    explanationHTML += '</div>';
-  }
-  
-  document.getElementById("explanation").innerHTML = explanationHTML;
-  document.getElementById("askGeminiBtn").style.display = CONFIG.geminiKey ? "block" : "none";
-  document.getElementById("geminiInsights").style.display = "none";
-  
-  document.getElementById("resultCard").classList.remove("hidden");
-  document.getElementById("resultCard").classList.add("flash");
-  setTimeout(() => document.getElementById("resultCard").classList.remove("flash"), 300);
-}
-
-async function reanalyzeWithNewThresholds() {
-  if (!lastScanData) return;
-  try {
-    const decision = CONFIG.useGemini
-      ? await analyzeWithGemini(lastScanData.keepaData)
-      : localDecisionEngine(lastScanData.keepaData);
-    displayResult(decision, lastScanData.keepaData);
-  } catch (e) { console.error(e); }
-}
-
-function addToHistory(decision, keepaData) {
-  const gems = detectHiddenGems(keepaData, decision);
-  const record = {
-    verdict: decision.verdict,
-    title: keepaData.title,
-    asin: keepaData.asin,
-    price: decision.targetPrice.toFixed(2),
-    profit: decision.profit.toFixed(2),
-    roi: decision.roi,
-    time: new Date().toLocaleTimeString(),
-    isGem: gems.length > 0,
-    gemTypes: gems.map(g => g.label).join(', ')
-  };
-  scanHistory.push(record);
-  if (decision.verdict === "ACCEPT") buyList.push(record);
-  
-  const list = document.getElementById("historyList");
-  list.innerHTML = '';
-  scanHistory.slice().reverse().forEach(rec => {
-    const div = document.createElement("div");
-    div.className = "history-item";
-    div.innerHTML = `
-      <div class="history-decision ${rec.verdict}">${rec.isGem?'✨ ':''}${rec.verdict}</div>
-      <div class="history-title">${rec.title}</div>
-      <div class="history-meta">ASIN: ${rec.asin} • $${rec.profit} Profit • ${rec.roi}% ROI<br>${rec.time}</div>
-    `;
-    list.appendChild(div);
-  });
-  document.getElementById("itemCount").innerHTML = `<span class="status-label">Queue:</span> ${buyList.length}`;
-}
-
-document.getElementById("historyBtn").onclick = () => {
-  document.getElementById("mainPage").style.display = "none";
-  document.getElementById("historyPage").style.display = "block";
-};
-document.getElementById("backBtn").onclick = () => {
-  document.getElementById("historyPage").style.display = "none";
-  document.getElementById("mainPage").style.display = "block";
-};
-document.getElementById("downloadBtn").onclick = () => {
-  if (buyList.length === 0) return alert("No items in buy queue.");
-  let csv = "Title,ASIN,TargetPrice,Profit,ROI,HiddenGem,GemReasons\n";
-  buyList.forEach(r => {
-    csv += `"${r.title}",${r.asin},${r.price},${r.profit},${r.roi}%,${r.isGem?'YES':'NO'},"${r.gemTypes}"\n`;
-  });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-  a.download = `scoutpro_buylist_${Date.now()}.csv`;
-  a.click();
-};
-document.getElementById("clearBtn").onclick = () => {
-  if (!confirm("Clear all data?")) return;
-  scanHistory = []; buyList = []; lastScanData = null; seenIdentifiers.clear();
-  document.getElementById("historyList").innerHTML = "";
-  document.getElementById("itemCount").innerHTML = `<span class="status-label">Queue:</span> 0`;
-  document.getElementById("resultCard").classList.add("hidden");
-};
+});
 </script>
 
 </body>
