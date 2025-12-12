@@ -560,9 +560,15 @@ input[type="range"]::-moz-range-thumb {
 <header>
   <div class="brand">
     <div class="brand-title">ScoutPro AI</div>
-    <div class="brand-badge" id="engineBadge">
-      <div class="status-dot"></div>
-      <span id="engineName">Local Engine</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <div class="brand-badge" id="keepaBadge" style="display:none;">
+        <div class="status-dot" style="background:var(--green);"></div>
+        <span>KEEPA</span>
+      </div>
+      <div class="brand-badge" id="engineBadge">
+        <div class="status-dot"></div>
+        <span id="engineName">Local Engine</span>
+      </div>
     </div>
   </div>
   <div class="input-row">
@@ -792,8 +798,18 @@ function updateEngineBadge() {
   badge.textContent = CONFIG.useGemini ? "Gemini AI" : "Local Engine";
 }
 
+function updateKeepaIndicator() {
+  const keepaBadge = document.getElementById("keepaBadge");
+  if (CONFIG.keepaKey) {
+    keepaBadge.style.display = "flex";
+  } else {
+    keepaBadge.style.display = "none";
+  }
+}
+
 // Update on load
 updateEngineBadge();
+updateKeepaIndicator();
 
 /* ==================== HELPER: Switch to Local Engine ==================== */
 window.useLocalEngine = function() {
@@ -890,6 +906,7 @@ document.getElementById("saveSettings").onclick = () => {
   localStorage.setItem('useGemini', CONFIG.useGemini);
   
   updateEngineBadge();
+  updateKeepaIndicator();
   
   alert('✅ Settings saved!');
   document.getElementById("settingsPage").style.display = "none";
@@ -1078,23 +1095,46 @@ async function queryKeepa(identifier, rawInput) {
 
 /* ==================== PARSE KEEPA PRODUCT ==================== */
 function parseKeepaProduct(product) {
+  console.log('Raw Keepa product data:', product);
+  
   // Keepa uses -1 to indicate no data
   const getPrice = (val) => (val === -1 || val === null || val === undefined) ? 0 : val / 100;
   const getCount = (val) => (val === -1 || val === null || val === undefined) ? 0 : val;
   
-  // Current prices (Keepa stores in cents, -1 = no data)
-  const currentPriceAmazon = getPrice(product.stats?.current?.[0]); // Amazon price
-  const currentPriceFBA = getPrice(product.stats?.current?.[18]); // FBA New
-  const currentPriceFBM = getPrice(product.stats?.current?.[2]); // FBM New
+  // Current prices from csv array (Keepa stores in cents, -1 = no data)
+  // According to Keepa API docs:
+  // csv[0] = Amazon price
+  // csv[1] = Marketplace New
+  // csv[2] = Marketplace Used  
+  // csv[18] = Buy Box (what we want for current competitive price)
+  const currentPriceAmazon = getPrice(product.csv?.[0]?.[product.csv[0]?.length - 1]); // Last Amazon price
+  const currentPriceNew = getPrice(product.csv?.[1]?.[product.csv[1]?.length - 1]); // Last New price
+  const currentPriceBuyBox = getPrice(product.csv?.[18]?.[product.csv[18]?.length - 1]); // Last Buy Box price
   
-  // Offer counts
-  const offerCountFBA = getCount(product.stats?.current?.[19]); // FBA offer count
-  const offerCountFBM = getCount(product.stats?.current?.[3]); // FBM offer count
+  // Use Buy Box price as our competitive price, fall back to New price
+  const currentPriceFBA = currentPriceBuyBox > 0 ? currentPriceBuyBox : currentPriceNew;
+  const currentPriceFBM = currentPriceNew; // Simplified - treating marketplace new as FBM
   
-  // Sales rank
-  const salesRank = getCount(product.stats?.current?.[3]) || 999999;
+  // Offer counts from stats
+  const offerCountFBA = getCount(product.offersSuccessful); // Total FBA offers
+  const offerCountFBM = getCount(product.offers ? product.offers.length : 0); // FBM offers
+  
+  // Sales rank from csv[3]
+  const salesRankArray = product.csv?.[3];
+  const salesRank = salesRankArray && salesRankArray.length > 0 
+    ? getCount(salesRankArray[salesRankArray.length - 1]) 
+    : 999999;
+  
+  // Sales rank drops from stats
   const salesRankDrops30 = getCount(product.stats?.salesRankDrops30) || 0;
   const salesRankDrops90 = getCount(product.stats?.salesRankDrops90) || 0;
+  
+  console.log('Parsed prices:', {
+    amazon: currentPriceAmazon,
+    fba: currentPriceFBA,
+    fbm: currentPriceFBM,
+    salesRank: salesRank
+  });
   
   // Determine Buy Box winner
   let buyBoxWinner = "NONE";
@@ -1109,7 +1149,7 @@ function parseKeepaProduct(product) {
   // Price volatility (simplified - would need historical data for accurate calc)
   const priceVolatility = "STABLE"; // Placeholder
   
-  return {
+  const parsedData = {
     asin: product.asin,
     title: product.title || 'Unknown Title',
     salesRank: salesRank,
@@ -1125,7 +1165,11 @@ function parseKeepaProduct(product) {
     weight: product.packageWeight ? product.packageWeight / 100 : 1.0, // Keepa stores in 0.01 lb units
     publicationDate: product.releaseDate ? new Date(product.releaseDate * 60000) : null // Keepa time is in minutes since epoch
   };
+  
+  console.log('Final parsed data:', parsedData);
+  return parsedData;
 }
+
 
 /* ==================== MOCK KEEPA DATA (for testing) ==================== */
 function getMockKeepaData(identifier, rawInput) {
@@ -1244,6 +1288,11 @@ OUTPUT FORMAT (JSON only, no markdown):
 function detectHiddenGems(keepaData, decision) {
   const gems = [];
   const title = keepaData.title.toLowerCase();
+  
+  // CRITICAL: Only detect gems for ACCEPT decisions with positive profit
+  if (decision.verdict !== "ACCEPT" || decision.profit < PROFIT_FLOOR) {
+    return gems; // No gems for rejects or unprofitable items
+  }
   
   // GEM 1: High ROI despite borderline profit
   if (decision.roi >= 200 && decision.profit >= PROFIT_FLOOR * 0.8) {
@@ -1516,6 +1565,13 @@ function localDecisionEngine(keepaData) {
     targetPrice = keepaData.currentPriceFBM * 0.98;
   } else if (keepaData.buyBoxWinner === "FBA") {
     targetPrice = keepaData.currentPriceFBA * 0.97;
+  }
+  
+  // CRITICAL: Apply $8 minimum floor price for FBA
+  // FBA fees make anything below $8 unprofitable
+  const MINIMUM_PRICE = 8.00;
+  if (targetPrice < MINIMUM_PRICE) {
+    targetPrice = MINIMUM_PRICE;
   }
   
   // Calculate profit (FBA model: buy cost + $0.75 shipping to Amazon + FBA fees)
