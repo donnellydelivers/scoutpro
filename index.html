@@ -2,143 +2,1906 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>ScoutPro AI v3.5 (FULL – Scanner & Settings Fixed)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ScoutPro AI v3.0</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
-/* ================= CORE THEME ================= */
-:root{--bg:#0a0e1a;--panel:#141b2d;--card:#1a2332;--border:rgba(255,255,255,.08);--text:#fff;--muted:#8b92ab;--green:#10b981;--yellow:#fbbf24;--red:#ef4444;--blue:#3b82f6}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:Inter,system-ui;background:var(--bg);color:var(--text)}
-.app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:140px}
-input{font-size:16px}
-button{cursor:pointer}
+:root {
+  --bg: #0a0e1a;
+  --panel: #141b2d;
+  --card: #1a2332;
+  --border: rgba(255,255,255,.08);
+  --text: #ffffff;
+  --muted: #8b92ab;
+  --green: #10b981;
+  --yellow: #fbbf24;
+  --red: #ef4444;
+  --blue: #3b82f6;
+}
 
-/* ================= CRITICAL FIXES ================= */
-#settingsBtn{z-index:9999!important;pointer-events:auto!important}
-.status-bar{pointer-events:none}
+* { 
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-/* ================= HEADER ================= */
-header{position:sticky;top:0;z-index:100;background:var(--bg);padding:12px;border-bottom:1px solid var(--border)}
-.input-row{display:grid;grid-template-columns:1fr auto auto;gap:8px}
-input[type=text]{padding:14px 16px;border-radius:12px;background:var(--panel);border:1px solid var(--border);color:var(--text);font-family:JetBrains Mono}
-button{padding:14px 16px;border-radius:12px;border:none;font-weight:600}
-.btn-settings{background:var(--card);color:var(--muted)}
-.btn-history{background:var(--yellow);color:#000}
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-.status-bar{padding:10px 16px;font-family:JetBrains Mono;font-size:12px;color:var(--muted);background:var(--panel);margin:12px;border-radius:8px;display:flex;justify-content:space-between}
+.app { 
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 140px;
+}
 
-.card{margin:12px;background:var(--panel);border-radius:16px;border:1px solid var(--border)}
-.hidden{display:none}
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
 
-.actions{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;padding:16px;display:flex;gap:10px;background:linear-gradient(to top,var(--bg) 70%,transparent)}
-.actions button{flex:1}
-.btn-download{background:var(--green);color:#000}
-.btn-clear{background:var(--red);color:#fff}
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.brand-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 999px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--blue);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+input[type="text"] {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus {
+  border-color: var(--blue);
+}
+
+input[type="text"]::placeholder {
+  color: var(--muted);
+}
+
+button {
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Status Bar */
+.status-bar {
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--panel);
+  margin: 12px 12px 0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  pointer-events: none; /* FIX: don't block taps */
+}
+
+.status-label {
+  color: var(--blue);
+}
+
+/* Duplicate Warning */
+#dupeWarning {
+  padding: 10px 16px;
+  margin: 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid var(--yellow);
+  border-radius: 8px;
+  color: var(--yellow);
+  font-size: 13px;
+  display: none;
+}
+
+/* Processing State */
+.processing {
+  margin: 12px;
+  padding: 24px;
+  background: var(--panel);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  text-align: center;
+  display: none;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  border: 3px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.processing-text {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Cards */
+.card {
+  margin: 12px;
+  background: var(--panel);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Decision Banner */
+.banner {
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+}
+
+.banner.buy { 
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), transparent);
+  border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.banner.pass { 
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), transparent);
+  border-bottom: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.banner.gem {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(16, 185, 129, 0.1));
+  border-bottom: 2px solid rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+}
+
+.gem-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #000;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+  animation: gem-pulse 2s ease-in-out infinite;
+}
+
+.gem-sparkle {
+  font-size: 14px;
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes gem-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+  }
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.6);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% { 
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: rotate(180deg);
+  }
+}
+
+.gem-reasons {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  font-size: 12px;
+  color: var(--text);
+  text-align: left;
+}
+
+.gem-reasons strong {
+  color: #fbbf24;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+/* Gemini Insights */
+.gemini-insights {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1));
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  display: none;
+}
+
+.gemini-insights-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #a78bfa;
+}
+
+.gemini-insights-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.gemini-loading {
+  text-align: center;
+  padding: 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.gemini-loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 8px;
+}
+
+.banner .decision {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+
+.banner.buy .decision { color: var(--green); }
+.banner.pass .decision { color: var(--red); }
+
+.banner .reason {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.banner .explanation {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  text-align: left;
+  background: rgba(0,0,0,0.3);
+  padding: 14px;
+  border-radius: 10px;
+  margin-top: 16px;
+}
+
+.banner .explanation ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.banner .explanation li {
+  margin: 6px 0;
+}
+
+/* Stats Grid */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.stat {
+  background: var(--card);
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.stat-value.negative { color: var(--red); }
+.stat-value.warning { color: var(--yellow); }
+
+/* Section */
+.section {
+  padding: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+/* Sliders */
+.slider-group {
+  margin-bottom: 20px;
+}
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.slider-value {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--blue);
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--card);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+  border: 3px solid var(--panel);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+  border: 3px solid var(--panel);
+}
+
+/* Settings */
+.settings-group {
+  margin-bottom: 16px;
+}
+
+.settings-label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.settings-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 13px;
+  outline: none;
+}
+
+.settings-input:focus {
+  border-color: var(--blue);
+}
+
+.settings-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Action Buttons */
+.actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  display: flex;
+  gap: 10px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.actions button {
+  flex: 1;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn-download {
+  background: var(--green);
+  color: var(--bg);
+}
+
+.btn-clear {
+  background: var(--red);
+  color: white;
+}
+
+.btn-settings {
+  background: var(--blue);
+  color: white;
+}
+
+.btn-history {
+  background: var(--yellow);
+  color: var(--bg);
+}
+
+/* History */
+#historyPage, #settingsPage { display: none; }
+
+.history-item {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-decision {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.history-decision.ACCEPT { color: var(--green); }
+.history-decision.REJECT { color: var(--red); }
+
+.history-title {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.history-meta {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  line-height: 1.6;
+}
+
+.flash {
+  animation: flash 300ms ease-out;
+}
+
+@keyframes flash {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  100% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
+}
+
+.hidden { display: none !important; }
+
+#settingsBtn{z-index:9999!important;pointer-events:auto!important;}
 </style>
 </head>
+
 <body>
 <div class="app">
+
+<!-- Header -->
 <header>
+  <div class="brand">
+    <div class="brand-title">ScoutPro AI</div>
+    <div class="brand-badge" id="engineBadge">
+      <div class="status-dot"></div>
+      <span id="engineName">Local Engine</span>
+    </div>
+  </div>
   <div class="input-row">
-    <input id="scanInput" type="text" placeholder="Scan ISBN / ASIN" autocomplete="off" />
-    <button id="settingsBtn" class="btn-settings">⚙️</button>
+    <input id="scanInput" type="text" placeholder="ISBN, UPC, ASIN, or Title..." autocomplete="off" />
     <button id="historyBtn" class="btn-history">History</button>
   </div>
 </header>
 
 <div class="status-bar">
   <span id="statusText">Ready to scan</span>
-  <span id="itemCount">Queue: 0</span>
+  <span id="itemCount"><span class="status-label">Queue:</span> 0</span>
 </div>
 
-<div class="card hidden" id="resultCard">
-  <div style="padding:20px">
-    <h2 id="decision">—</h2>
-    <div id="resultText" style="margin-top:12px;font-size:14px"></div>
+<div id="dupeWarning">⚠️ Already scanned — ignored</div>
+
+<!-- Processing State -->
+<div class="processing" id="processing">
+  <div class="spinner"></div>
+  <div class="processing-text">Analyzing with AI...</div>
+</div>
+
+<!-- MAIN PAGE -->
+<div id="mainPage">
+  <div class="card hidden" id="resultCard">
+    <div id="banner" class="banner buy">
+      <div id="gemBadge" class="gem-badge" style="display:none;">
+        <span class="gem-sparkle">✨</span>
+        <span>HIDDEN GEM</span>
+        <span class="gem-sparkle">✨</span>
+      </div>
+      <div class="decision" id="decision">ACCEPT</div>
+      <div class="reason" id="reason"></div>
+      
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Target Price</div>
+          <div class="stat-value" id="targetPrice">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Profit</div>
+          <div class="stat-value" id="profit">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">ROI</div>
+          <div class="stat-value" id="roi">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Buy Box</div>
+          <div class="stat-value" id="bb">—</div>
+        </div>
+      </div>
+      
+      <div class="explanation" id="explanation"></div>
+      
+      <div class="gemini-insights" id="geminiInsights">
+        <div class="gemini-insights-header">
+          <span>🤖</span>
+          <span>Gemini AI Analysis</span>
+        </div>
+        <div class="gemini-insights-body" id="geminiInsightsBody"></div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="section">
+      <div class="section-title">Scanner Controls</div>
+      
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Buy Cost</span>
+          <span class="slider-value">$<span id="buyCostVal">1.00</span></span>
+        </div>
+        <input type="range" min="0.10" max="10" step="0.10" id="buyCostSlider" value="1.00" />
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Profit Floor</span>
+          <span class="slider-value">$<span id="profitFloorVal">5.00</span></span>
+        </div>
+        <input type="range" min="1" max="20" step="1" id="profitFloorSlider" value="5" />
+      </div>
+      
+      <button id="askGeminiBtn" class="btn-toggle" style="background:linear-gradient(135deg,#8b5cf6,#6366f1);display:none;">
+        🤖 Ask Gemini Why
+      </button>
+    </div>
   </div>
 </div>
 
-<div class="card hidden" id="settingsPage">
-  <div style="padding:20px">
-    <h3>⚙️ Settings</h3>
-    <label>Keepa API Key</label>
-    <input id="keepaKey" type="password" style="width:100%;margin:8px 0" />
-    <label>Gemini API Key</label>
-    <input id="geminiKey" type="password" style="width:100%;margin:8px 0" />
-    <button id="saveSettings" style="background:var(--green);width:100%;margin-top:12px">Save</button>
-    <button id="backFromSettings" style="width:100%;margin-top:8px">Back</button>
+<!-- SETTINGS PAGE -->
+<div id="settingsPage" class="card">
+  <div class="section">
+    <div class="section-title">API Configuration</div>
+    
+    <div class="settings-group">
+      <label class="settings-label">Keepa API Key</label>
+      <input type="text" id="keepaKey" class="settings-input" placeholder="Enter your Keepa API key" />
+      <div class="settings-hint">Get your key at <a href="https://keepa.com/#!api" target="_blank" style="color:var(--blue)">keepa.com/#!api</a></div>
+    </div>
+    
+    <div class="settings-group">
+      <label class="settings-label">Gemini API Key</label>
+      <input type="text" id="geminiKey" class="settings-input" placeholder="Enter your Gemini API key" />
+      <div class="settings-hint">Get your key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue)">aistudio.google.com</a></div>
+    </div>
+    
+    <div class="settings-group">
+      <label class="settings-label">Decision Engine</label>
+      <select id="useGemini" style="width:100%; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px;">
+        <option value="false">Local Engine (Fast, Free)</option>
+        <option value="true">Gemini AI (Smarter, $0.0001/scan)</option>
+      </select>
+      <div class="settings-hint">Local engine works offline and is faster. Gemini provides more nuanced analysis.</div>
+    </div>
+    
+    <button id="saveSettings" style="width:100%; background:var(--green); color:var(--bg); margin-top:16px;">
+      Save Settings
+    </button>
+    
+    <button id="backFromSettings" style="width:100%; background:var(--panel); color:var(--text); margin-top:8px; border:1px solid var(--border);">
+      Back
+    </button>
   </div>
 </div>
 
+<!-- HISTORY PAGE -->
+<div id="historyPage" class="card">
+  <div class="section">
+    <div class="section-title">Scan History</div>
+    <div id="historyList"></div>
+    <button id="backBtn" style="margin-top:16px; background:var(--blue); color:white; width:100%;">Back</button>
+  </div>
+</div>
+
+<!-- Action Buttons -->
 <div class="actions">
+  <button id="settingsBtn" class="btn-settings" style="position:relative;z-index:9999;">⚙️</button>
   <button id="downloadBtn" class="btn-download">Download</button>
   <button id="clearBtn" class="btn-clear">Clear</button>
 </div>
+
 </div>
 
 <script>
-/* ================= STATE ================= */
-const scanInput=document.getElementById('scanInput');
-const statusText=document.getElementById('statusText');
-const resultCard=document.getElementById('resultCard');
-const resultText=document.getElementById('resultText');
-const decisionEl=document.getElementById('decision');
-const settingsPage=document.getElementById('settingsPage');
-let lastLength=0;let scanning=false;let queue=0;
+/* ==================== CONFIG ==================== */
+let BUY_COST = 1.00;
+let PROFIT_FLOOR = 5.00;
+let buffer = "";
+let timer = null;
+const SCAN_DELAY = 100;
 
-/* ================= SCANNER BURST FIX ================= */
-scanInput.addEventListener('input',()=>{
-  const val=scanInput.value.trim();
-  if(!scanning && val.length>=10 && val.length-lastLength>=8){
-    scanning=true;finalizeScan(val)
+const CONFIG = {
+  keepaKey: localStorage.getItem('keepaKey') || '',
+  geminiKey: localStorage.getItem('geminiKey') || '',
+  useGemini: localStorage.getItem('useGemini') === 'true' // Defaults to false if not set
+};
+
+const seenIdentifiers = new Set(); // ISBN/UPC/ASIN tracking
+let scanHistory = [];
+let buyList = [];
+let lastScanData = null;
+
+const scanInput = document.getElementById("scanInput");
+
+  // === Scanner burst fix (Bluetooth scanners often don't send Enter) ===
+  let __sp_lastLen = 0;
+  let __sp_burstArmed = true;
+  let __sp_timer = null;
+  const __sp_SCAN_DELAY = 180;
+
+  function __sp_attachScannerHandlers() {
+    // Remove any existing listeners by reassigning the element (safe clone)
+    const old = scanInput;
+    const fresh = old.cloneNode(true);
+    old.parentNode.replaceChild(fresh, old);
+
+    // Rebind reference
+    window.scanInput = fresh;
+    const si = fresh;
+
+    si.addEventListener('input', () => {
+      const val = (si.value || '').trim();
+
+      // Burst detection: big jump in length
+      if (__sp_burstArmed && val.length >= 10 && (val.length - __sp_lastLen) >= 8) {
+        __sp_burstArmed = false;
+        clearTimeout(__sp_timer);
+        if (typeof finalizeScan === 'function') finalizeScan();
+        return;
+      }
+
+      __sp_lastLen = val.length;
+      if (val.length === 0) __sp_burstArmed = true;
+
+      clearTimeout(__sp_timer);
+      __sp_timer = setTimeout(() => {
+        const v = (si.value || '').trim();
+        if (v.length > 0 && typeof finalizeScan === 'function') finalizeScan();
+      }, __sp_SCAN_DELAY);
+    });
+
+    si.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(__sp_timer);
+        if (typeof finalizeScan === 'function') finalizeScan();
+      }
+    });
+
+    // Keep focus for scanners
+    setTimeout(() => si.focus(), 50);
   }
-  lastLength=val.length
-});
 
-scanInput.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){e.preventDefault();finalizeScan(scanInput.value.trim())}
-});
+scanInput.focus();
 
-function finalizeScan(code){
-  if(!code)return;
-  scanInput.value='';lastLength=0;scanning=false;
-  if(navigator.vibrate)navigator.vibrate(40);
-  statusText.textContent=`Processing ${code}`;
-  processItem(code)
+/* ==================== UPDATE ENGINE BADGE ==================== */
+function updateEngineBadge() {
+  const badge = document.getElementById("engineName");
+  badge.textContent = CONFIG.useGemini ? "Gemini AI" : "Local Engine";
 }
 
-/* ================= MOCK PROCESSING (Keepa safe) ================= */
-function processItem(code){
-  setTimeout(()=>{
-    queue++;document.getElementById('itemCount').textContent=`Queue: ${queue}`;
-    decisionEl.textContent='ACCEPT';
-    resultText.innerHTML=`<strong>${code}</strong><br>Profit looks good.`;
-    resultCard.classList.remove('hidden');
-    statusText.textContent='Ready to scan'
-  },400)
+// Update on load
+updateEngineBadge();
+
+/* ==================== HELPER: Switch to Local Engine ==================== */
+window.useLocalEngine = function() {
+  CONFIG.useGemini = false;
+  localStorage.setItem('useGemini', 'false');
+  updateEngineBadge();
+  console.log('✅ Switched to Local Engine. Refresh not needed.');
+};
+
+/* ==================== ASK GEMINI WHY ==================== */
+document.getElementById("askGeminiBtn").onclick = async () => {
+  if (!lastScanData) return;
+  if (!CONFIG.geminiKey) {
+    alert('⚠️ Please add your Gemini API key in Settings first');
+    return;
+  }
+  
+  const insightsContainer = document.getElementById("geminiInsights");
+  const insightsBody = document.getElementById("geminiInsightsBody");
+  const btn = document.getElementById("askGeminiBtn");
+  
+  // Show loading state
+  btn.disabled = true;
+  btn.textContent = "🤖 Analyzing...";
+  insightsContainer.style.display = "block";
+  insightsBody.innerHTML = '<div class="gemini-loading"><div class="gemini-loading-spinner"></div><br>Gemini is analyzing this item...</div>';
+  
+  try {
+    const { decision, keepaData } = lastScanData;
+    
+    // Build comprehensive context for Gemini
+    const prompt = `You are an expert Amazon FBA book reseller analyzing this item. Provide insights that go beyond simple rule-based logic.
+
+ITEM DATA:
+- Title: ${keepaData.title}
+- ASIN: ${keepaData.asin}
+- Sales Rank: ${keepaData.salesRank.toLocaleString()}
+- Rank Drops (30d): ${keepaData.salesRankDrops30}
+- Rank Drops (90d): ${keepaData.salesRankDrops90}
+- Current FBA Price: $${keepaData.currentPriceFBA}
+- Current FBM Price: $${keepaData.currentPriceFBM}
+- Amazon Price: ${keepaData.currentPriceAmazon > 0 ? '$' + keepaData.currentPriceAmazon : 'Not available'}
+- Buy Box Winner: ${keepaData.buyBoxWinner}
+- FBA Sellers: ${keepaData.offerCountFBA}
+- FBM Sellers: ${keepaData.offerCountFBM}
+- Price Volatility: ${keepaData.priceVolatility}
+- Weight: ${keepaData.weight}lb
+
+LOCAL ENGINE DECISION:
+- Verdict: ${decision.verdict}
+- Target Price: $${decision.targetPrice}
+- Profit: $${decision.profit}
+- ROI: ${decision.roi}%
+- Reasoning: ${decision.reasoning.replace(/<[^>]*>/g, '')}
+
+USER THRESHOLDS:
+- Buy Cost: $${BUY_COST}
+- Profit Floor: $${PROFIT_FLOOR}
+
+ANALYZE THIS:
+1. Do you agree with the ${decision.verdict} decision? Why or why not?
+2. What market dynamics or patterns do you see that rules-based logic might miss?
+3. What are the risks and opportunities?
+4. Any strategic insights about timing, competition, or pricing?
+5. Would you personally buy this? Be honest.
+
+Keep your response conversational and under 200 words. Focus on insights the local engine can't provide.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 500
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const insights = data.candidates[0].content.parts[0].text;
+    
+    // Format the insights nicely
+    const formattedInsights = insights
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join('<br><br>');
+    
+    insightsBody.innerHTML = formattedInsights;
+    
+  } catch (error) {
+    console.error('Gemini insights error:', error);
+    insightsBody.innerHTML = `<div style="color:var(--red);">❌ Error: ${error.message}<br><br>Check your Gemini API key in Settings.</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🤖 Ask Gemini Again";
+  }
+};
+
+/* ==================== SLIDERS ==================== */
+const bcSlider = document.getElementById("buyCostSlider");
+const pfSlider = document.getElementById("profitFloorSlider");
+
+let sliderTimeout = null;
+
+bcSlider.oninput = () => {
+  BUY_COST = parseFloat(bcSlider.value);
+  document.getElementById("buyCostVal").textContent = BUY_COST.toFixed(2);
+  
+  // Debounce reanalysis
+  clearTimeout(sliderTimeout);
+  sliderTimeout = setTimeout(() => {
+    if (lastScanData) reanalyzeWithNewThresholds();
+  }, 300);
+};
+
+pfSlider.oninput = () => {
+  PROFIT_FLOOR = parseFloat(pfSlider.value);
+  document.getElementById("profitFloorVal").textContent = PROFIT_FLOOR.toFixed(2);
+  
+  // Debounce reanalysis
+  clearTimeout(sliderTimeout);
+  sliderTimeout = setTimeout(() => {
+    if (lastScanData) reanalyzeWithNewThresholds();
+  }, 300);
+};
+
+/* ==================== SETTINGS ==================== */
+document.getElementById("settingsBtn").onclick = () => {
+  document.getElementById("mainPage").style.display = "none";
+  document.getElementById("settingsPage").style.display = "block";
+  document.getElementById("keepaKey").value = CONFIG.keepaKey;
+  document.getElementById("geminiKey").value = CONFIG.geminiKey;
+  document.getElementById("useGemini").value = CONFIG.useGemini ? "true" : "false";
+};
+
+document.getElementById("saveSettings").onclick = () => {
+  CONFIG.keepaKey = document.getElementById("keepaKey").value.trim();
+  CONFIG.geminiKey = document.getElementById("geminiKey").value.trim();
+  CONFIG.useGemini = document.getElementById("useGemini").value === "true";
+  
+  localStorage.setItem('keepaKey', CONFIG.keepaKey);
+  localStorage.setItem('geminiKey', CONFIG.geminiKey);
+  localStorage.setItem('useGemini', CONFIG.useGemini);
+  
+  updateEngineBadge();
+  
+  alert('✅ Settings saved!');
+  document.getElementById("settingsPage").style.display = "none";
+  document.getElementById("mainPage").style.display = "block";
+};
+
+document.getElementById("backFromSettings").onclick = () => {
+  document.getElementById("settingsPage").style.display = "none";
+  document.getElementById("mainPage").style.display = "block";
+};
+
+/* ==================== SCAN LISTENERS ==================== */
+scanInput.addEventListener("input", e => {
+  buffer += e.data || "";
+  scanInput.value = buffer;
+  clearTimeout(timer);
+  timer = setTimeout(finalizeScan, SCAN_DELAY);
+});
+
+scanInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    clearTimeout(timer);
+    finalizeScan();
+  }
+});
+
+/* ==================== FINALIZE SCAN ==================== */
+async function finalizeScan() {
+  const input = buffer.trim() || scanInput.value.trim();
+  buffer = "";
+  scanInput.value = "";
+  scanInput.focus();
+
+  if (!input) return;
+  
+  // Vibrate feedback
+  if (navigator.vibrate) navigator.vibrate(40);
+  
+  // Check API keys
+  if (!CONFIG.keepaKey) {
+    console.warn('No Keepa key - using mock data');
+  }
+  
+  if (CONFIG.useGemini && !CONFIG.geminiKey) {
+    alert('⚠️ Gemini is enabled but no API key provided. Falling back to local engine.');
+    CONFIG.useGemini = false;
+  }
+  
+  // Detect input type
+  const identifier = detectInputType(input);
+  
+  if (checkDuplicate(identifier)) return;
+  
+  document.getElementById("statusText").textContent = `Processing: ${identifier}`;
+  
+  // Show processing state
+  document.getElementById("processing").style.display = "block";
+  document.getElementById("resultCard").classList.add("hidden");
+  
+  try {
+    // Step 1: Query Keepa
+    const keepaData = await queryKeepa(identifier, input);
+    
+    if (!keepaData) {
+      throw new Error("Item not found in Keepa database");
+    }
+    
+    // Step 2: Analyze with Gemini or local engine
+    console.log('CONFIG.useGemini:', CONFIG.useGemini);
+    console.log('Using engine:', CONFIG.useGemini ? 'Gemini AI' : 'Local');
+    
+    let decision;
+    try {
+      decision = CONFIG.useGemini 
+        ? await analyzeWithGemini(keepaData)
+        : localDecisionEngine(keepaData);
+    } catch (analysisError) {
+      // Gemini failed, silently fall back to local
+      console.warn('Analysis engine failed, using local fallback:', analysisError.message);
+      decision = localDecisionEngine(keepaData);
+    }
+    
+    // Step 3: Display result
+    displayResult(decision, keepaData);
+    
+    // Step 4: Add to history
+    addToHistory(decision, keepaData);
+    
+    document.getElementById("statusText").textContent = `${decision.verdict}: ${keepaData.title}`;
+    document.getElementById("processing").style.display = "none";
+    
+  } catch (error) {
+    console.error('Scan error:', error);
+    
+    // More specific error messages
+    let errorMsg = error.message;
+    if (errorMsg.includes('Failed to fetch')) {
+      errorMsg = 'Network error. Check your internet connection.';
+    } else if (errorMsg.includes('API key')) {
+      errorMsg = 'Invalid API key. Check Settings.';
+    } else if (errorMsg.includes('not found')) {
+      errorMsg = 'Product not found in database.';
+    }
+    
+    document.getElementById("statusText").textContent = "Error — try again";
+    document.getElementById("processing").style.display = "none";
+    
+    // Show error in result card
+    document.getElementById("resultCard").classList.remove("hidden");
+    document.getElementById("banner").className = "banner pass";
+    document.getElementById("decision").textContent = "ERROR";
+    document.getElementById("reason").textContent = errorMsg;
+    document.getElementById("explanation").innerHTML = `⚠️ ${error.message}`;
+  }
 }
 
-/* ================= SETTINGS ================= */
-document.getElementById('settingsBtn').onclick=()=>{
-  settingsPage.classList.remove('hidden');resultCard.classList.add('hidden')
+/* ==================== INPUT DETECTION ==================== */
+function detectInputType(input) {
+  const cleaned = input.replace(/[^0-9X]/gi, '');
+  
+  // ISBN-10 or ISBN-13
+  if (cleaned.length === 10 || cleaned.length === 13) {
+    return cleaned;
+  }
+  
+  // UPC/EAN (12-14 digits)
+  if (cleaned.length >= 12 && cleaned.length <= 14) {
+    return cleaned;
+  }
+  
+  // ASIN (B + 9 alphanumeric)
+  if (/^B[0-9A-Z]{9}$/i.test(input)) {
+    return input.toUpperCase();
+  }
+  
+  // Otherwise treat as title search
+  return input;
+}
+
+/* ==================== DUPLICATE CHECK ==================== */
+function checkDuplicate(identifier) {
+  if (seenIdentifiers.has(identifier)) {
+    document.getElementById("dupeWarning").style.display = "block";
+    setTimeout(() => document.getElementById("dupeWarning").style.display = "none", 2000);
+    return true;
+  }
+  seenIdentifiers.add(identifier);
+  return false;
+}
+
+/* ==================== KEEPA API ==================== */
+async function queryKeepa(identifier, rawInput) {
+  // Check if we have a Keepa key
+  if (!CONFIG.keepaKey) {
+    console.warn('No Keepa key - using mock data');
+    return getMockKeepaData(identifier, rawInput);
+  }
+  
+  try {
+    // Keepa Product API endpoint
+    const domain = 1; // 1 = US Amazon (.com)
+    
+    // Build query based on identifier type
+    let queryParam = '';
+    const isNumeric = /^[0-9X]+$/i.test(identifier);
+    
+    if (isNumeric) {
+      // ISBN/UPC/EAN
+      queryParam = `code=${encodeURIComponent(identifier)}`;
+    } else if (/^B[0-9A-Z]{9}$/i.test(identifier)) {
+      // ASIN
+      queryParam = `asin=${encodeURIComponent(identifier)}`;
+    } else {
+      // Title search - need to get ASIN first
+      // For now, throw error - title search is complex
+      throw new Error('Title search not yet implemented. Please scan ISBN/UPC or enter ASIN.');
+    }
+    
+    // Stats parameter: 0 = current prices, 1 = sales rank history
+    // We want current prices (Amazon, New, Used, etc.) and basic stats
+    const stats = 0; // Current prices only
+    const history = 0; // No historical data (saves tokens)
+    
+    const url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&stats=${stats}&history=${history}`;
+    
+    console.log('Keepa API call:', url.replace(CONFIG.keepaKey, 'HIDDEN'));
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Rate limit reached. Please wait a moment.');
+      } else if (response.status === 401) {
+        throw new Error('Invalid Keepa API key. Check Settings.');
+      }
+      throw new Error(`Keepa API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    console.log('Keepa response:', data);
+    
+    // Parse Keepa response
+    if (!data.products || data.products.length === 0) {
+      throw new Error('Product not found in Keepa database');
+    }
+    
+    return parseKeepaResponse(data.products[0]);
+    
+  } catch (error) {
+    console.error('Keepa API error:', error);
+    throw error;
+  }
+}
+
+/* ==================== PARSE KEEPA RESPONSE ==================== */
+function parseKeepaResponse(product) {
+  // Keepa returns prices in "Keepa format" (price * 100, -1 = no data)
+  // Example: 1999 = $19.99, -1 = not available
+  
+  const parsePrice = (val) => {
+    if (val === null || val === undefined || val === -1) return 0;
+    return val / 100;
+  };
+  
+  // Current prices from stats.current array
+  // Index 0 = Amazon, 1 = New, 2 = Used, 18 = Sales Rank
+  const stats = product.stats || {};
+  const current = stats.current || [];
+  
+  const amazonPrice = parsePrice(current[0]);
+  const newPrice = parsePrice(current[1]); 
+  const usedPrice = parsePrice(current[2]);
+  const salesRank = current[18] || 0;
+  
+  // Buy Box information from csv array
+  // csv[0] = Amazon, csv[1] = New, csv[2] = Used, csv[10] = BuyBox
+  const csv = product.csv || [];
+  const latestIndex = csv[0] ? csv[0].length - 1 : 0;
+  
+  const buyBoxPrice = parsePrice(csv[10] ? csv[10][latestIndex] : null);
+  
+  // Determine Buy Box winner
+  let buyBoxWinner = 'UNKNOWN';
+  if (csv[0] && csv[0][latestIndex] > 0) buyBoxWinner = 'AMAZON';
+  else if (csv[18] && csv[18][latestIndex] > 0) buyBoxWinner = 'FBA'; // FBA offer exists
+  else if (csv[10] && csv[10][latestIndex] > 0) buyBoxWinner = 'FBM'; // Some Buy Box exists
+  
+  // Offer counts (from offersSuccessful array)
+  const offers = product.offersSuccessful || 0;
+  const offerCountFBA = product.fbaFees ? 1 : 0; // Rough estimate
+  const offerCountFBM = offers - offerCountFBA;
+  
+  // Calculate rank drops (sales velocity estimate)
+  // This requires historical data - for now estimate based on rank
+  const salesRankDrops30 = estimateSalesFromRank(salesRank);
+  const salesRankDrops90 = salesRankDrops30 * 3;
+  
+  // Weight from packageDimensions
+  const weight = product.packageWeight ? product.packageWeight / 100 : 1.0; // Convert to lbs
+  
+  return {
+    asin: product.asin || 'UNKNOWN',
+    title: product.title || 'Unknown Product',
+    salesRank: salesRank,
+    salesRankDrops30: salesRankDrops30,
+    salesRankDrops90: salesRankDrops90,
+    avgRank30: salesRank * 1.1, // Estimate
+    avgRank90: salesRank * 1.2, // Estimate
+    avgRank365: salesRank * 1.3, // Estimate
+    currentPriceFBA: newPrice > 0 ? newPrice : usedPrice, // Fallback logic
+    currentPriceFBM: usedPrice,
+    currentPriceAmazon: amazonPrice,
+    avgPrice30: usedPrice * 0.9, // Estimate
+    buyBoxWinner: buyBoxWinner,
+    buyBoxPrice: buyBoxPrice,
+    offerCountFBA: offerCountFBA,
+    offerCountFBM: offerCountFBM,
+    priceVolatility: 'Low', // Would need history to calculate
+    condition: 'Used - Very Good',
+    weight: weight,
+    reviewCount: product.reviewCount || 0,
+    packageQuantity: product.packageQuantity || 1,
+    publicationDate: null, // Not in basic Keepa response
+    outOfPrint: false // Not in basic Keepa response
+  };
+}
+
+/* ==================== ESTIMATE SALES FROM RANK ==================== */
+function estimateSalesFromRank(rank) {
+  // Rough estimates based on rank tiers
+  if (rank < 10000) return 50;
+  if (rank < 50000) return 30;
+  if (rank < 100000) return 20;
+  if (rank < 250000) return 15;
+  if (rank < 500000) return 10;
+  if (rank < 1000000) return 5;
+  return 2;
+}
+
+/* ==================== MOCK KEEPA DATA (FALLBACK) ==================== */
+function getMockKeepaData(identifier, rawInput) {
+  const rank = Math.floor(Math.random() * 900000) + 10000;
+  const drops30 = Math.floor(Math.random() * 40) + 2;
+  const offerCountFBA = Math.floor(Math.random() * 15) + 1;
+  const offerCountFBM = Math.floor(Math.random() * 20);
+  const bbWinner = ['FBA', 'FBM', 'AMAZON', 'FBA'][Math.floor(Math.random() * 4)];
+  const priceFBA = +(Math.random() * 25 + 12).toFixed(2);
+  
+  return {
+    asin: 'B00' + Math.random().toString(36).substring(2, 9).toUpperCase(),
+    title: `Test Product for ${rawInput}`,
+    salesRank: rank,
+    salesRankDrops30: drops30,
+    salesRankDrops90: drops30 * 3,
+    avgRank30: rank * (0.8 + Math.random() * 0.4),
+    avgRank90: rank * (1.1 + Math.random() * 0.3),
+    avgRank365: rank * 1.3,
+    currentPriceFBA: priceFBA,
+    currentPriceFBM: +(Math.random() * 20 + 10).toFixed(2),
+    currentPriceAmazon: Math.random() > 0.6 ? +(Math.random() * 28 + 15).toFixed(2) : 0,
+    avgPrice30: priceFBA * (0.7 + Math.random() * 0.4),
+    buyBoxWinner: bbWinner,
+    offerCountFBA: offerCountFBA,
+    offerCountFBM: offerCountFBM,
+    priceVolatility: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)],
+    condition: 'Used - Very Good',
+    weight: +(Math.random() * 3).toFixed(2),
+    reviewCount: Math.floor(Math.random() * 1000),
+    packageQuantity: Math.random() > 0.8 ? Math.floor(Math.random() * 5) + 2 : 1,
+    publicationDate: Math.random() > 0.7 ? new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString() : null,
+    outOfPrint: Math.random() > 0.9
+  };
+}
+
+/* ==================== GEMINI AI ANALYSIS ==================== */
+async function analyzeWithGemini(keepaData) {
+  const prompt = `You are an AI sourcing assistant for Amazon FBA reselling. Analyze this product and make a BUY/REJECT decision.
+
+PRODUCT DATA:
+${JSON.stringify(keepaData, null, 2)}
+
+USER THRESHOLDS:
+- Buy Cost: $${BUY_COST.toFixed(2)}
+- Profit Floor: $${PROFIT_FLOOR.toFixed(2)}
+
+DECISION CRITERIA:
+1. Calculate target sell price based on Buy Box holder
+2. Calculate profit after 15% + $5 FBA fees
+3. REJECT if profit < $${PROFIT_FLOOR.toFixed(2)}
+4. REJECT if Amazon controls Buy Box (unless we can undercut profitably)
+5. Consider sales rank, velocity, competition
+6. ACCEPT if profitable with good market conditions
+
+OUTPUT FORMAT (JSON only, no markdown):
+{
+  "verdict": "ACCEPT" or "REJECT",
+  "targetPrice": 24.99,
+  "profit": 8.50,
+  "roi": 425,
+  "reasoning": "Bullet point explanation with <br> tags"
+}
+
+Make the decision now:`;
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 500,
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.candidates || !data.candidates[0]) {
+      throw new Error("Invalid Gemini response format");
+    }
+    
+    const text = data.candidates[0].content.parts[0].text;
+    
+    // Try to parse JSON directly
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (e) {
+      // Extract JSON from markdown code blocks or other wrapping
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Could not extract JSON from AI response");
+      parsed = JSON.parse(jsonMatch[0]);
+    }
+    
+    return parsed;
+    
+  } catch (error) {
+    console.error('Gemini API error:', error);
+    
+    // If Gemini fails, fall back to local calculation
+    console.warn('Falling back to local decision engine');
+    return localDecisionEngine(keepaData);
+  }
+}
+
+/* ==================== HIDDEN GEM DETECTION ==================== */
+function detectHiddenGems(keepaData, decision) {
+  const gems = [];
+  
+  // Only check for gems on ACCEPT items
+  if (decision.verdict !== 'ACCEPT') return gems;
+  
+  // GEM 1: High velocity despite high rank
+  if (keepaData.salesRank > 500000 && keepaData.salesRankDrops30 >= 15) {
+    gems.push({
+      type: 'high-velocity',
+      icon: '🚀',
+      label: 'High velocity despite rank',
+      details: `Rank ${keepaData.salesRank.toLocaleString()} but ${keepaData.salesRankDrops30} sales in last 30 days`
+    });
+  }
+  
+  // GEM 2: Low competition
+  if (keepaData.offerCountFBA <= 3 && keepaData.offerCountFBA > 0 && decision.profit > 5) {
+    gems.push({
+      type: 'low-competition',
+      icon: '🎯',
+      label: 'Low competition',
+      details: `Only ${keepaData.offerCountFBA} FBA seller${keepaData.offerCountFBA === 1 ? '' : 's'} competing`
+    });
+  }
+  
+  // GEM 3: Amazon out of stock
+  if (keepaData.currentPriceAmazon === 0 && keepaData.buyBoxWinner !== 'AMAZON' && decision.profit > 5) {
+    gems.push({
+      type: 'amazon-oos',
+      icon: '🏆',
+      label: 'Amazon OOS opportunity',
+      details: 'Amazon not selling - temporary opportunity window'
+    });
+  }
+  
+  // GEM 4: Rank trending up (improving)
+  const avgRank90 = keepaData.avgRank365 || keepaData.salesRank * 2; // fallback estimate
+  if (avgRank90 > keepaData.salesRank * 1.5 && keepaData.salesRank < 300000) {
+    gems.push({
+      type: 'trending',
+      icon: '📈',
+      label: 'Rank trending up',
+      details: `Improving from ${avgRank90.toLocaleString()} average to current ${keepaData.salesRank.toLocaleString()}`
+    });
+  }
+  
+  // GEM 5: High profit margin
+  if (decision.roi > 200 && decision.profit > 8) {
+    gems.push({
+      type: 'high-margin',
+      icon: '💰',
+      label: 'Exceptional profit margin',
+      details: `${decision.roi}% ROI with $${decision.profit.toFixed(2)} profit`
+    });
+  }
+  
+  // GEM 6: Strong sales velocity (lots of drops)
+  if (keepaData.salesRankDrops30 >= 20 && keepaData.salesRank < 500000) {
+    gems.push({
+      type: 'hot-seller',
+      icon: '🔥',
+      label: 'Hot seller',
+      details: `${keepaData.salesRankDrops30} sales in last 30 days - moves fast`
+    });
+  }
+  
+  // GEM 7: Monopoly opportunity (you'd be only FBA seller)
+  if (keepaData.offerCountFBA === 1 && keepaData.offerCountFBM > 0) {
+    gems.push({
+      type: 'monopoly',
+      icon: '👑',
+      label: 'FBA monopoly',
+      details: `You'd be the only FBA seller (${keepaData.offerCountFBM} FBM sellers exist)`
+    });
+  }
+  
+  // GEM 8: Price spike (current price much higher than average)
+  if (keepaData.avgPrice30 && keepaData.currentPriceFBA > keepaData.avgPrice30 * 1.4) {
+    gems.push({
+      type: 'price-spike',
+      icon: '📊',
+      label: 'Price spike detected',
+      details: `Current $${keepaData.currentPriceFBA.toFixed(2)} vs $${keepaData.avgPrice30.toFixed(2)} 30-day avg`
+    });
+  }
+  
+  // GEM 9: Low weight, high value
+  if (keepaData.weight && keepaData.weight < 1 && decision.profit > 8) {
+    gems.push({
+      type: 'lightweight',
+      icon: '🪶',
+      label: 'Lightweight profit',
+      details: `Under 1lb (${keepaData.weight}lb) with strong profit - low FBA fees`
+    });
+  }
+  
+  // GEM 10: Consistent seller
+  const drops90 = keepaData.salesRankDrops90 || 0;
+  const drops30 = keepaData.salesRankDrops30 || 0;
+  if (drops90 > 30 && drops30 > 8 && Math.abs(drops90/3 - drops30) < 5) {
+    gems.push({
+      type: 'consistent',
+      icon: '📅',
+      label: 'Consistent seller',
+      details: `Steady sales velocity - ${drops30} sales/month over 90 days`
+    });
+  }
+  
+  // GEM 11: Top-tier rank
+  if (keepaData.salesRank < 50000) {
+    gems.push({
+      type: 'top-rank',
+      icon: '⭐',
+      label: 'Top-tier rank',
+      details: `Rank ${keepaData.salesRank.toLocaleString()} - extremely fast mover`
+    });
+  }
+  
+  // GEM 12: High review count
+  if (keepaData.reviewCount && keepaData.reviewCount > 500) {
+    gems.push({
+      type: 'validated',
+      icon: '✅',
+      label: 'Demand validated',
+      details: `${keepaData.reviewCount.toLocaleString()} reviews - proven popular`
+    });
+  }
+  
+  // GEM 13: Gaining momentum
+  const recent30AvgRank = keepaData.avgRank30 || keepaData.salesRank;
+  const historical90AvgRank = keepaData.avgRank90 || keepaData.salesRank;
+  if (historical90AvgRank > recent30AvgRank * 1.3) {
+    gems.push({
+      type: 'gaining-momentum',
+      icon: '⚡',
+      label: 'Gaining momentum',
+      details: `30-day rank improving vs 90-day average`
+    });
+  }
+  
+  // GEM 14: Stable pricing
+  if (keepaData.priceVolatility === 'Low' && decision.profit > 6) {
+    gems.push({
+      type: 'stable-pricing',
+      icon: '🛡️',
+      label: 'Stable pricing',
+      details: 'Low volatility - not in a race to the bottom'
+    });
+  }
+  
+  // GEM 15: Profit + velocity combo
+  if (decision.profit > 10 && keepaData.salesRank < 200000) {
+    gems.push({
+      type: 'profit-velocity-combo',
+      icon: '💎',
+      label: 'Profit + velocity combo',
+      details: `$${decision.profit.toFixed(2)} profit with rank ${keepaData.salesRank.toLocaleString()}`
+    });
+  }
+  
+  // GEM 16: Prime advantage play
+  const totalOffers = keepaData.offerCountFBA + keepaData.offerCountFBM;
+  if (totalOffers > 5 && keepaData.offerCountFBA <= 2 && keepaData.offerCountFBM > 5) {
+    gems.push({
+      type: 'prime-advantage',
+      icon: '📦',
+      label: 'Prime advantage play',
+      details: `Only ${keepaData.offerCountFBA} FBA vs ${keepaData.offerCountFBM} FBM - Prime wins`
+    });
+  }
+  
+  // GEM 17: Quick flip
+  if (decision.roi > 300 && decision.profit >= 5) {
+    gems.push({
+      type: 'quick-flip',
+      icon: '⚡',
+      label: 'Quick flip',
+      details: `${decision.roi}% ROI - exceptional return`
+    });
+  }
+  
+  // GEM 18: Multi-pack
+  if (keepaData.packageQuantity && keepaData.packageQuantity > 1) {
+    gems.push({
+      type: 'multi-pack',
+      icon: '📚',
+      label: 'Multi-pack value',
+      details: `${keepaData.packageQuantity}-pack item - higher value`
+    });
+  }
+  
+  // GEM 19: Seasonal timing
+  const title = (keepaData.title || '').toLowerCase();
+  const month = new Date().getMonth();
+  let seasonal = false;
+  if ((month >= 0 && month <= 3) && (title.includes('tax') || title.includes('accounting'))) seasonal = true;
+  if ((month >= 9 && month <= 11) && (title.includes('christmas') || title.includes('holiday'))) seasonal = true;
+  if ((month >= 4 && month <= 7) && (title.includes('summer') || title.includes('vacation'))) seasonal = true;
+  
+  if (seasonal) {
+    gems.push({
+      type: 'seasonal',
+      icon: '🎯',
+      label: 'Seasonal timing',
+      details: 'Peak demand window for this topic'
+    });
+  }
+  
+  // GEM 20: New release momentum
+  if (keepaData.publicationDate) {
+    const pubDate = new Date(keepaData.publicationDate);
+    const monthsOld = (Date.now() - pubDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+    if (monthsOld < 6 && keepaData.salesRank < 100000) {
+      gems.push({
+        type: 'new-release',
+        icon: '🆕',
+        label: 'New release momentum',
+        details: `Published ${Math.round(monthsOld)} months ago with strong rank`
+      });
+    }
+  }
+  
+  // GEM 21: Textbook potential
+  if (decision.targetPrice > 30 && (title.includes('edition') || title.includes('textbook'))) {
+    gems.push({
+      type: 'textbook',
+      icon: '🎓',
+      label: 'Textbook potential',
+      details: 'High-value educational book'
+    });
+  }
+  
+  // GEM 22: Collectible premium
+  if (keepaData.condition && keepaData.condition.includes('Collectible') && decision.profit > 8) {
+    gems.push({
+      type: 'collectible',
+      icon: '🏺',
+      label: 'Collectible premium',
+      details: 'Collectible condition commands higher prices'
+    });
+  }
+  
+  // GEM 23: First edition
+  if (title.includes('first edition') || title.includes('1st edition')) {
+    gems.push({
+      type: 'first-edition',
+      icon: '📖',
+      label: 'First edition',
+      details: 'First editions have collector value'
+    });
+  }
+  
+  // GEM 24: Out of print
+  if (keepaData.outOfPrint) {
+    gems.push({
+      type: 'out-of-print',
+      icon: '🔒',
+      label: 'Out of print',
+      details: 'Limited supply increases value'
+    });
+  }
+  
+  // GEM 25: Floor protection working
+  if (decision.targetPrice === 8.00 && decision.profit >= 5) {
+    gems.push({
+      type: 'floor-protection',
+      icon: '🛡️',
+      label: 'Floor protection active',
+      details: 'Raised to $8 floor but still profitable'
+    });
+  }
+  
+  return gems;
+}
+
+/* ==================== LOCAL FALLBACK DECISION ENGINE ==================== */
+function localDecisionEngine(keepaData) {
+  // Determine target price based on Buy Box
+  let targetPrice = keepaData.currentPriceFBA;
+  
+  if (keepaData.buyBoxWinner === "AMAZON") {
+    targetPrice = keepaData.currentPriceAmazon * 0.95;
+  } else if (keepaData.buyBoxWinner === "FBM") {
+    targetPrice = keepaData.currentPriceFBM * 0.98;
+  } else if (keepaData.buyBoxWinner === "FBA") {
+    targetPrice = keepaData.currentPriceFBA * 0.97;
+  }
+  
+  // Calculate profit
+  const fees = targetPrice * 0.15 + 5;
+  const profit = targetPrice - BUY_COST - fees;
+  const roi = Math.round((profit / BUY_COST) * 100);
+  
+  // Make decision
+  let verdict = "REJECT";
+  let reasoning = "";
+  
+  if (keepaData.buyBoxWinner === "AMAZON" && keepaData.currentPriceAmazon > 0) {
+    if (profit >= PROFIT_FLOOR) {
+      verdict = "ACCEPT";
+      reasoning = `✓ Can undercut Amazon profitably<br>✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>✓ Target: $${targetPrice.toFixed(2)}`;
+    } else {
+      reasoning = `✗ Amazon controls Buy Box<br>✗ Cannot compete profitably<br>✗ Profit would be: $${profit.toFixed(2)}`;
+    }
+  } else if (profit < 0) {
+    reasoning = `✗ Not profitable<br>✗ Loss: $${Math.abs(profit).toFixed(2)}<br>✗ Fees too high relative to price`;
+  } else if (profit < PROFIT_FLOOR) {
+    reasoning = `✗ Profit $${profit.toFixed(2)} below $${PROFIT_FLOOR.toFixed(2)} floor<br>✗ ROI: ${roi}%<br>✗ Not worth the capital`;
+  } else if (keepaData.salesRank > 500000) {
+    reasoning = `⚠ High sales rank (${keepaData.salesRank.toLocaleString()})<br>⚠ Profitable but slow mover<br>⚠ Consider passing unless high ROI`;
+  } else {
+    verdict = "ACCEPT";
+    reasoning = `✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>✓ ${keepaData.buyBoxWinner} controls Buy Box<br>✓ Good sales rank: ${keepaData.salesRank.toLocaleString()}`;
+  }
+  
+  return {
+    verdict,
+    targetPrice: Math.round(targetPrice * 100) / 100,
+    profit: Math.round(profit * 100) / 100,
+    roi,
+    reasoning
+  };
+}
+
+/* ==================== DISPLAY RESULT ==================== */
+function displayResult(decision, keepaData) {
+  lastScanData = { decision, keepaData };
+  
+  const banner = document.getElementById("banner");
+  const cls = decision.verdict === "ACCEPT" ? "buy" : "pass";
+  
+  // Detect hidden gems
+  const gems = detectHiddenGems(keepaData, decision);
+  const isGem = gems.length > 0;
+  
+  banner.className = `banner ${cls}${isGem ? ' gem' : ''}`;
+  
+  // Show/hide gem badge
+  const gemBadge = document.getElementById("gemBadge");
+  if (isGem) {
+    gemBadge.style.display = "inline-flex";
+  } else {
+    gemBadge.style.display = "none";
+  }
+  
+  document.getElementById("decision").textContent = decision.verdict;
+  document.getElementById("reason").textContent = keepaData.title;
+  
+  document.getElementById("targetPrice").textContent = `$${decision.targetPrice.toFixed(2)}`;
+  document.getElementById("profit").textContent = `$${decision.profit.toFixed(2)}`;
+  document.getElementById("roi").textContent = `${decision.roi}%`;
+  document.getElementById("bb").textContent = keepaData.buyBoxWinner;
+  
+  const profitEl = document.getElementById("profit");
+  profitEl.className = "stat-value" + (decision.profit < 0 ? " negative" : "");
+  
+  // Build explanation with gem reasons
+  let explanationHTML = decision.reasoning;
+  
+  if (isGem) {
+    explanationHTML += '<div class="gem-reasons"><strong>Why This is a Hidden Gem:</strong>';
+    gems.forEach(gem => {
+      explanationHTML += `<div style="margin:6px 0;">${gem.icon} <strong>${gem.label}:</strong> ${gem.details}</div>`;
+    });
+    explanationHTML += '</div>';
+  }
+  
+  document.getElementById("explanation").innerHTML = explanationHTML;
+  
+  // Show Ask Gemini button (if Gemini key configured)
+  const askGeminiBtn = document.getElementById("askGeminiBtn");
+  if (CONFIG.geminiKey) {
+    askGeminiBtn.style.display = "block";
+  } else {
+    askGeminiBtn.style.display = "none";
+  }
+  
+  // Hide previous Gemini insights
+  document.getElementById("geminiInsights").style.display = "none";
+  
+  document.getElementById("resultCard").classList.remove("hidden");
+  document.getElementById("resultCard").classList.add("flash");
+  setTimeout(() => document.getElementById("resultCard").classList.remove("flash"), 300);
+}
+
+/* ==================== REANALYZE ==================== */
+async function reanalyzeWithNewThresholds() {
+  if (!lastScanData) return;
+  
+  // Don't show spinner for reanalysis - update in place
+  try {
+    const decision = CONFIG.useGemini
+      ? await analyzeWithGemini(lastScanData.keepaData)
+      : localDecisionEngine(lastScanData.keepaData);
+    displayResult(decision, lastScanData.keepaData);
+    document.getElementById("statusText").textContent = `${decision.verdict}: ${lastScanData.keepaData.title}`;
+  } catch (error) {
+    console.error('Reanalysis error:', error);
+    // Silently fail - keep showing old data
+  }
+}
+
+/* ==================== HISTORY ==================== */
+function addToHistory(decision, keepaData) {
+  const gems = detectHiddenGems(keepaData, decision);
+  
+  const record = {
+    verdict: decision.verdict,
+    title: keepaData.title,
+    asin: keepaData.asin,
+    price: decision.targetPrice.toFixed(2),
+    profit: decision.profit.toFixed(2),
+    roi: decision.roi,
+    time: new Date().toLocaleTimeString(),
+    isGem: gems.length > 0,
+    gemTypes: gems.map(g => g.label).join(', ')
+  };
+  
+  scanHistory.push(record);
+  if (decision.verdict === "ACCEPT") {
+    buyList.push(record);
+  }
+  
+  updateHistoryUI();
+  document.getElementById("itemCount").innerHTML = `<span class="status-label">Queue:</span> ${buyList.length}`;
+}
+
+function updateHistoryUI() {
+  const list = document.getElementById("historyList");
+  list.innerHTML = '';
+  
+  scanHistory.slice().reverse().forEach(rec => {
+    const div = document.createElement("div");
+    div.className = "history-item";
+    
+    const gemBadge = rec.isGem ? `<span style="color:#fbbf24;font-size:14px;margin-right:4px;">✨</span>` : '';
+    
+    div.innerHTML = `
+      <div class="history-decision ${rec.verdict}">${gemBadge}${rec.verdict}</div>
+      <div class="history-title">${rec.title}</div>
+      <div class="history-meta">
+        ASIN: ${rec.asin}<br>
+        Price: $${rec.price} • Profit: $${rec.profit} • ROI: ${rec.roi}%<br>
+        ${rec.isGem ? `<span style="color:#fbbf24;">💎 ${rec.gemTypes}</span><br>` : ''}
+        ${rec.time}
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+/* ==================== NAVIGATION ==================== */
+document.getElementById("historyBtn").onclick = () => {
+  document.getElementById("mainPage").style.display = "none";
+  document.getElementById("historyPage").style.display = "block";
 };
 
-document.getElementById('backFromSettings').onclick=()=>{
-  settingsPage.classList.add('hidden')
+document.getElementById("backBtn").onclick = () => {
+  document.getElementById("historyPage").style.display = "none";
+  document.getElementById("mainPage").style.display = "block";
 };
 
-document.getElementById('saveSettings').onclick=()=>{
-  localStorage.setItem('keepaKey',document.getElementById('keepaKey').value.trim());
-  localStorage.setItem('geminiKey',document.getElementById('geminiKey').value.trim());
-  alert('Settings saved');settingsPage.classList.add('hidden')
+/* ==================== CSV DOWNLOAD ==================== */
+document.getElementById("downloadBtn").onclick = () => {
+  if (buyList.length === 0) return alert("No items in buy queue.");
+
+  let csv = "Title,ASIN,TargetPrice,Profit,ROI,HiddenGem,GemReasons\n";
+  buyList.forEach(r => {
+    const gemFlag = r.isGem ? 'YES' : 'NO';
+    const gemReasons = r.isGem ? `"${r.gemTypes}"` : '';
+    csv += `"${r.title}",${r.asin},${r.price},${r.profit},${r.roi}%,${gemFlag},${gemReasons}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `scoutpro_buylist_${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 };
 
-/* ================= CLEAR ================= */
-document.getElementById('clearBtn').onclick=()=>{
-  queue=0;document.getElementById('itemCount').textContent='Queue: 0';
-  resultCard.classList.add('hidden');statusText.textContent='Ready to scan'
+/* ==================== CLEAR DATA ==================== */
+document.getElementById("clearBtn").onclick = () => {
+  if (!confirm("Clear all scan data and buy queue?")) return;
+
+  scanHistory.length = 0;
+  buyList.length = 0;
+  lastScanData = null;
+  seenIdentifiers.clear();
+
+  document.getElementById("historyList").innerHTML = "";
+  document.getElementById("itemCount").innerHTML = `<span class="status-label">Queue:</span> 0`;
+  document.getElementById("statusText").textContent = "Ready to scan";
+  document.getElementById("resultCard").classList.add("hidden");
 };
+
+<script>
+try{__sp_attachScannerHandlers();}catch(e){}
 </script>
+</script>
+
 </body>
 </html>
