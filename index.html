@@ -620,6 +620,7 @@ input[type="range"]::-moz-range-thumb {
 <div class="status-bar">
   <span id="statusText">Ready to scan</span>
   <span id="itemCount"><span class="status-label">Queue:</span> 0</span>
+  <span id="tokenCount" style="display:none;"><span class="status-label">Tokens:</span> <span id="tokenValue">0</span></span>
 </div>
 
 <div id="dupeWarning">⚠️ Already scanned — ignored</div>
@@ -1180,6 +1181,15 @@ async function queryKeepa(identifier, rawInput) {
     const data = await response.json();
     
     console.log('Keepa response:', data);
+    
+    // Show tokens consumed in UI
+    if (data.tokensConsumed !== undefined) {
+      document.getElementById("tokenCount").style.display = "block";
+      document.getElementById("tokenValue").textContent = data.tokensConsumed;
+      console.log('⚠️ TOKENS CONSUMED:', data.tokensConsumed);
+      console.log('Tokens left:', data.tokensLeft);
+      console.log('Products returned:', data.products ? data.products.length : 0);
+    }
     
     // Parse Keepa response
     if (!data.products || data.products.length === 0) {
