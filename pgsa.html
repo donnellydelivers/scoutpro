@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ScoutPro Radar v2.3</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0a0e1a;
+  --panel: #141b2d;
+  --card: #1a2332;
+  --border: rgba(255,255,255,.08);
+  --text: #ffffff;
+  --muted: #8b92ab;
+  --green: #10b981;
+  --yellow: #fbbf24;
+  --red: #ef4444;
+  --blue: #3b82f6;
+}
+
+* { 
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app { 
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 120px;
+}
+
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+}
+
+input[type="text"] {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  outline: none;
+}
+
+input[type="text"]::placeholder {
+  color: var(--muted);
+}
+
+button {
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* ISBN Bar */
+#isbnBar {
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--panel);
+  margin: 0 12px;
+  margin-top: 12px;
+  border-radius: 8px;
+}
+
+/* Duplicate Warning */
+#dupeWarning {
+  padding: 10px 16px;
+  margin: 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid var(--yellow);
+  border-radius: 8px;
+  color: var(--yellow);
+  font-size: 13px;
+  display: none;
+}
+
+/* Cards */
+.card {
+  margin: 12px;
+  background: var(--panel);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Decision Banner */
+.banner {
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.banner.buy { background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), transparent); }
+.banner.check { background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), transparent); }
+.banner.pass { background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), transparent); }
+
+.banner .decision {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+
+.banner.buy .decision { color: var(--green); }
+.banner.check .decision { color: var(--yellow); }
+.banner.pass .decision { color: var(--red); }
+
+.banner .reason {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Stats Grid */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.stat {
+  background: var(--card);
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Section */
+.section {
+  padding: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+/* Sliders */
+.slider-group {
+  margin-bottom: 20px;
+}
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.slider-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--blue);
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--card);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+  border: 3px solid var(--panel);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+  border: 3px solid var(--panel);
+}
+
+/* Advanced Grid */
+.advanced-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.metric {
+  background: var(--card);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.metric-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Action Buttons */
+.actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  display: flex;
+  gap: 10px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.actions button {
+  flex: 1;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn-download {
+  background: var(--green);
+  color: var(--bg);
+}
+
+.btn-clear {
+  background: var(--red);
+  color: white;
+}
+
+.btn-history {
+  background: var(--yellow);
+  color: var(--bg);
+}
+
+.btn-toggle {
+  background: var(--blue);
+  color: white;
+  width: 100%;
+}
+
+/* History */
+#historyPage { display: none; }
+
+.history-item {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-decision {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.history-decision.BUY { color: var(--green); }
+.history-decision.CHECK { color: var(--yellow); }
+.history-decision.PASS { color: var(--red); }
+
+.history-title {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.history-meta {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.6;
+}
+
+#advancedSection { display: none; }
+
+.flash {
+  animation: flash 300ms ease-out;
+}
+
+@keyframes flash {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  100% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- Header -->
+<header>
+  <input id="scanInput" type="text" pattern="[0-9X]*" placeholder="Scan ISBN..." autocomplete="off" />
+  <button id="historyBtn" class="btn-history">History</button>
+</header>
+
+<div id="isbnBar">ISBN: —</div>
+<div id="dupeWarning">⚠️ Duplicate detected — ignored</div>
+
+<!-- MAIN PAGE -->
+<div id="mainPage">
+  <div class="card">
+    <div id="banner" class="banner check">
+      <div class="decision" id="decision">READY</div>
+      <div class="reason" id="reason">Waiting for scan</div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Median FBA</div>
+          <div class="stat-value" id="medianFba">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Profit</div>
+          <div class="stat-value" id="profit">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">ROI</div>
+          <div class="stat-value" id="roi">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Buy Box</div>
+          <div class="stat-value" id="bb">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="section">
+      <div class="section-title">Controls</div>
+      
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Buy Cost</span>
+          <span class="slider-value">$<span id="buyCostVal">1.00</span></span>
+        </div>
+        <input type="range" min="0.10" max="10" step="0.10" id="buyCostSlider" value="1.00" />
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Profit Floor</span>
+          <span class="slider-value">$<span id="profitFloorVal">5.00</span></span>
+        </div>
+        <input type="range" min="1" max="20" step="1" id="profitFloorSlider" value="5" />
+      </div>
+
+      <button id="toggleAdvanced" class="btn-toggle">Show Advanced</button>
+    </div>
+
+    <!-- Advanced Section -->
+    <div id="advancedSection" class="section">
+      <div class="section-title">Market Signals</div>
+      <div class="advanced-grid">
+        <div class="metric">
+          <div class="metric-label">Buy Box Type</div>
+          <div class="metric-value" id="bbType">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Price Stability</div>
+          <div class="metric-value" id="stability">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Velocity</div>
+          <div class="metric-value" id="velocity">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">False Floor</div>
+          <div class="metric-value" id="floor">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY PAGE -->
+<div id="historyPage" class="card">
+  <div class="section">
+    <div class="section-title">Scan History</div>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="actions">
+  <button id="downloadBtn" class="btn-download">Download</button>
+  <button id="clearBtn" class="btn-clear">Clear</button>
+</div>
+
+</div>
+
+<script>
+/* CONFIG */
+let BUY_COST = 1.00;
+let PROFIT_FLOOR = 5.00;
+let buffer = "";
+let timer = null;
+let SCAN_DELAY = 60;
+
+const seenISBNs = new Set();
+const seenSKUs = new Set();
+const seenFull = new Set();
+
+let scanHistory = [];
+let buyList = [];
+
+const scanInput = document.getElementById("scanInput");
+const banner = document.getElementById("banner");
+scanInput.focus();
+
+/* SLIDERS */
+const bcSlider = document.getElementById("buyCostSlider");
+const pfSlider = document.getElementById("profitFloorSlider");
+
+bcSlider.oninput = () => {
+  BUY_COST = parseFloat(bcSlider.value);
+  document.getElementById("buyCostVal").textContent = BUY_COST.toFixed(2);
+};
+
+pfSlider.oninput = () => {
+  PROFIT_FLOOR = parseFloat(pfSlider.value);
+  document.getElementById("profitFloorVal").textContent = PROFIT_FLOOR.toFixed(2);
+};
+
+/* ADVANCED TOGGLE */
+document.getElementById("toggleAdvanced").onclick = () => {
+  const sec = document.getElementById("advancedSection");
+  const btn = document.getElementById("toggleAdvanced");
+  const open = sec.style.display === "block";
+  sec.style.display = open ? "none" : "block";
+  btn.textContent = open ? "Show Advanced" : "Hide Advanced";
+};
+
+/* SCAN LISTENERS */
+scanInput.addEventListener("input", e => {
+  buffer += e.data || "";
+  scanInput.value = buffer;
+  clearTimeout(timer);
+  timer = setTimeout(finalizeScan, SCAN_DELAY);
+});
+
+scanInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" || e.key === "Tab") {
+    e.preventDefault();
+    clearTimeout(timer);
+    finalizeScan();
+  }
+});
+
+/* FINALIZE SCAN */
+function finalizeScan() {
+  const isbn = buffer.replace(/[^0-9X]/gi, "");
+  buffer = "";
+  scanInput.value = "";
+  scanInput.focus();
+
+  if (isbn.length !== 10 && isbn.length !== 13) return;
+
+  if (navigator.vibrate) navigator.vibrate(40);
+
+  document.getElementById("isbnBar").textContent = "ISBN: " + isbn;
+
+  if (checkDuplicate(isbn)) return;
+
+  banner.classList.add("flash");
+  setTimeout(() => banner.classList.remove("flash"), 300);
+
+  fetchKeepaData(isbn).then(data => processScan(isbn, data));
+}
+
+/* MOCK KEEPA */
+function fetchKeepaData(isbn) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const d = {
+        title: "Sample Book Title for ISBN " + isbn,
+        medianFBA: +(Math.random()*22+14).toFixed(2),
+        bbType: ["FBA","FBM","ROTATE","AMAZON"][Math.random()*4|0],
+        falseFloor: Math.random()<0.3,
+        velocity: ["Strong","Moderate","Weak"][Math.random()*3|0]
+      };
+      resolve(d);
+    }, 100);
+  });
+}
+
+/* DUPLICATE CHECK */
+function checkDuplicate(isbn) {
+  const day = new Date();
+  const sku = `${String(day.getMonth()+1).padStart(2,'0')}${String(day.getDate()).padStart(2,'0')}-${isbn}-VG`;
+  const unique = isbn + "|" + sku;
+
+  if (seenISBNs.has(isbn) || seenSKUs.has(sku) || seenFull.has(unique)) {
+    document.getElementById("dupeWarning").style.display = "block";
+    setTimeout(() => document.getElementById("dupeWarning").style.display = "none", 2000);
+    return true;
+  }
+
+  seenISBNs.add(isbn);
+  seenSKUs.add(sku);
+  seenFull.add(unique);
+  return false;
+}
+
+/* DECISION ENGINE */
+function processScan(isbn, d) {
+  const sell = d.medianFBA;
+  const fees = sell * 0.15 + 5;
+  const profitVal = sell - BUY_COST - fees;
+  const roiVal = (profitVal / BUY_COST * 100);
+
+  document.getElementById("medianFba").textContent = `$${sell.toFixed(2)}`;
+  document.getElementById("profit").textContent = `$${profitVal.toFixed(2)}`;
+  document.getElementById("roi").textContent = `${roiVal.toFixed(0)}%`;
+  document.getElementById("bb").textContent = d.bbType;
+
+  document.getElementById("bbType").textContent = d.bbType;
+  document.getElementById("stability").textContent = d.falseFloor ? "False Floor" : "Stable";
+  document.getElementById("velocity").textContent = d.velocity;
+  document.getElementById("floor").textContent = d.falseFloor ? "Detected" : "Clear";
+
+  let cls = "check", txt = "CHECK", why = "Manual review recommended";
+
+  if (d.bbType === "AMAZON") {
+    cls = "pass"; txt = "PASS"; why = "Amazon controls Buy Box";
+  }
+  else if (profitVal <= 0) {
+    cls = "pass"; txt = "PASS"; why = "Not profitable";
+  }
+  else if (profitVal >= PROFIT_FLOOR && !d.falseFloor && d.velocity !== "Weak") {
+    cls = "buy"; txt = "BUY"; why = "Strong margin & stable";
+  }
+
+  banner.className = `banner ${cls}`;
+  document.getElementById("decision").textContent = txt;
+  document.getElementById("reason").textContent = why;
+
+  const dt = new Date();
+  const sku = `${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}-${isbn}-VG`;
+
+  const record = {
+    title: d.title,
+    isbn,
+    sku,
+    price: sell.toFixed(2),
+    decision: txt,
+    time: new Date().toLocaleTimeString()
+  };
+
+  scanHistory.push(record);
+  buyList.push(record);
+  addHistoryRow(record);
+}
+
+/* HISTORY UI */
+function addHistoryRow(rec) {
+  const list = document.getElementById("historyList");
+  const div = document.createElement("div");
+  div.className = "history-item";
+  div.innerHTML = `
+    <div class="history-decision ${rec.decision}">${rec.decision}</div>
+    <div class="history-title">${rec.title}</div>
+    <div class="history-meta">
+      ISBN: ${rec.isbn}<br>
+      SKU: ${rec.sku}<br>
+      Price: $${rec.price} • ${rec.time}
+    </div>
+  `;
+  list.prepend(div);
+}
+
+document.getElementById("historyBtn").onclick = () => {
+  document.getElementById("mainPage").style.display = "none";
+  document.getElementById("historyPage").style.display = "block";
+  document.getElementById("historyBtn").textContent = "Back";
+  document.getElementById("historyBtn").onclick = () => {
+    document.getElementById("historyPage").style.display = "none";
+    document.getElementById("mainPage").style.display = "block";
+    document.getElementById("historyBtn").textContent = "History";
+    document.getElementById("historyBtn").onclick = arguments.callee.caller;
+  };
+};
+
+/* CSV DOWNLOAD */
+document.getElementById("downloadBtn").onclick = () => {
+  if (buyList.length === 0) return alert("No data to export.");
+
+  let csv = "Title,SKU,ISBN,SuggestedPrice,Decision\n";
+  buyList.forEach(r => {
+    csv += `"${r.title}","${r.sku}",${r.isbn},${r.price},${r.decision}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "scoutpro_buylist.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+/* CLEAR DATA */
+document.getElementById("clearBtn").onclick = () => {
+  if (!confirm("Clear all scan & export data?")) return;
+
+  scanHistory.length = 0;
+  buyList.length = 0;
+  seenFull.clear();
+  seenISBNs.clear();
+  seenSKUs.clear();
+
+  document.getElementById("historyList").innerHTML = "";
+  document.getElementById("isbnBar").textContent = "ISBN: —";
+  banner.className = "banner check";
+  document.getElementById("decision").textContent = "READY";
+  document.getElementById("reason").textContent = "Waiting for scan";
+  document.getElementById("medianFba").textContent = "—";
+  document.getElementById("profit").textContent = "—";
+  document.getElementById("roi").textContent = "—";
+  document.getElementById("bb").textContent = "—";
+};
+</script>
+
+</body>
+</html>
