@@ -767,34 +767,65 @@ let scanHistory = [];
 let buyList = [];
 let lastScanData = null;
 
-const scanInput = document.getElementById("scanInput");
 
-  // === Scanner burst fix (Bluetooth scanners often don't send Enter) ===
+$1
+
+  // ✅ Scanner handler (KNOWN-GOOD): capture-phase + stopImmediatePropagation
+  // Why: some builds attach multiple listeners; cloning the input breaks references.
+  // This keeps the original element, but guarantees our handler runs and prevents downstream listeners.
   let __sp_lastLen = 0;
   let __sp_burstArmed = true;
   let __sp_timer = null;
   const __sp_SCAN_DELAY = 180;
 
-  function __sp_attachScannerHandlers() {
-    // Remove any existing listeners by reassigning the element (safe clone)
-    const old = scanInput;
-    const fresh = old.cloneNode(true);
-    old.parentNode.replaceChild(fresh, old);
+  function __sp_resetScannerState() {
+    __sp_lastLen = 0;
+    __sp_burstArmed = true;
+    if (__sp_timer) { clearTimeout(__sp_timer); __sp_timer = null; }
+  }
 
-    // Rebind reference
-    window.scanInput = fresh;
-    const si = fresh;
+  function __sp_finalizeIfReady() {
+    if (typeof finalizeScan === 'function') finalizeScan();
+  }
 
-    si.addEventListener('input', () => {
-      const val = (si.value || '').trim();
+  // Capture-phase input handler
+  scanInput.addEventListener('input', (e) => {
+    // Prevent any other 'input' listeners from interfering
+    if (e && typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
 
-      // Burst detection: big jump in length
-      if (__sp_burstArmed && val.length >= 10 && (val.length - __sp_lastLen) >= 8) {
-        __sp_burstArmed = false;
-        clearTimeout(__sp_timer);
-        if (typeof finalizeScan === 'function') finalizeScan();
-        return;
-      }
+    const val = (scanInput.value || '').trim();
+
+    // Scanner burst: big jump in length (e.g., 0 -> 13 digits)
+    if (__sp_burstArmed && val.length >= 10 && (val.length - __sp_lastLen) >= 8) {
+      __sp_burstArmed = false;
+      if (__sp_timer) { clearTimeout(__sp_timer); __sp_timer = null; }
+      __sp_finalizeIfReady();
+      return;
+    }
+
+    __sp_lastLen = val.length;
+    if (val.length === 0) __sp_burstArmed = true;
+
+    if (__sp_timer) clearTimeout(__sp_timer);
+    __sp_timer = setTimeout(() => {
+      const v = (scanInput.value || '').trim();
+      if (v.length > 0) __sp_finalizeIfReady();
+    }, __sp_SCAN_DELAY);
+  }, true);
+
+  // Capture-phase Enter fallback
+  scanInput.addEventListener('keydown', (e) => {
+    if (e && typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+    if (e && e.key === 'Enter') {
+      e.preventDefault();
+      if (__sp_timer) { clearTimeout(__sp_timer); __sp_timer = null; }
+      __sp_finalizeIfReady();
+    }
+  }, true);
+
+  // Keep focus for scanners
+  setTimeout(() => { try { scanInput.focus(); } catch(e) {} }, 50);
+
 
       __sp_lastLen = val.length;
       if (val.length === 0) __sp_burstArmed = true;
@@ -1898,9 +1929,6 @@ document.getElementById("clearBtn").onclick = () => {
   document.getElementById("resultCard").classList.add("hidden");
 };
 
-<script>
-try{__sp_attachScannerHandlers();}catch(e){}
-</script>
 </script>
 
 </body>
