@@ -840,60 +840,33 @@ let lastScanData = null;
 const scanInput = document.getElementById("scanInput");
 
 /* ==================== BLUETOOTH SCANNER HANDLER ==================== */
-/* ✅ Scanner fix (stable):
-   - Uses scanInput.value (what the scanner actually types)
-   - Processes after short inactivity OR Enter
-   - Clears the field after processing so scans don't concatenate
-   - Uses .oninput/.onkeydown (overwrites any other handlers -> avoids multi-listener fights)
-*/
 let __scan_timer = null;
 
 function __scan_clean(v){
   return String(v || "").replace(/[^0-9xXbB]/g,"").trim();
 }
 
-// Override-aware finalize: if the app defines finalizeScan(), we'll call it with a value.
-// If finalizeScan takes no args, we'll temporarily set scanInput.value then call it.
-function __scan_callFinalize(cleanVal){
-  if (!cleanVal) return;
-
-  try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
-
-  // Most robust: if app exposes finalizeScanWithValue
-  if (typeof window.finalizeScanWithValue === "function") {
-    window.finalizeScanWithValue(cleanVal);
-    return;
-  }
-
-  // If app has finalizeScan(), make it see this value
-  if (typeof window.finalizeScan === "function") {
-    const prev = scanInput.value;
-    scanInput.value = cleanVal;
-    try { window.finalizeScan(); }
-    finally { /* finalizeScan usually clears it; if not, restore to empty */ }
-    return;
-  }
-
-  // Fallback
-  console.warn("No finalizeScan() found; scanned:", cleanVal);
-}
-
+// 1. DEDICATED SCANNER ENTRY POINT (Robust to clearing)
 function __scan_processNow(){
   if (__scan_timer) { clearTimeout(__scan_timer); __scan_timer = null; }
+  
   const raw = scanInput.value;
   const cleaned = __scan_clean(raw);
 
-  // Many scanners type 12-14 digits (UPC/EAN) or 10/13 (ISBN)
+  // If looks like valid barcode (>=10 chars)
   if (cleaned.length >= 10) {
-    // Clear immediately so next scan doesn't append
+    // Clear immediately to prevent double scans
     scanInput.value = "";
-    __scan_callFinalize(cleaned);
+    
+    // Call the Value-Based finalize function directly
+    finalizeScanWithValue(cleaned);
   }
 }
 
+// 2. Event Listeners
 scanInput.oninput = () => {
   if (__scan_timer) clearTimeout(__scan_timer);
-  // short inactivity window; scanners type in ~50ms bursts
+  // Short delay (80ms) to let scanner finish typing
   __scan_timer = setTimeout(__scan_processNow, 80);
 };
 
@@ -904,9 +877,9 @@ scanInput.onkeydown = (e) => {
   }
 };
 
-// Keep focus for scanner
+// Keep focus
+document.body.onclick = () => { if(document.activeElement !== scanInput && document.activeElement.tagName !== "INPUT") scanInput.focus(); };
 setTimeout(()=>{ try{ scanInput.focus(); }catch(e){} }, 50);
-scanInput.focus();
 
 /* ==================== UPDATE ENGINE BADGE ==================== */
 function updateKeepaIndicator() {
@@ -1002,13 +975,23 @@ document.getElementById("backFromSettings").onclick = () => {
   document.getElementById("mainPage").style.display = "block";
 };
 
-/* ==================== FINALIZE SCAN ==================== */
+/* ==================== FINALIZE SCAN (UI Wrapper) ==================== */
+// This is called if user manually types and hits Enter on a virtual keyboard
+// (But mostly we rely on finalizeScanWithValue)
 async function finalizeScan() {
   const input = scanInput.value.trim();
+  if (!input) return;
+  
   scanInput.value = "";
   scanInput.focus();
+  
+  finalizeScanWithValue(input);
+}
 
-  if (!input) return;
+
+/* ==================== FINALIZE SCAN WITH VALUE (Core Logic) ==================== */
+async function finalizeScanWithValue(inputCode) {
+  if (!inputCode) return;
   
   // Vibrate feedback
   if (navigator.vibrate) navigator.vibrate(40);
@@ -1018,13 +1001,8 @@ async function finalizeScan() {
     console.warn('No Keepa key - using mock data');
   }
   
-  if (CONFIG.useGemini && !CONFIG.geminiKey) {
-    alert('⚠️ Gemini is enabled but no API key provided. Falling back to local engine.');
-    CONFIG.useGemini = false;
-  }
-  
   // Detect input type
-  const identifier = detectInputType(input);
+  const identifier = detectInputType(inputCode);
   
   if (checkDuplicate(identifier)) return;
   
@@ -1036,7 +1014,7 @@ async function finalizeScan() {
   
   try {
     // Step 1: Query Keepa
-    const keepaData = await queryKeepa(identifier, input);
+    const keepaData = await queryKeepa(identifier, inputCode);
     
     if (!keepaData) {
       throw new Error("Item not found in Keepa database");
@@ -1643,28 +1621,24 @@ function getEffectiveProfitFloor(baseFloor, velocity) {
 /* Simple confidence heuristic for LOCAL engine (Gemini can override with its own confidence) */
 /* ==================== CONFIDENCE CALCULATION ==================== 
  * Confidence score (5-95%) represents how sure we are about the decision.
- * 
- * For ACCEPT decisions:
- *   - 75%+ = Strong buy (good profit, good velocity, clear price signals)
- *   - 50-75% = Moderate buy (acceptable profit but some risk factors)
- *   - <50% = REJECT (auto-converted - we don't recommend low-confidence buys)
- * 
- * For REJECT decisions:
- *   - Higher % = More confident in rejecting (clear reasons to pass)
- *   - Lower % = Borderline reject (might work but too risky)
- * 
- * Factors that increase confidence:
- *   + Clear market price data (FBA/Buy Box prices available)
- *   + Profit well above floor ($5+ cushion)
- *   + Fast/Steady sales velocity (many rank drops)
- *   + Accelerating trend (sales speeding up)
- * 
- * Factors that decrease confidence:
- *   - Missing price data
- *   - Thin margins (profit barely above floor)
- *   - Slow/Very slow velocity
- *   - Declining trend
- *   - Extremely high rank (>1M) with low margin
+ * * For ACCEPT decisions:
+ * - 75%+ = Strong buy (good profit, good velocity, clear price signals)
+ * - 50-75% = Moderate buy (acceptable profit but some risk factors)
+ * - <50% = REJECT (auto-converted - we don't recommend low-confidence buys)
+ * * For REJECT decisions:
+ * - Higher % = More confident in rejecting (clear reasons to pass)
+ * - Lower % = Borderline reject (might work but too risky)
+ * * Factors that increase confidence:
+ * + Clear market price data (FBA/Buy Box prices available)
+ * + Profit well above floor ($5+ cushion)
+ * + Fast/Steady sales velocity (many rank drops)
+ * + Accelerating trend (sales speeding up)
+ * * Factors that decrease confidence:
+ * - Missing price data
+ * - Thin margins (profit barely above floor)
+ * - Slow/Very slow velocity
+ * - Declining trend
+ * - Extremely high rank (>1M) with low margin
  */
 function computeLocalConfidence(keepaData, velocity, decision, profit, effectiveFloor) {
   let score = 50;
