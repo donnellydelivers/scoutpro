@@ -280,21 +280,46 @@ button:disabled {
 }
 
 .gem-reasons {
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 16px;
   background: rgba(251, 191, 36, 0.1);
   border-radius: 8px;
   border: 1px solid rgba(251, 191, 36, 0.3);
+  overflow: hidden;
+}
+
+.gem-reasons summary {
+  padding: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fbbf24;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gem-reasons summary::-webkit-details-marker {
+  display: none;
+}
+
+.gem-reasons summary::before {
+  content: '▶';
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.gem-reasons[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.gem-reasons-content {
+  padding: 0 12px 12px 12px;
   font-size: 12px;
   color: var(--text);
   text-align: left;
-}
-
-.gem-reasons strong {
-  color: #fbbf24;
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
+  line-height: 1.6;
 }
 
 .decision {
@@ -312,9 +337,9 @@ button:disabled {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 16px;
+  margin-bottom: 20px;
 }
 
 .stat {
@@ -322,15 +347,16 @@ button:disabled {
 }
 
 .stat-label {
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   font-family: 'JetBrains Mono', 'Courier New', monospace;
 }
@@ -648,13 +674,14 @@ input[type="range"]::-moz-range-thumb {
           <div class="stat-label">Buy Box</div>
           <div class="stat-value" id="bb">—</div>
         </div>
-      <div class="pill-row" id="signalPills" aria-label="Velocity and confidence">
-        <span class="pill info" id="velocityPill"><span class="k">Velocity</span> —</span>
-        <span class="pill info" id="trendPill"><span class="k">Trend</span> —</span>
-        <span class="pill info" id="floorPill"><span class="k">Floor</span> —</span>
-        <span class="pill info" id="confPill"><span class="k">Conf</span> —</span>
-      </div>
-
+        <div class="stat">
+          <div class="stat-label">Avg Sales Rank</div>
+          <div class="stat-value" id="avgRank">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span id="confidenceLabel">Buy Confidence</span></div>
+          <div class="stat-value" id="confidence">—</div>
+        </div>
       </div>
       
       <div class="explanation" id="explanation"></div>
@@ -928,7 +955,7 @@ async function finalizeScan() {
     // Step 4: Add to history
     addToHistory(decision, keepaData);
     
-    document.getElementById("statusText").textContent = `${decision.verdict}: ${keepaData.title}`;
+    document.getElementById("statusText").textContent = keepaData.title;
     document.getElementById("processing").style.display = "none";
     
   } catch (error) {
@@ -1018,14 +1045,19 @@ async function queryKeepa(identifier, rawInput) {
       throw new Error('Title search not yet implemented. Please scan ISBN/UPC or enter ASIN.');
     }
     
-    // Stats parameter: 0 = current prices, 1 = sales rank history
-    // We want current prices (Amazon, New, Used, etc.) and basic stats
-    const stats = 180; // Get current + 180d stats (no extra token cost per Keepa docs)
-    const history = 0; // No price history arrays (saves tokens)
+    // Keepa API parameters:
+    // stats: 0 = no stats, 1 = include stats like sales rank drops
+    // history: 0 = no history, 1 = price history (we need this for csv arrays!)
+    const stats = 1; // Include stats (sales rank drops, etc)
+    const history = 1; // Include price history (needed for csv arrays!)
     
-    const url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&stats=${stats}&history=${history}`;
+    const keepaUrl = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&stats=${stats}&history=${history}`;
     
-    console.log('Keepa API call:', url.replace(CONFIG.keepaKey, 'HIDDEN'));
+    // Use CORS proxy to avoid browser CORS restrictions
+    const corsProxy = 'https://corsproxy.io/?';
+    const url = corsProxy + encodeURIComponent(keepaUrl);
+    
+    console.log('Keepa API call:', keepaUrl.replace(CONFIG.keepaKey, 'HIDDEN'));
     
     const response = await fetch(url);
     
@@ -1660,35 +1692,20 @@ function displayResult(decision, keepaData) {
   document.getElementById("profit").textContent = `$${decision.profit.toFixed(2)}`;
   document.getElementById("roi").textContent = `${decision.roi}%`;
   document.getElementById("bb").textContent = keepaData.buyBoxWinner;
-
-  // Velocity/Trend/Floor/Confidence pills
+  
+  // Calculate average sales rank (simple approximation - current rank)
+  const avgRank = keepaData.salesRank;
+  document.getElementById("avgRank").textContent = avgRank > 0 ? avgRank.toLocaleString() : "—";
+  
+  // Calculate confidence
   const v = (decision && decision.velocity) ? decision.velocity : computeVelocitySignals(keepaData);
   const effFloor = getEffectiveProfitFloor(PROFIT_FLOOR, v);
   const conf = (typeof decision.confidence === "number") ? decision.confidence : computeLocalConfidence(keepaData, v, decision, decision.profit, effFloor);
-
-  const velP = document.getElementById("velocityPill");
-  if (!velP) { /* pills not present */ }
-  const trP = document.getElementById("trendPill");
-  const flP = document.getElementById("floorPill");
-  const cfP = document.getElementById("confPill");
-
-  if (velP && trP && flP && cfP) {
-
-  const velClass = (v.velocityBand === "FAST" || v.velocityBand === "STEADY") ? "good" : (v.velocityBand === "SLOW" ? "warn" : "bad");
-  const trClass = (v.trend === "ACCELERATING") ? "good" : (v.trend === "DECLINING" ? "bad" : "info");
-  const cfClass = (conf >= 75) ? "good" : (conf >= 55 ? "warn" : "bad");
-
-  velP.className = `pill ${velClass}`;
-  trP.className = `pill ${trClass}`;
-  flP.className = `pill info`;
-  cfP.className = `pill ${cfClass}`;
-
-  velP.innerHTML = `<span class="k">Velocity</span> ${v.velocityBand} • ${v.velocityScore}`;
-  trP.innerHTML  = `<span class="k">Trend</span> ${v.trend}`;
-  flP.innerHTML  = `<span class="k">Floor</span> $${PROFIT_FLOOR.toFixed(2)} hard • $${effFloor.toFixed(2)} soft`;
-  cfP.innerHTML  = `<span class="k">Conf</span> ${Math.round(conf)}%`;
-
-  }
+  
+  // Update confidence label and value based on verdict
+  const confidenceLabel = document.getElementById("confidenceLabel");
+  confidenceLabel.textContent = decision.verdict === "ACCEPT" ? "Buy Confidence" : "Reject Confidence";
+  document.getElementById("confidence").textContent = `${Math.round(conf)}%`;
   
   const profitEl = document.getElementById("profit");
   profitEl.className = "stat-value" + (decision.profit < 0 ? " negative" : "");
@@ -1697,11 +1714,11 @@ function displayResult(decision, keepaData) {
   let explanationHTML = decision.reasoning;
   
   if (isGem) {
-    explanationHTML += '<div class="gem-reasons"><strong>Why This is a Hidden Gem:</strong>';
+    explanationHTML += '<details class="gem-reasons" open><summary>✨ Why This is a Hidden Gem</summary><div class="gem-reasons-content">';
     gems.forEach(gem => {
       explanationHTML += `<div style="margin:6px 0;">${gem.icon} <strong>${gem.label}:</strong> ${gem.details}</div>`;
     });
-    explanationHTML += '</div>';
+    explanationHTML += '</div></details>';
   }
   
   document.getElementById("explanation").innerHTML = explanationHTML;
@@ -1720,7 +1737,7 @@ async function reanalyzeWithNewThresholds() {
   try {
     const decision = localDecisionEngine(lastScanData.keepaData);
     displayResult(decision, lastScanData.keepaData);
-    document.getElementById("statusText").textContent = `${decision.verdict}: ${lastScanData.keepaData.title}`;
+    document.getElementById("statusText").textContent = lastScanData.keepaData.title;
   } catch (error) {
     console.error('Reanalysis error:', error);
     // Silently fail - keep showing old data
