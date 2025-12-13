@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ScoutPro AI v3.1</title>
+<title>ScoutPro AI v3.2 (FBA‑only)</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
@@ -226,6 +226,15 @@ button:disabled {
 .banner.buy { 
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), transparent);
   border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.banner.buy.strong {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.20), rgba(16, 185, 129, 0.10));
+  border-color: rgba(251, 191, 36, 0.45);
+}
+.banner.buy.borderline {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(15, 23, 42, 0.55));
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 .banner.pass { 
@@ -528,13 +537,20 @@ input[type="range"]::-moz-range-thumb {
   margin-bottom: 8px;
 }
 
-.history-decision.ACCEPT {
-  background: rgba(16, 185, 129, 0.2);
+.history-decision.BUY_STRONG {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fbbf24;
+}
+.history-decision.BUY {
+  background: rgba(16, 185, 129, 0.18);
   color: var(--green);
 }
-
+.history-decision.BUY_BORDERLINE {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+}
 .history-decision.REJECT {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.16);
   color: var(--red);
 }
 
@@ -655,6 +671,12 @@ input[type="range"]::-moz-range-thumb {
 <header>
   <div class="brand">
     <div class="brand-title">ScoutPro AI</div>
+    
+    <div class="brand-badge" id="fbaBadge" style="display:flex; background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.35); color: var(--green);">
+      <div class="status-dot" style="background:var(--green); animation:none;"></div>
+      <span>FBA ONLY</span>
+    </div>
+
     <div class="brand-badge" id="keepaBadge" style="display:none;">
       <div class="status-dot" style="background:var(--green);"></div>
       <span>KEEPA</span>
@@ -685,7 +707,7 @@ input[type="range"]::-moz-range-thumb {
         <span>HIDDEN GEM</span>
         <span class="gem-sparkle">✨</span>
       </div>
-      <div class="decision" id="decision">ACCEPT</div>
+      <div class="decision" id="decision">—</div>
       <div class="reason" id="reason"></div>
       
       <div class="stats">
@@ -710,7 +732,7 @@ input[type="range"]::-moz-range-thumb {
           <div class="stat-value" id="avgRank">—</div>
         </div>
         <div class="stat">
-          <div class="stat-label"><span id="confidenceLabel">Buy Confidence</span></div>
+          <div class="stat-label"><span id="confidenceLabel">Buy Score</span></div>
           <div class="stat-value" id="confidence">—</div>
         </div>
       </div>
@@ -736,7 +758,23 @@ input[type="range"]::-moz-range-thumb {
           <span class="slider-value">$<span id="profitFloorVal">5.00</span></span>
         </div>
         <input type="range" min="1" max="20" step="1" id="profitFloorSlider" value="5" />
+      
+      <div class="slider-group" style="margin-top:18px;">
+        <div class="slider-label">
+          <span>Item Condition</span>
+          <span class="slider-value"><span id="itemConditionVal">NEW</span></span>
+        </div>
+        <select id="itemConditionSelect" class="settings-input" style="background: var(--panel); border-radius: 12px;">
+          <option value="NEW">NEW (FBA)</option>
+          <option value="USED_LIKE_NEW">USED – Like New</option>
+          <option value="USED_VERY_GOOD">USED – Very Good</option>
+          <option value="USED_GOOD">USED – Good</option>
+          <option value="USED_ACCEPTABLE">USED – Acceptable</option>
+        </select>
+        <div class="settings-hint" style="margin-top:8px;">FBA-only mode: used is evaluated as Used-FBA. FBM is treated only as competition/price pressure.</div>
       </div>
+
+</div>
     </div>
   </div>
 </div>
@@ -790,7 +828,8 @@ let PROFIT_FLOOR = 5.00; // HARD floor set by slider
 
 
 const CONFIG = {
-  keepaKey: localStorage.getItem('keepaKey') || ''
+  keepaKey: localStorage.getItem('keepaKey') || '',
+  itemCondition: localStorage.getItem('itemCondition') || 'NEW'
 };
 
 const seenIdentifiers = new Set();
@@ -913,6 +952,31 @@ pfSlider.oninput = () => {
 pfSlider.onchange = scheduleReanalysisAfterAdjust;
 pfSlider.onpointerup = scheduleReanalysisAfterAdjust;
 pfSlider.onkeyup = (e) => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") scheduleReanalysisAfterAdjust(); };
+
+
+/* ==================== ITEM CONDITION (FBA-ONLY) ==================== */
+const condSelect = document.getElementById("itemConditionSelect");
+const condVal = document.getElementById("itemConditionVal");
+
+function setItemCondition(v){
+  CONFIG.itemCondition = v || 'NEW';
+  localStorage.setItem('itemCondition', CONFIG.itemCondition);
+  if (condSelect) condSelect.value = CONFIG.itemCondition;
+  if (condVal) condVal.textContent = CONFIG.itemCondition.replaceAll('_',' ');
+  // Reanalyze last scan so the user can toggle New/Used without rescanning
+  if (lastScanData) reanalyzeWithNewThresholds();
+}
+if (condSelect){
+  condSelect.value = CONFIG.itemCondition;
+  condSelect.onchange = (e)=> setItemCondition(e.target.value);
+}
+if (condVal) condVal.textContent = (CONFIG.itemCondition||'NEW').replaceAll('_',' ');
+
+/* Helper: item type from condition (FBA-only) */
+function getItemType(){
+  return (CONFIG.itemCondition || 'NEW') === 'NEW' ? 'NEW' : 'USED';
+}
+
 
 /* ==================== SETTINGS ==================== */
 document.getElementById("settingsBtn").onclick = () => {
@@ -1290,7 +1354,7 @@ function detectHiddenGems(keepaData, decision) {
   }
   
   // GEM 3: Amazon controls BB but we can still profit
-  if (keepaData.buyBoxWinner === "AMAZON" && decision.verdict === "ACCEPT") {
+  if (keepaData.buyBoxWinner === "AMAZON" && decision.verdict !== "REJECT") {
     gems.push({
       type: 'amazon-gap',
       icon: '🎯',
@@ -1350,7 +1414,7 @@ function detectHiddenGems(keepaData, decision) {
   }
   
   // GEM 9: FBM dominant but FBA opportunity
-  if (keepaData.buyBoxWinner === "FBM" && keepaData.offerCountFBA <= 2 && decision.verdict === "ACCEPT") {
+  if (keepaData.buyBoxWinner === "FBM" && keepaData.offerCountFBA <= 2 && decision.verdict !== "REJECT") {
     gems.push({
       type: 'fba-upgrade',
       icon: '📦',
@@ -1638,136 +1702,279 @@ function computeLocalConfidence(keepaData, velocity, decision, profit, effective
   return score;
 }
 
-function localDecisionEngine(keepaData) {
-  // -------- Pricing anchor (book-aware) --------
-  // Prefer FBA market price (Prime-competitive). If not available, fall back to Buy Box, then FBM.
-  const market = (keepaData.currentPriceFBA && keepaData.currentPriceFBA > 0)
-    ? keepaData.currentPriceFBA
-    : ((keepaData.currentPriceBuyBox && keepaData.currentPriceBuyBox > 0)
-        ? keepaData.currentPriceBuyBox
-        : (keepaData.currentPriceFBM || keepaData.marketPrice || 0));
 
-  // Undercut strategy by who appears to control the BB
-  let targetPrice = market || 0;
-  if (keepaData.buyBoxWinner === "AMAZON" && keepaData.currentPriceAmazon > 0) {
-    targetPrice = keepaData.currentPriceAmazon * 0.95; // undercut Amazon
-  } else if (keepaData.buyBoxWinner === "FBM" && targetPrice > 0) {
-    targetPrice = targetPrice * 0.98;
-  } else if (keepaData.buyBoxWinner === "FBA" && targetPrice > 0) {
-    targetPrice = targetPrice * 0.97;
+/* ==================== FBA-ONLY BUY SCORE ENGINE ==================== */
+function getVerdictFromScore(score){
+  if (score >= 85) return { label: "STRONG BUY", icon: "🔥", cls: "buy strong" };
+  if (score >= 70) return { label: "BUY", icon: "✅", cls: "buy" };
+  if (score >= 55) return { label: "BORDERLINE BUY", icon: "⚠️", cls: "buy borderline" };
+  return { label: "REJECT", icon: "⛔", cls: "pass" };
+}
+
+function hardReject(reason, reasons){
+  return { score: Math.min(39, Math.max(5, (reasons||[]).length * 4)), reasons: (reasons||[]).concat([`⛔ Auto-reject: ${reason}`]) };
+}
+
+function detectBuyBoxRotationFbaOnly(keepa){
+  // We do NOT sell FBM; rotation only matters as a risk/opportunity signal for FBA
+  // Heuristic: FBM BB + meaningful sellers implies rotation / price elasticity
+  if (keepa.buyBoxWinner === "AMAZON") return "AMAZON_LOCK";
+  if (keepa.buyBoxWinner === "FBM") return "ROTATING";
+  if (keepa.buyBoxWinner === "FBA" && (keepa.offerCountFBA || 0) >= 6) return "STABLE";
+  return "UNKNOWN";
+}
+
+function amazonPenalty(keepa, profit, floor){
+  if (keepa.buyBoxWinner !== "AMAZON") return { penalty: 0, reason: null };
+  if (profit >= floor * 2) return { penalty: -5, reason: "⚠️ Amazon owns Buy Box, but margin provides cushion" };
+  return { penalty: -20, reason: "⛔ Amazon controls Buy Box — price ceiling risk" };
+}
+
+function computeBuyScoreFbaOnly(keepa, profit, profitFloor, velocity, itemType){
+  let score = 0;
+  const reasons = [];
+
+  // ---- Velocity (0–30) ----
+  const d30 = Number(velocity.drops30 || 0);
+  if (d30 >= 30) { score += 30; reasons.push("🔥 Strong sales velocity (30+ sales/month)"); }
+  else if (d30 >= 20) { score += 25; reasons.push("✅ Healthy monthly sales volume"); }
+  else if (d30 >= 10) { score += 18; reasons.push("✅ Consistent ongoing demand"); }
+  else if (d30 >= 5)  { score += 10; reasons.push("⚠️ Slow but real sales activity"); }
+  else if (d30 >= 3)  { score += 5;  reasons.push("⚠️ Very limited sales velocity"); }
+  else {
+    reasons.push("⛔ No meaningful sales activity detected");
+    return hardReject("Insufficient velocity", reasons);
   }
 
+  // ---- Acceleration (0–15) ----
+  const accelRatio = d30 / Math.max(1, Number(velocity.expected30 || 1));
+  if (accelRatio >= 1.5) { score += 15; reasons.push("📈 Sales accelerating"); }
+  else if (accelRatio >= 1.1) { score += 10; reasons.push("📈 Sales improving"); }
+  else if (accelRatio >= 0.9) { score += 7; reasons.push("➖ Sales stable"); }
+  else if (accelRatio >= 0.7) { score += 3; reasons.push("⚠️ Sales slowing"); }
+  else { reasons.push("⛔ Sales declining"); }
+
+  // ---- Profit strength (0–25) ----
+  const pr = profit / Math.max(0.01, profitFloor);
+  if (pr >= 2.0) { score += 25; reasons.push("💰 Exceptional profit cushion"); }
+  else if (pr >= 1.5) { score += 20; reasons.push("💰 Strong margin above target"); }
+  else if (pr >= 1.2) { score += 15; reasons.push("✅ Healthy margin"); }
+  else if (pr >= 1.0) { score += 8; reasons.push("⚠️ Meets minimum profit"); }
+  else {
+    reasons.push("⛔ Profit below minimum target");
+    return hardReject("Below profit floor", reasons);
+  }
+
+  // ---- Price signal quality (0–10) ----
+  const hasFBA = (keepa.currentPriceFBA && keepa.currentPriceFBA > 0);
+  const hasBB  = (keepa.currentPriceBuyBox && keepa.currentPriceBuyBox > 0);
+  const hasFBM = (keepa.currentPriceFBM && keepa.currentPriceFBM > 0);
+  if (hasFBA && hasBB) { score += 10; reasons.push("📦 Clear FBA + Buy Box price signal"); }
+  else if (hasFBA) { score += 7; reasons.push("📦 Reliable FBA market pricing"); }
+  else if (hasFBM) { score += 3; reasons.push("⚠️ Only FBM price signal — FBA pricing risk"); }
+  else {
+    reasons.push("⛔ No reliable price signal");
+    return hardReject("No price signal", reasons);
+  }
+
+  // ---- Buy Box owner (FBA-only interpretation) ----
+  const bb = keepa.buyBoxWinner || "NONE";
+  const rotation = detectBuyBoxRotationFbaOnly(keepa);
+
+  if (itemType === "NEW") {
+    if (bb === "FBA") { score += 10; reasons.push("📦 FBA sellers control Buy Box — Prime path validated"); }
+    else if (bb === "FBM") { score -= 3; reasons.push("⚠️ FBM controls Buy Box — price pressure for FBA"); }
+    else if (bb === "AMAZON") {
+      const ap = amazonPenalty(keepa, profit, profitFloor);
+      score += ap.penalty;
+      if (ap.reason) reasons.push(ap.reason);
+    } else {
+      score -= 10; reasons.push("⛔ No stable Buy Box — risky for FBA pricing");
+    }
+  } else { // USED, still FBA-only
+    if (bb === "FBA") { score += 8; reasons.push("📦 FBA Buy Box — Prime helps used conversion"); }
+    else if (bb === "FBM") { score -= 2; reasons.push("⚠️ Used FBM may cap price"); }
+    else { score -= 6; reasons.push("⚠️ No stable Buy Box for used — slower turnover risk"); }
+  }
+
+  // Rotation: slight bonus if rotating (more opportunity), but still risk for FBA if FBM-heavy
+  if (rotation === "ROTATING") {
+    score += (itemType === "USED" ? 4 : 2);
+    reasons.push("🔄 Buy Box rotation detected");
+  }
+  if (rotation === "AMAZON_LOCK") {
+    score -= 5;
+    reasons.push("🏷️ Amazon lock risk");
+  }
+
+  // ---- Competition (0–10) ----
+  const fbaCount = Number(keepa.offerCountFBA || 0);
+  if (fbaCount <= 2) { score += 10; reasons.push("🏆 Very low FBA competition"); }
+  else if (fbaCount <= 5) { score += 7; reasons.push("✅ Manageable FBA competition"); }
+  else if (fbaCount <= 10) { score += 4; reasons.push("⚠️ Crowded FBA listing"); }
+  else { reasons.push("⛔ Highly competitive FBA listing"); }
+
+  // ---- Rank context (0–10) (proxy: current rank) ----
+  const r = Number(keepa.salesRank || 9999999);
+  if (r < 200000) { score += 10; reasons.push("📊 Strong historical demand (rank proxy)"); }
+  else if (r < 500000) { score += 7; reasons.push("📊 Healthy long-tail demand (rank proxy)"); }
+  else if (r < 1000000) { score += 4; reasons.push("⚠️ Moderate demand (rank proxy)"); }
+  else { reasons.push("⚠️ Weak demand (rank proxy)"); }
+
+  // Clamp
+  score = Math.max(5, Math.min(100, Math.round(score)));
+
+  return { score, reasons };
+}
+
+function applyFbaVerdictCaps(v, keepa, profit, floor, velocity){
+  // Amazon BB: never STRONG BUY
+  if (keepa.buyBoxWinner === "AMAZON" && v.label === "STRONG BUY") {
+    v.label = "BUY"; v.icon = "⚠️"; v.cls = "buy";
+  }
+  // FBM BB + thin margin: cap at BORDERLINE BUY
+  if (keepa.buyBoxWinner === "FBM" && profit < floor * 1.25 && v.label === "STRONG BUY") {
+    v.label = "BUY"; v.icon = "⚠️"; v.cls = "buy";
+  }
+  if (keepa.buyBoxWinner === "FBM" && profit < floor * 1.15 && (v.label === "BUY")) {
+    v.label = "BORDERLINE BUY"; v.icon = "⚠️"; v.cls = "buy borderline";
+  }
+  // No BB + low velocity: force REJECT
+  const d30 = Number(velocity.drops30 || 0);
+  if ((!keepa.currentPriceBuyBox || keepa.currentPriceBuyBox <= 0) && d30 < 10) {
+    v.label = "REJECT"; v.icon = "⛔"; v.cls = "pass";
+  }
+  return v;
+}
+
+/* ==================== FBA-ONLY LOCAL DECISION ENGINE ==================== */
+function localDecisionEngine(keepaData) {
+  const itemType = getItemType(); // NEW / USED
+
+  // -------- Market price anchor (FBA-first) --------
+  const marketFBA = (keepaData.currentPriceFBA && keepaData.currentPriceFBA > 0) ? keepaData.currentPriceFBA : 0;
+  const marketBB  = (keepaData.currentPriceBuyBox && keepaData.currentPriceBuyBox > 0) ? keepaData.currentPriceBuyBox : 0;
+  const marketFBM = (keepaData.currentPriceFBM && keepaData.currentPriceFBM > 0) ? keepaData.currentPriceFBM : 0;
+  const marketUsed= (keepaData.currentPriceUsed && keepaData.currentPriceUsed > 0) ? keepaData.currentPriceUsed : 0;
+
+  // For FBA sellers:
+  // - NEW: use FBA market if available, else BB, else FBM (as last resort price signal)
+  // - USED: use Used price if available, else FBA/BB fallback (still FBA-only selling path)
+  const market = (itemType === "USED")
+    ? (marketUsed || marketFBA || marketBB || marketFBM || keepaData.marketPrice || 0)
+    : (marketFBA || marketBB || marketFBM || keepaData.marketPrice || 0);
+
   // If we don't have any price signal, it's unsafe.
-  if (!targetPrice || targetPrice <= 0) {
+  if (!market || market <= 0) {
     return {
       verdict: "REJECT",
+      verdictIcon: "⛔",
+      buyScore: 25,
       targetPrice: 0,
       profit: -999,
       roi: -999,
-      reasoning: "✗ No reliable price signal from Keepa (missing FBA/BB/New prices)."
+      reasoning: "⛔ No reliable price signal from Keepa (missing FBA/BB/Used prices).",
+      scoreReasons: ["⛔ No reliable price signal"],
+      velocity: computeVelocitySignals(keepaData)
     };
   }
 
-  // -------- Fee model (book-aware, Scoutly-ish) --------
-  // We don't have exact dimensions, so we use a conservative estimator:
-  // - Referral fee: ~15% for most categories
-  // - Closing fee (media): ~$1.80 per unit (books are media) 
-  // - Fulfillment fee: weight-based approximation; if < $10, apply Low-Price FBA discount (about $0.86 on avg)
-  // Sources (high-level): Amazon Seller Central low-price FBA discount + media closing fee references.
+  // -------- Target price strategy (FBA-only) --------
+  // Price slightly under the FBA market if possible. If FBM owns BB, cap closer to FBM.
+  let targetPrice = market;
+
+  // Undercut by Buy Box owner (but we are FBA)
+  if (keepaData.buyBoxWinner === "AMAZON" && keepaData.currentPriceAmazon > 0) targetPrice = keepaData.currentPriceAmazon * 0.95;
+  else if (keepaData.buyBoxWinner === "FBA") targetPrice = targetPrice * 0.97;
+  else if (keepaData.buyBoxWinner === "FBM") targetPrice = targetPrice * 0.98;
+  else targetPrice = targetPrice * 0.98;
+
+  // FBM price pressure cap (competition only)
+  if (marketFBM > 0 && targetPrice > marketFBM * 1.08) {
+    targetPrice = marketFBM * 1.05;
+  }
+
+  // Round
+  targetPrice = Math.round(targetPrice * 100) / 100;
+
+  // -------- Fee model (book-aware, conservative) --------
   function estimateFbaFees(price, weightLbs) {
     const referral = price * 0.15;
-
-    // Media closing fee (books)
-    const closing = 1.80;
-
-    // Fulfillment fee rough model:
-    // Base for ~1 lb standard-size is ~3.2; add ~0.35 per extra lb (conservative)
+    const closing = 1.80; // media closing fee proxy
     const w = Math.max(0.25, weightLbs || 1.0);
     let fulfillment = 3.20 + Math.max(0, w - 1.0) * 0.35;
-
-    // Low-Price FBA (under $10) discount
-    if (price < 10) fulfillment = Math.max(2.00, fulfillment - 0.86);
-
+    if (price < 10) fulfillment = Math.max(2.00, fulfillment - 0.86); // low-price discount proxy
     return { referral, closing, fulfillment, total: (referral + closing + fulfillment) };
   }
 
-  const shippingToAmazon = 0.75; // inbound prep/ship estimate
+  const shippingToAmazon = 0.75;
   const totalCOGS = BUY_COST + shippingToAmazon;
 
   const fees = estimateFbaFees(targetPrice, keepaData.weight);
   const profit = targetPrice - totalCOGS - fees.total;
   const roi = Math.round((profit / Math.max(0.01, totalCOGS)) * 100);
 
-  // Confidence (local heuristic)
-
-  // -------- Decision logic tuned for real-world book scans --------
-  // Rank is a snapshot; drops are the story.
+  // -------- Velocity + profit floor tuning --------
   const velocity = computeVelocitySignals(keepaData);
-
-  // Auto-tuned profit floor (soft for FAST/ACCELERATING, stricter for VERY_SLOW/DECLINING)
   const effectiveFloor = getEffectiveProfitFloor(PROFIT_FLOOR, velocity);
 
-  // Slow mover heuristic: very high rank + very low drops
-  const slowMover = ((keepaData.salesRank || 0) >= 900000 && velocity.drops30 < 5);
+  // Compute Buy Score (FBA-only)
+  const scored = computeBuyScoreFbaOnly(keepaData, profit, effectiveFloor, velocity, itemType);
+  let buyScore = scored.score;
+  let scoreReasons = scored.reasons;
 
+  // Map to verdicts: STRONG BUY / BUY / BORDERLINE BUY / REJECT
+  let v = getVerdictFromScore(buyScore);
+  v = applyFbaVerdictCaps(v, keepaData, profit, effectiveFloor, velocity);
 
+  // If capped to REJECT, clamp score display a bit (UX)
+  if (v.label === "REJECT" && buyScore > 54) buyScore = 54;
 
-  let verdict = "REJECT";
+  // Build UI #2 reasoning block (especially for BORDERLINE BUY)
   let reasoning = "";
+  reasoning += `<strong>${v.icon} ${v.label}</strong> • <strong>Buy Score:</strong> ${buyScore}/100<br>`;
+  reasoning += `<strong>FBA‑only mode:</strong> FBM is treated as competition/price pressure only.<br><br>`;
 
-  if (profit < 0) {
-    reasoning = `✗ Not profitable<br>✗ Est. loss: $${Math.abs(profit).toFixed(2)}<br>✗ Fees (est): $${fees.total.toFixed(2)} (ref $${fees.referral.toFixed(2)} + close $${fees.closing.toFixed(2)} + FBA $${fees.fulfillment.toFixed(2)})`;
-  } else if (slowMover && profit < (PROFIT_FLOOR * 1.25)) {
-    reasoning = `✗ Likely slow mover (rank ${keepaData.salesRank.toLocaleString()}, drops30 ${keepaData.salesRankDrops30})<br>✗ Profit $${profit.toFixed(2)} not high enough to justify storage risk`;
-  } else if (profit < effectiveFloor) {
-    reasoning = `✗ Profit $${profit.toFixed(2)} below floor ($${effectiveFloor.toFixed(2)})<br>✗ ROI: ${roi}%<br>✗ Price signal: $${targetPrice.toFixed(2)} vs market $${(market||0).toFixed(2)}`;
-  } else {
-    // Temporarily set to ACCEPT to calculate confidence
-    verdict = "ACCEPT";
-    
-    // Calculate confidence BEFORE finalizing verdict
-    const tempConfidence = computeLocalConfidence(keepaData, velocity, { verdict }, profit, effectiveFloor);
-    
-    // If confidence is too low, reject it - we shouldn't recommend low-confidence buys
-    if (tempConfidence < 50) {
-      verdict = "REJECT";
-      reasoning = `✗ Low confidence buy (${tempConfidence}%)<br>✗ Profit $${profit.toFixed(2)} exists but signals are weak<br>✗ Rank: ${(keepaData.salesRank || 0).toLocaleString()} • Drops: ${keepaData.salesRankDrops30}`;
-    } else {
-      // Good confidence - proceed with ACCEPT
-      const velocityTag = velocity.velocityBand === 'FAST' ? "✓ Good velocity signals" : "✓ Profit meets target";
-      reasoning =
-        `✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>` +
-        `${velocityTag}<br>` +
-        `✓ Target: $${targetPrice.toFixed(2)} • Market: $${(market||0).toFixed(2)} • BB: ${keepaData.buyBoxWinner}`;
-    }
+  if (v.label === "BORDERLINE BUY") {
+    reasoning += `<div style="margin:8px 0;padding:10px;border-radius:10px;border:1px solid rgba(251,191,36,0.35);background:rgba(251,191,36,0.08);">
+      <strong>⚠️ Borderline Buy</strong><br>
+      This meets minimum demand + profit, but Buy Box dynamics / competition / trend introduce elevated risk. Buy selectively.
+    </div>`;
   }
 
-    // Finalize local confidence
-  const confidence = computeLocalConfidence(keepaData, velocity, { verdict }, profit, effectiveFloor);
+  reasoning += scoreReasons.map(r => `• ${r}`).join("<br>");
+  reasoning += `<br><br><strong>Pricing:</strong> Target $${targetPrice.toFixed(2)} • Est. Profit $${profit.toFixed(2)} • ROI ${roi}%<br>`;
+  reasoning += `<strong>Signals:</strong> BB ${keepaData.buyBoxWinner} • Drops30 ${velocity.drops30} • Rank ${(keepaData.salesRank||0).toLocaleString()} (proxy)<br>`;
+  reasoning += `<strong>Fees (est):</strong> $${fees.total.toFixed(2)} (ref $${fees.referral.toFixed(2)} + close $${fees.closing.toFixed(2)} + FBA $${fees.fulfillment.toFixed(2)})`;
 
   return {
-    verdict,
-    targetPrice: Math.round(targetPrice * 100) / 100,
+    verdict: v.label,
+    verdictIcon: v.icon,
+    buyScore,
+    targetPrice,
     profit: Math.round(profit * 100) / 100,
     roi,
     reasoning,
-    confidence,
-    velocity
+    scoreReasons,
+    velocity,
+    effectiveFloor
   };
 }
 
 /* ==================== DISPLAY RESULT ==================== */
+
 function displayResult(decision, keepaData) {
   lastScanData = { decision, keepaData };
   
   const banner = document.getElementById("banner");
-  const cls = decision.verdict === "ACCEPT" ? "buy" : "pass";
+  const cls = (decision.verdict !== "REJECT") ? "buy" : "pass";
   
   // Detect hidden gems
   const gems = detectHiddenGems(keepaData, decision);
   const isGem = gems.length > 0;
   
-  banner.className = `banner ${cls}${isGem ? ' gem' : ''}`;
+  const tier = (decision.verdict === "STRONG BUY") ? " strong" : (decision.verdict === "BORDERLINE BUY" ? " borderline" : "");
+  banner.className = `banner ${cls}${tier}${isGem ? ' gem' : ''}`;
   
   // Show/hide gem badge
   const gemBadge = document.getElementById("gemBadge");
@@ -1777,7 +1984,7 @@ function displayResult(decision, keepaData) {
     gemBadge.style.display = "none";
   }
   
-  document.getElementById("decision").textContent = decision.verdict;
+  document.getElementById("decision").textContent = `${decision.verdictIcon || ""} ${decision.verdict}`.trim();
   document.getElementById("reason").textContent = keepaData.title;
   
   document.getElementById("targetPrice").textContent = `$${decision.targetPrice.toFixed(2)}`;
@@ -1789,32 +1996,18 @@ function displayResult(decision, keepaData) {
   const avgRank = keepaData.salesRank;
   document.getElementById("avgRank").textContent = avgRank > 0 ? avgRank.toLocaleString() : "—";
   
-  // Calculate confidence
-  const v = (decision && decision.velocity) ? decision.velocity : computeVelocitySignals(keepaData);
-  const effFloor = getEffectiveProfitFloor(PROFIT_FLOOR, v);
-  const conf = (typeof decision.confidence === "number") ? decision.confidence : computeLocalConfidence(keepaData, v, decision, decision.profit, effFloor);
-  
-  // Update confidence label and value - show as STRONG/MODERATE/WEAK signal
+  // Buy Score (FBA-only)
   const confidenceLabel = document.getElementById("confidenceLabel");
-  
-  // For REJECT decisions, invert the confidence and change label
-  // Low buy confidence = High reject confidence
-  let displayConf = conf;
-  if (decision.verdict === "REJECT") {
-    confidenceLabel.textContent = "Pass Confidence";
-    displayConf = 100 - conf;
-  } else {
-    confidenceLabel.textContent = "Buy Confidence";
-  }
-  
-  let signalStrength = "WEAK";
-  if (displayConf >= 75) {
-    signalStrength = "STRONG";
-  } else if (displayConf >= 50) {
-    signalStrength = "MODERATE";
-  }
-  
-  document.getElementById("confidence").textContent = `${signalStrength} (${Math.round(displayConf)}%)`;
+  confidenceLabel.textContent = "Buy Score";
+
+  const s = (typeof decision.buyScore === "number") ? decision.buyScore : 0;
+  let band = "PASS";
+  let icon = "⛔";
+  if (s >= 85) { band = "STRONG"; icon = "🔥"; }
+  else if (s >= 70) { band = "BUY"; icon = "✅"; }
+  else if (s >= 55) { band = "BORDERLINE"; icon = "⚠️"; }
+
+  document.getElementById("confidence").textContent = `${icon} ${s}/100 (${band})`;
   
   const profitEl = document.getElementById("profit");
   profitEl.className = "stat-value"; // Always regular styling, no color change
@@ -1869,6 +2062,8 @@ function addToHistory(decision, keepaData) {
   
   const record = {
     verdict: decision.verdict,
+    buyScore: (decision.buyScore || 0),
+    condition: (CONFIG.itemCondition || "NEW"),
     title: keepaData.title,
     asin: keepaData.asin,
     price: decision.targetPrice.toFixed(2),
@@ -1880,7 +2075,7 @@ function addToHistory(decision, keepaData) {
   };
   
   scanHistory.push(record);
-  if (decision.verdict === "ACCEPT") {
+  if (decision.verdict !== "REJECT" && (decision.buyScore || 0) >= 55) {
     buyList.push(record);
   }
   
@@ -1891,17 +2086,21 @@ function addToHistory(decision, keepaData) {
 function updateHistoryUI() {
   const list = document.getElementById("historyList");
   list.innerHTML = '';
-  
+
   scanHistory.slice().reverse().forEach(rec => {
     const div = document.createElement("div");
     div.className = "history-item";
-    
+
+    const isBuy = rec.verdict && rec.verdict !== "REJECT";
+    const vIcon = isBuy ? (rec.buyScore >= 85 ? "🔥" : (rec.buyScore >= 70 ? "✅" : "⚠️")) : "⛔";
+    const vClass = isBuy ? (rec.buyScore >= 85 ? "BUY_STRONG" : (rec.buyScore >= 70 ? "BUY" : "BUY_BORDERLINE")) : "REJECT";
     const gemBadge = rec.isGem ? `<span style="color:#fbbf24;font-size:14px;margin-right:4px;">✨</span>` : '';
-    
+
     div.innerHTML = `
-      <div class="history-decision ${rec.verdict}">${gemBadge}${rec.verdict}</div>
+      <div class="history-decision ${vClass}">${gemBadge}${vIcon} ${rec.verdict}</div>
       <div class="history-title">${rec.title}</div>
       <div class="history-meta">
+        Score: <strong>${rec.buyScore || ""}</strong> • Cond: ${rec.condition || ""}<br>
         ASIN: ${rec.asin}<br>
         Price: $${rec.price} • Profit: $${rec.profit} • ROI: ${rec.roi}%<br>
         ${rec.isGem ? `<span style="color:#fbbf24;">💎 ${rec.gemTypes}</span><br>` : ''}
@@ -1910,6 +2109,9 @@ function updateHistoryUI() {
     `;
     list.appendChild(div);
   });
+
+  // Update buy queue count
+  document.getElementById("itemCount").innerHTML = `<span class="status-label">Queue:</span> ${buyList.length}`;
 }
 
 /* ==================== NAVIGATION ==================== */
@@ -1927,11 +2129,11 @@ document.getElementById("backBtn").onclick = () => {
 document.getElementById("downloadBtn").onclick = () => {
   if (buyList.length === 0) return alert("No items in buy queue.");
 
-  let csv = "Title,ASIN,TargetPrice,Profit,ROI,HiddenGem,GemReasons\n";
+  let csv = "Verdict,BuyScore,Condition,Title,ASIN,TargetPrice,Profit,ROI,HiddenGem,GemReasons\n";
   buyList.forEach(r => {
     const gemFlag = r.isGem ? 'YES' : 'NO';
     const gemReasons = r.isGem ? `"${r.gemTypes}"` : '';
-    csv += `"${r.title}",${r.asin},${r.price},${r.profit},${r.roi}%,${gemFlag},${gemReasons}\n`;
+    csv += `"${r.verdict}",${r.buyScore || ""},"${r.condition || ""}","${String(r.title||"").replaceAll(\'"\',\'""\')}",${r.asin},${r.price},${r.profit},${r.roi}%,${gemFlag},${gemReasons}\n`;
   });
 
   const blob = new Blob([csv], { type: "text/csv" });
