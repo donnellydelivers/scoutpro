@@ -276,9 +276,8 @@ const CONFIG = {
   KEEPA_DOMAIN: 'api.keepa.com',
   // CORS proxies - try these in order if direct call fails
   CORS_PROXIES: [
-    'https://api.allorigins.win/raw?url=',
     'https://corsproxy.io/?',
-    'https://cors-anywhere.herokuapp.com/',
+    'https://api.allorigins.win/raw?url=',
     '' // Empty string = direct call (no proxy)
   ],
   BUY_COST_DEFAULT: 1.00,
@@ -379,104 +378,71 @@ document.getElementById('scanBtn').addEventListener('click', () => {
 // 4. KEEPA CLIENT
 // =====================================================
 const KeepaClient = {
-  detectIdentifierType(input) {
-    const cleaned = input.replace(/[^0-9XB]/gi, '').toUpperCase();
-    
-    // ASIN format (B + 9 characters)
-    if (/^B[0-9A-Z]{9}$/i.test(input)) {
-      return { type: 'asin', value: input.toUpperCase() };
-    }
-    
-    // ISBN-10 or ISBN-13 or UPC
-    if (cleaned.length === 10 || cleaned.length === 13 || (cleaned.length >= 12 && cleaned.length <= 14)) {
-      return { type: 'code', value: cleaned };
-    }
-    
-    // Default to treating as ASIN/code
-    return { type: 'code', value: input };
-  },
-
-  async fetchProduct(identifier) {
+  async fetchProduct(asin) {
     const key = AppState.settings.keepaKey;
     
     if (!key) {
       console.log('No Keepa key - using simulated data');
       AppState.keepa.mode = 'SIMULATED';
-      return this.generateSimulatedData(identifier);
+      return this.generateSimulatedData(asin);
     }
 
-    // Detect what type of identifier this is
-    const detected = this.detectIdentifierType(identifier);
-    console.log(`Detected identifier type: ${detected.type} = ${detected.value}`);
-
-    try {
-      AppState.keepa.mode = 'LIVE';
+    // Try each CORS proxy in order
+    for (let i = 0; i < CONFIG.CORS_PROXIES.length; i++) {
+      const proxy = CONFIG.CORS_PROXIES[i];
+      const proxyName = proxy ? `Proxy ${i + 1}` : 'Direct';
       
-      // Build Keepa URL with proper parameter (asin= or code=)
-      const queryParam = detected.type === 'asin' 
-        ? `asin=${encodeURIComponent(detected.value)}`
-        : `code=${encodeURIComponent(detected.value)}`;
-      
-      const keepaUrl = `https://api.keepa.com/product?key=${key}&domain=1&${queryParam}&stats=180&history=1`;
-      
-      // Use CORS proxy (same as old app)
-      const corsProxy = 'https://corsproxy.io/?';
-      const url = corsProxy + encodeURIComponent(keepaUrl);
-      
-      console.log('Keepa API call:', keepaUrl.replace(key, 'HIDDEN'));
-      console.log('Full proxy URL:', url.substring(0, 50) + '...');
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('Rate limit reached');
+      try {
+        AppState.keepa.mode = 'LIVE';
+        const baseUrl = `https://${CONFIG.KEEPA_DOMAIN}/product?key=${key}&domain=1&asin=${asin}&stats=180&offers=20`;
+        const url = proxy ? `${proxy}${encodeURIComponent(baseUrl)}` : baseUrl;
+        
+        console.log(`Trying Keepa via ${proxyName}...`);
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        throw new Error(`Keepa API error: ${response.status}`);
+        
+        const data = await response.json();
+        console.log('Keepa response:', data);
+        
+        if (data.error) {
+          throw new Error(`Keepa API error: ${data.error.message || data.error}`);
+        }
+        
+        if (data.products && data.products.length > 0) {
+          const product = data.products[0];
+          AppState.runtime.tokensUsed += (data.tokensConsumed || 1);
+          AppState.keepa.tokensRemaining = data.tokensLeft;
+          
+          console.log(`✓ Success via ${proxyName}! Tokens left: ${data.tokensLeft}`);
+          
+          // Save the working proxy for next time
+          if (i !== CONFIG.CORS_PROXIES.length - 1) {
+            // Move working proxy to front of array for next scan
+            CONFIG.CORS_PROXIES.unshift(CONFIG.CORS_PROXIES.splice(i, 1)[0]);
+          }
+          
+          return this.parseKeepaProduct(product);
+        } else {
+          throw new Error('Product not found in Keepa response');
+        }
+      } catch (error) {
+        console.warn(`${proxyName} failed:`, error.message);
+        
+        // If this was the last proxy, give up
+        if (i === CONFIG.CORS_PROXIES.length - 1) {
+          console.error('All proxies failed. Error details:', error);
+          alert(`Unable to reach Keepa API.\n\nError: ${error.message}\n\nFalling back to simulated data.\n\nTip: Check your API key in Settings.`);
+          AppState.keepa.mode = 'SIMULATED';
+          return this.generateSimulatedData(asin);
+        }
+        
+        // Otherwise, try next proxy
+        continue;
       }
-      
-      const data = await response.json();
-      console.log('Keepa response received:', data);
-      
-      // Check for errors
-      if (data.error) {
-        const errorMsg = data.error.message || data.error;
-        console.error('Keepa error:', errorMsg);
-        throw new Error(errorMsg);
-      }
-      
-      // Check if product found
-      if (!data.products || data.products.length === 0) {
-        console.log('Product not found in Keepa database');
-        AppState.keepa.mode = 'SIMULATED';
-        UI.setStatus('⚠️ Not in Keepa - using estimated data');
-        return this.generateSimulatedData(detected.value);
-      }
-      
-      const product = data.products[0];
-      AppState.runtime.tokensUsed += (data.tokensConsumed || 1);
-      AppState.keepa.tokensRemaining = data.tokensLeft;
-      
-      console.log(`✓ Keepa success! Product: ${product.title}`);
-      console.log(`✓ Tokens left: ${data.tokensLeft}`);
-      
-      return this.parseKeepaProduct(product);
-      
-    } catch (error) {
-      console.error('Keepa fetch error:', error);
-      
-      // If it's a "not found" error, use simulated quietly
-      if (error.message.includes('not found') || error.message.includes('Invalid product identifier')) {
-        AppState.keepa.mode = 'SIMULATED';
-        UI.setStatus('⚠️ Not in Keepa - using estimated data');
-        return this.generateSimulatedData(detected.value);
-      }
-      
-      // For other errors, alert and fallback
-      console.log(`Keepa error: ${error.message} - falling back to simulated`);
-      AppState.keepa.mode = 'SIMULATED';
-      UI.setStatus('Keepa unavailable - using estimated data');
-      return this.generateSimulatedData(detected.value);
     }
   },
 
