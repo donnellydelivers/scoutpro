@@ -361,6 +361,17 @@ button:disabled {
   font-family: 'JetBrains Mono', 'Courier New', monospace;
 }
 
+/* Make profit stand out */
+#profit {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+#profit.negative {
+  color: var(--red);
+}
+
 .stat-value.negative {
   color: var(--red);
 }
@@ -563,6 +574,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .btn-history {
+  flex: 1;
   background: var(--blue);
   color: white;
 }
@@ -629,12 +641,11 @@ input[type="range"]::-moz-range-thumb {
     </div>
   </div>
   <div class="input-row">
-    <input id="scanInput" type="text" placeholder="ISBN, UPC, ASIN, or Title..." autocomplete="off" />
-    <button id="historyBtn" class="btn-history">History</button>
+    <input id="scanInput" type="text" placeholder="ISBN, UPC, ASIN, or Title..." autocomplete="off" style="grid-column: 1 / -1;" />
   </div>
 </header>
 
-<div class="status-bar">
+<div class="status-bar" style="display:none;">
   <span id="statusText">Ready to scan</span>
   <span id="itemCount"><span class="status-label">Queue:</span> 0</span>
 </div>
@@ -745,6 +756,7 @@ input[type="range"]::-moz-range-thumb {
 
 <div class="actions">
   <button id="settingsBtn" class="btn-settings">⚙️</button>
+  <button id="historyBtn" class="btn-history">History</button>
   <button id="downloadBtn" class="btn-download">Download</button>
   <button id="clearBtn" class="btn-clear">Clear</button>
 </div>
@@ -1522,6 +1534,31 @@ function getEffectiveProfitFloor(baseFloor, velocity) {
 }
 
 /* Simple confidence heuristic for LOCAL engine (Gemini can override with its own confidence) */
+/* ==================== CONFIDENCE CALCULATION ==================== 
+ * Confidence score (5-95%) represents how sure we are about the decision.
+ * 
+ * For ACCEPT decisions:
+ *   - 75%+ = Strong buy (good profit, good velocity, clear price signals)
+ *   - 50-75% = Moderate buy (acceptable profit but some risk factors)
+ *   - <50% = REJECT (auto-converted - we don't recommend low-confidence buys)
+ * 
+ * For REJECT decisions:
+ *   - Higher % = More confident in rejecting (clear reasons to pass)
+ *   - Lower % = Borderline reject (might work but too risky)
+ * 
+ * Factors that increase confidence:
+ *   + Clear market price data (FBA/Buy Box prices available)
+ *   + Profit well above floor ($5+ cushion)
+ *   + Fast/Steady sales velocity (many rank drops)
+ *   + Accelerating trend (sales speeding up)
+ * 
+ * Factors that decrease confidence:
+ *   - Missing price data
+ *   - Thin margins (profit barely above floor)
+ *   - Slow/Very slow velocity
+ *   - Declining trend
+ *   - Extremely high rank (>1M) with low margin
+ */
 function computeLocalConfidence(keepaData, velocity, decision, profit, effectiveFloor) {
   let score = 50;
 
@@ -1642,12 +1679,24 @@ function localDecisionEngine(keepaData) {
   } else if (profit < effectiveFloor) {
     reasoning = `✗ Profit $${profit.toFixed(2)} below floor ($${effectiveFloor.toFixed(2)})<br>✗ ROI: ${roi}%<br>✗ Price signal: $${targetPrice.toFixed(2)} vs market $${(market||0).toFixed(2)}`;
   } else {
+    // Temporarily set to ACCEPT to calculate confidence
     verdict = "ACCEPT";
-    const velocityTag = velocity.velocityBand === 'FAST' ? "✓ Good velocity signals" : "✓ Profit meets target";
-    reasoning =
-      `✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>` +
-      `${velocityTag}<br>` +
-      `✓ Target: $${targetPrice.toFixed(2)} • Market: $${(market||0).toFixed(2)} • BB: ${keepaData.buyBoxWinner}`;
+    
+    // Calculate confidence BEFORE finalizing verdict
+    const tempConfidence = computeLocalConfidence(keepaData, velocity, { verdict }, profit, effectiveFloor);
+    
+    // If confidence is too low, reject it - we shouldn't recommend low-confidence buys
+    if (tempConfidence < 50) {
+      verdict = "REJECT";
+      reasoning = `✗ Low confidence buy (${tempConfidence}%)<br>✗ Profit $${profit.toFixed(2)} exists but signals are weak<br>✗ Rank: ${(keepaData.salesRank || 0).toLocaleString()} • Drops: ${keepaData.salesRankDrops30}`;
+    } else {
+      // Good confidence - proceed with ACCEPT
+      const velocityTag = velocity.velocityBand === 'FAST' ? "✓ Good velocity signals" : "✓ Profit meets target";
+      reasoning =
+        `✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>` +
+        `${velocityTag}<br>` +
+        `✓ Target: $${targetPrice.toFixed(2)} • Market: $${(market||0).toFixed(2)} • BB: ${keepaData.buyBoxWinner}`;
+    }
   }
 
     // Finalize local confidence
