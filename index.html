@@ -329,6 +329,14 @@ button:disabled {
   margin-bottom: 8px;
 }
 
+.banner.buy .decision {
+  color: var(--green);
+}
+
+.banner.pass .decision {
+  color: var(--red);
+}
+
 .reason {
   font-size: 14px;
   color: var(--muted);
@@ -533,9 +541,9 @@ input[type="range"]::-moz-range-thumb {
   right: 0;
   background: var(--bg);
   border-top: 1px solid var(--border);
-  padding: 16px;
+  padding: 12px;
   display: flex;
-  gap: 12px;
+  gap: 8px;
   max-width: 480px;
   margin: 0 auto;
 }
@@ -545,7 +553,7 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text);
   border: 1px solid var(--border);
   flex-shrink: 0;
-  width: 50px;
+  width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -555,17 +563,21 @@ input[type="range"]::-moz-range-thumb {
   flex: 1;
   background: var(--green);
   color: var(--bg);
+  min-width: 0; /* Allow flex item to shrink below content size */
 }
 
 .btn-clear {
+  flex: 1;
   background: var(--red);
   color: white;
+  min-width: 0; /* Allow flex item to shrink below content size */
 }
 
 .btn-history {
   flex: 1;
   background: var(--blue);
   color: white;
+  min-width: 0; /* Allow flex item to shrink below content size */
 }
 
 
