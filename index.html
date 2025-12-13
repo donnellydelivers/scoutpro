@@ -1,1008 +1,1901 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ScoutPro AI v4.0 - FBA Edition</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ScoutPro AI v3.1</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
-  body {
-    font-family: 'Inter', -apple-system, sans-serif;
+:root {
+  --bg: #0a0e1a;
+  --panel: #141b2d;
+  --card: #1a2332;
+  --border: rgba(255,255,255,.08);
+  --text: #ffffff;
+  --muted: #8b92ab;
+  --green: #10b981;
+  --yellow: #fbbf24;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+}
+
+* { 
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app { 
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 140px;
+}
+
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.brand-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 999px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--blue);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  width: 100%;
+}
+
+input[type="text"] {
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus {
+  border-color: var(--blue);
+}
+
+input[type="text"]::placeholder {
+  color: var(--muted);
+}
+
+button {
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Status Bar */
+.status-bar {
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--panel);
+  margin: 12px 12px 0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none; /* FIX: don't block taps */
+}
+
+.status-label {
+  color: var(--blue);
+}
+
+/* Duplicate Warning */
+#dupeWarning {
+  padding: 10px 16px;
+  margin: 12px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid var(--yellow);
+  border-radius: 8px;
+  color: var(--yellow);
+  font-size: 13px;
+  display: none;
+}
+
+/* Processing State */
+.processing {
+  margin: 12px;
+  padding: 24px;
+  background: var(--panel);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  text-align: center;
+  display: none;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  border: 3px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.processing-text {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Cards */
+.card {
+  margin: 12px;
+  background: var(--panel);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Decision Banner */
+.banner {
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+}
+
+.banner.buy { 
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), transparent);
+  border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.banner.pass { 
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), transparent);
+  border-bottom: 2px solid rgba(239, 68, 68, 0.3);
+}
+
+.banner.gem {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(16, 185, 129, 0.1));
+  border-bottom: 2px solid rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+}
+
+.gem-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #000;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+  animation: gem-pulse 2s ease-in-out infinite;
+}
+
+.gem-sparkle {
+  font-size: 14px;
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes gem-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
   }
-  .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.6);
   }
-  .decision-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 8px;
+}
+
+@keyframes sparkle {
+  0%, 100% { 
+    opacity: 1;
+    transform: rotate(0deg);
   }
-  .dot-green { background: #10b981; }
-  .dot-yellow { background: #fbbf24; }
-  .dot-red { background: #ef4444; }
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  50% { 
+    opacity: 0.7;
+    transform: rotate(180deg);
   }
-  .animate-slide-in {
-    animation: slideIn 0.3s ease-out;
-  }
+}
+
+.gem-reasons {
+  margin-top: 16px;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  overflow: hidden;
+}
+
+.gem-reasons summary {
+  padding: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fbbf24;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gem-reasons summary::-webkit-details-marker {
+  display: none;
+}
+
+.gem-reasons summary::before {
+  content: '▶';
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.gem-reasons[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.gem-reasons-content {
+  padding: 0 12px 12px 12px;
+  font-size: 12px;
+  color: var(--text);
+  text-align: left;
+  line-height: 1.6;
+}
+
+.decision {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.banner.buy .decision {
+  color: var(--green);
+}
+
+.banner.pass .decision {
+  color: var(--red);
+}
+
+.reason {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: start;
+}
+
+.stat {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-value.negative {
+  color: var(--red);
+}
+
+.explanation {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* Sections */
+.section {
+  padding: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* Sliders */
+.slider-group {
+  margin-bottom: 16px;
+}
+
+.slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.slider-value {
+  font-weight: 700;
+  color: var(--blue);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--card);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--blue);
+  cursor: pointer;
+  border: none;
+}
+
+/* Buttons */
+.btn-toggle {
+  width: 100%;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  margin-top: 12px;
+}
+
+.btn-toggle:hover {
+  border-color: var(--blue);
+}
+
+/* Settings */
+.settings-group {
+  margin-bottom: 20px;
+}
+
+.settings-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.settings-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+.settings-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* History */
+.history-item {
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+
+.history-decision {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.history-decision.BUY {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--green);
+}
+
+.history-decision.REJECT {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--red);
+}
+
+.history-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.history-meta {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  line-height: 1.5;
+}
+
+/* Action Buttons */
+.actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.btn-settings {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-download {
+  flex: 1;
+  background: var(--green);
+  color: var(--bg);
+  min-width: 0; /* Allow flex item to shrink below content size */
+}
+
+.btn-clear {
+  flex: 1;
+  background: var(--red);
+  color: white;
+  min-width: 0; /* Allow flex item to shrink below content size */
+}
+
+.btn-history {
+  flex: 1;
+  background: var(--blue);
+  color: white;
+  min-width: 0; /* Allow flex item to shrink below content size */
+}
+
+
+/* Velocity / Confidence Pills */
+.pill-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
+  margin-top:12px;
+}
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.03em;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.pill .k{
+  color: var(--muted);
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  font-size:10px;
+}
+.pill.good{ border-color: rgba(16,185,129,0.45); background: rgba(16,185,129,0.08); }
+.pill.warn{ border-color: rgba(251,191,36,0.55); background: rgba(251,191,36,0.10); }
+.pill.bad{ border-color: rgba(239,68,68,0.55); background: rgba(239,68,68,0.10); }
+.pill.info{ border-color: rgba(59,130,246,0.55); background: rgba(59,130,246,0.10); }
+
+/* Utility */
+.hidden {
+  display: none !important;
+}
+
+@keyframes flash {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.flash {
+  animation: flash 0.3s ease-out;
+}
 </style>
 </head>
-<body class="bg-gray-950 text-white min-h-screen">
+<body>
 
-<!-- ============================================ -->
-<!-- MAIN SCAN PAGE -->
-<!-- ============================================ -->
-<div id="mainPage" class="max-w-md mx-auto pb-32">
-  
-  <!-- Header -->
-  <header class="sticky top-0 z-50 bg-gray-950 border-b border-gray-800 p-3">
-    <div class="flex items-center justify-between mb-3">
-      <div class="text-lg font-bold">ScoutPro AI</div>
-      <div class="flex items-center gap-2">
-        <button id="settingsBtn" class="p-2 hover:bg-gray-800 rounded-lg transition">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-          </svg>
-        </button>
-        <div class="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-xs font-semibold text-blue-400">
-          v4.0
-        </div>
-      </div>
-    </div>
-    
-    <!-- Scanner Input -->
-    <div class="grid grid-cols-[1fr_auto_auto] gap-2">
-      <input 
-        type="text" 
-        id="isbnInput" 
-        placeholder="Scan or enter ISBN/ASIN"
-        autocomplete="off"
-        class="px-4 py-3 rounded-xl bg-gray-900 border border-gray-800 text-white font-mono text-sm focus:outline-none focus:border-blue-500 transition"
-      />
-      <button id="scanBtn" class="px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl hover:bg-gray-800 transition">
-        📷
-      </button>
-      <button id="lookupBtn" class="px-6 py-3 bg-blue-600 rounded-xl font-semibold hover:bg-blue-700 transition">
-        GO
-      </button>
-    </div>
-  </header>
+<div class="app">
 
-  <!-- Status Bar -->
-  <div class="mx-3 mt-3 px-4 py-2 bg-gray-900 rounded-lg font-mono text-xs text-gray-400 flex justify-between items-center">
-    <div class="flex items-center gap-2">
-      <span id="statusText">Ready to scan</span>
-      <span id="keepaModeIndicator" class="hidden px-2 py-0.5 rounded text-[10px] font-bold"></span>
-    </div>
-    <span id="profitTally" class="text-blue-400">
-      <span class="font-semibold">Queue:</span> 0 | <span class="font-semibold">Profit:</span> $0
-    </span>
-  </div>
-
-  <!-- Duplicate Warning -->
-  <div id="dupeWarning" class="hidden mx-3 mt-3 px-4 py-2 bg-yellow-500/10 border border-yellow-500/50 rounded-lg text-yellow-400 text-sm">
-    ⚠️ Already scanned this item
-  </div>
-
-  <!-- Processing -->
-  <div id="processing" class="hidden mx-3 mt-3 p-6 bg-gray-900 rounded-2xl border border-gray-800 text-center">
-    <div class="w-10 h-10 mx-auto mb-4 border-3 border-gray-800 border-t-blue-500 rounded-full animate-spin"></div>
-    <div class="text-sm text-gray-400">Analyzing with Keepa...</div>
-  </div>
-
-  <!-- Sliders (Always Visible) -->
-  <div class="mx-3 mt-3 p-4 bg-gray-900 rounded-xl border border-gray-800 space-y-4">
-    <div>
-      <label class="flex justify-between text-xs font-semibold text-gray-400 mb-2">
-        <span>Buy Cost</span>
-        <span id="buyCostValue" class="text-white font-mono">$1.00</span>
-      </label>
-      <input type="range" id="buyCostSlider" min="0.25" max="10" step="0.25" value="1.00" class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer slider">
-    </div>
-    <div>
-      <label class="flex justify-between text-xs font-semibold text-gray-400 mb-2">
-        <span>Profit Floor</span>
-        <span id="profitFloorValue" class="text-white font-mono">$5.00</span>
-      </label>
-      <input type="range" id="profitFloorSlider" min="1" max="15" step="0.50" value="5.00" class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer slider">
+<header>
+  <div class="brand">
+    <div class="brand-title">ScoutPro AI</div>
+    <div class="brand-badge" id="keepaBadge" style="display:none;">
+      <div class="status-dot" style="background:var(--green);"></div>
+      <span>KEEPA</span>
     </div>
   </div>
-
-  <!-- Result Card -->
-  <div id="resultCard" class="hidden mx-3 mt-3 bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-    
-    <!-- Decision Banner -->
-    <div id="banner" class="p-6 text-center border-b border-gray-800">
-      <div id="gemBadge" class="hidden inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-xs font-bold text-black mb-2">
-        <span>✨</span>
-        HIDDEN GEM
-      </div>
-      <div id="decisionText" class="text-3xl font-bold mb-2 flex items-center justify-center">
-        <!-- Decision word goes here -->
-      </div>
-      <div id="confidence" class="text-sm text-gray-400 font-mono mb-3">Confidence: --</div>
-      <div id="bookTitle" class="text-sm text-gray-300 leading-relaxed">--</div>
-    </div>
-
-    <!-- Key Metrics -->
-    <div class="p-4 border-b border-gray-800 space-y-2 text-sm">
-      <div class="flex justify-between">
-        <span class="text-gray-400">Avg Sale Price (6 mo)</span>
-        <span id="avgPrice" class="font-mono font-semibold">--</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-gray-400">6-Month Sales</span>
-        <span id="salesVolume" class="font-mono font-semibold">--</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-gray-400">Est. Profit</span>
-        <span id="profitValue" class="font-mono font-semibold text-green-400">--</span>
-      </div>
-    </div>
-
-    <!-- Gemini Section -->
-    <div id="geminiSection" class="hidden p-4 border-b border-gray-800">
-      <button id="askGeminiBtn" class="w-full px-4 py-3 bg-purple-600/20 border border-purple-500/50 rounded-xl text-purple-300 font-semibold hover:bg-purple-600/30 transition">
-        Ask Gemini for more detail
-      </button>
-      <div id="geminiResult" class="hidden mt-4"></div>
-    </div>
-
-    <!-- Explanation/Reasoning -->
-    <div id="explanation" class="p-4 text-sm text-gray-300 leading-relaxed">
-      <!-- Reasoning text goes here -->
-    </div>
-
-    <!-- Hidden Gems Details -->
-    <div id="gemDetails" class="hidden p-4 bg-yellow-500/5 border-t border-yellow-500/20">
-      <details class="text-sm" open>
-        <summary class="font-semibold text-yellow-400 cursor-pointer mb-2">✨ Why This is a Hidden Gem</summary>
-        <div id="gemReasons" class="space-y-1 text-gray-300 ml-4">
-          <!-- Gem reasons go here -->
-        </div>
-      </details>
-    </div>
+  <div class="input-row">
+    <input id="scanInput" type="text" placeholder="ISBN, UPC, ASIN, or Title..." autocomplete="off" style="grid-column: 1 / -1;" />
   </div>
+</header>
 
+<div class="status-bar" style="display:none;">
+  <span id="statusText">Ready to scan</span>
+  <span id="itemCount"><span class="status-label">Queue:</span> 0</span>
 </div>
 
-<!-- ============================================ -->
-<!-- HISTORY PAGE -->
-<!-- ============================================ -->
-<div id="historyPage" class="hidden max-w-md mx-auto pb-32">
-  <div class="sticky top-0 z-50 bg-gray-950 border-b border-gray-800 p-4 flex items-center gap-3">
-    <button id="backBtn" class="p-2 hover:bg-gray-800 rounded-lg transition">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-      </svg>
-    </button>
-    <div class="text-lg font-bold flex-1">Scan History</div>
-  </div>
-  
-  <div id="historyList" class="p-3 space-y-3">
-    <!-- History items go here -->
+<div id="dupeWarning">⚠️ Already scanned — ignored</div>
+
+<div class="processing" id="processing">
+  <div class="spinner"></div>
+  <div class="processing-text">Analyzing with AI...</div>
+</div>
+
+<div id="mainPage">
+  <div class="card hidden" id="resultCard">
+    <div id="banner" class="banner buy">
+      <div id="gemBadge" class="gem-badge" style="display:none;">
+        <span class="gem-sparkle">✨</span>
+        <span>HIDDEN GEM</span>
+        <span class="gem-sparkle">✨</span>
+      </div>
+      <div class="decision" id="decision">BUY</div>
+      <div class="reason" id="reason"></div>
+      
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Target Price</div>
+          <div class="stat-value" id="targetPrice">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Profit</div>
+          <div class="stat-value" id="profit">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">ROI</div>
+          <div class="stat-value" id="roi">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Buy Box</div>
+          <div class="stat-value" id="bb">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Avg Sales Rank</div>
+          <div class="stat-value" id="avgRank">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label"><span id="confidenceLabel">Buy Confidence</span></div>
+          <div class="stat-value" id="confidence">—</div>
+        </div>
+      </div>
+      
+      <div class="explanation" id="explanation"></div>
+
+    </div>
+
+    <div class="section">
+      <div class="section-title">Scanner Controls</div>
+      
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Buy Cost</span>
+          <span class="slider-value">$<span id="buyCostVal">1.00</span></span>
+        </div>
+        <input type="range" min="0.10" max="10" step="0.10" id="buyCostSlider" value="1.00" />
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>Profit Floor</span>
+          <span class="slider-value">$<span id="profitFloorVal">5.00</span></span>
+        </div>
+        <input type="range" min="1" max="20" step="1" id="profitFloorSlider" value="5" />
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- ============================================ -->
-<!-- SETTINGS MODAL -->
-<!-- ============================================ -->
-<div id="settingsModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-  <div class="bg-gray-900 rounded-2xl border border-gray-800 max-w-md w-full p-6 space-y-4">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold">Settings</h2>
-      <button id="closeSettingsBtn" class="p-2 hover:bg-gray-800 rounded-lg transition">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-    </div>
+<div id="settingsPage" class="card" style="display:none;">
+  <div class="section">
+    <div class="section-title">Settings</div>
+    <details id="integrationsPanel" open style="margin-bottom:16px;">
+      <summary style="cursor:pointer; font-weight:800; color: var(--text); margin-bottom:10px;">🔑 Integrations (API Keys)</summary>
+      <div class="settings-hint" style="margin:-4px 0 12px 0;">Keys are stored locally in your browser (localStorage).</div>
 
-    <div>
-      <label class="block text-sm font-semibold text-gray-400 mb-2">Keepa API Key</label>
-      <input type="password" id="keepaKeyInput" placeholder="Enter Keepa API key" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+    
+    <div class="settings-group">
+      <label class="settings-label">Keepa API Key</label>
+      <input type="text" id="keepaKey" class="settings-input" placeholder="Enter your Keepa API key" />
+      <div class="settings-hint">Get your key at <a href="https://keepa.com/#!api" target="_blank" style="color:var(--blue)">keepa.com/#!api</a></div>
     </div>
-
-    <div>
-      <label class="block text-sm font-semibold text-gray-400 mb-2">Gemini API Key</label>
-      <input type="password" id="geminiKeyInput" placeholder="Enter Gemini API key" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500">
-    </div>
-
-    <div>
-      <label class="block text-sm font-semibold text-gray-400 mb-2">Token Budget (per session)</label>
-      <input type="number" id="tokenBudgetInput" value="500" min="100" max="5000" step="100" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500">
-    </div>
-
-    <div class="pt-4 border-t border-gray-800">
-      <div class="text-xs text-gray-400 mb-2">Keepa Tokens</div>
-      <div id="tokenStatus" class="font-mono text-sm text-green-400">Available: Unknown</div>
-    </div>
-
-    <button id="saveSettingsBtn" class="w-full px-4 py-3 bg-blue-600 rounded-xl font-semibold hover:bg-blue-700 transition">
+    </details>
+    
+    <button id="saveSettings" style="width:100%; background:var(--green); color:var(--bg); margin-top:16px;">
       Save Settings
     </button>
+    
+    <button id="backFromSettings" style="width:100%; background:var(--panel); color:var(--text); margin-top:8px; border:1px solid var(--border);">
+      Back
+    </button>
   </div>
 </div>
 
-<!-- ============================================ -->
-<!-- BOTTOM NAV -->
-<!-- ============================================ -->
-<div class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-3 z-40">
-  <div class="max-w-md mx-auto grid grid-cols-3 gap-2">
-    <button id="historyBtn" class="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-700 transition">
-      History
-    </button>
-    <button id="downloadBtn" class="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-700 transition">
-      Export CSV
-    </button>
-    <button id="clearBtn" class="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-700 transition">
-      Clear
-    </button>
+<div id="historyPage" class="card" style="display:none;">
+  <div class="section">
+    <div class="section-title">Scan History</div>
+    <div id="historyList"></div>
+    <button id="backBtn" style="margin-top:16px; background:var(--blue); color:white; width:100%;">Back</button>
   </div>
+</div>
+
+<div class="actions">
+  <button id="settingsBtn" class="btn-settings">⚙️</button>
+  <button id="historyBtn" class="btn-history">History</button>
+  <button id="downloadBtn" class="btn-download">Download</button>
+  <button id="clearBtn" class="btn-clear">Clear</button>
+</div>
+
 </div>
 
 <script>
-/* =====================================================
-   SCOUTPRO AI v4.0 - CLEAN REBUILD (FBA EDITION)
-   
-   Architecture:
-   1. CONFIG - Settings and constants
-   2. STATE - Centralized app state
-   3. SCANNER - Bluetooth scanner (FROZEN - DO NOT MODIFY)
-   4. KEEPA - API client with token management
-   5. GEMINI - Optional AI advisor
-   6. DECISION ENGINE - FBA-first buy/reject logic
-   7. UI RENDERERS - Display functions
-   8. EVENT HANDLERS - User interactions
-   ===================================================== */
+/* ==================== CONFIG ==================== */
+let BUY_COST = 1.00;
+let PROFIT_FLOOR = 5.00; // HARD floor set by slider
 
-// =====================================================
-// 1. CONFIG
-// =====================================================
+
 const CONFIG = {
-  KEEPA_DOMAIN: 'api.keepa.com',
-  // CORS proxies - try these in order if direct call fails
-  CORS_PROXIES: [
-    'https://corsproxy.io/?',
-    'https://api.allorigins.win/raw?url=',
-    '' // Empty string = direct call (no proxy)
-  ],
-  BUY_COST_DEFAULT: 1.00,
-  PROFIT_FLOOR_DEFAULT: 5.00,
-  SHIPPING_TO_AMAZON: 0.75,
-  TOKEN_BUDGET_DEFAULT: 500,
-  BORDERLINE_CONFIDENCE_RANGE: [45, 65],
-  BORDERLINE_PROFIT_BUFFER: 1.50,
-  RESTRICTED_BRANDS: ['Apple', 'Sony', 'Samsung', 'Microsoft', 'Nintendo', 'LEGO', 'Hasbro']
+  keepaKey: localStorage.getItem('keepaKey') || ''
 };
 
-// =====================================================
-// 2. STATE
-// =====================================================
-const AppState = {
-  settings: {
-    buyCost: parseFloat(localStorage.getItem('buyCost')) || CONFIG.BUY_COST_DEFAULT,
-    profitFloor: parseFloat(localStorage.getItem('profitFloor')) || CONFIG.PROFIT_FLOOR_DEFAULT,
-    keepaKey: localStorage.getItem('keepaKey') || '',
-    geminiKey: localStorage.getItem('geminiKey') || '',
-    tokenBudget: parseInt(localStorage.getItem('tokenBudget')) || CONFIG.TOKEN_BUDGET_DEFAULT
-  },
-  runtime: {
-    lastScanData: null,
-    history: [],
-    buyQueue: [],
-    scannedIdentifiers: new Set(),
-    tokensUsed: 0,
-    geminiCache: new Map()
-  },
-  keepa: {
-    mode: 'LIVE', // or 'SIMULATED'
-    tokensRemaining: null
-  }
-};
+const seenIdentifiers = new Set();
+let scanHistory = [];
+let buyList = [];
+let lastScanData = null;
 
-// Initialize sliders from saved state
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('buyCostSlider').value = AppState.settings.buyCost;
-  document.getElementById('profitFloorSlider').value = AppState.settings.profitFloor;
-  document.getElementById('buyCostValue').textContent = `$${AppState.settings.buyCost.toFixed(2)}`;
-  document.getElementById('profitFloorValue').textContent = `$${AppState.settings.profitFloor.toFixed(2)}`;
-  updateProfitTally();
-});
+const scanInput = document.getElementById("scanInput");
 
-// =====================================================
-// 3. SCANNER (FROZEN - EXACT COPY FROM WORKING VERSION)
-// =====================================================
-let scanBuffer = '';
-let scanTimeout = null;
-const SCAN_COMPLETE_DELAY = 100;
+/* ==================== BLUETOOTH SCANNER HANDLER ==================== */
+/* ✅ Scanner fix (stable):
+   - Uses scanInput.value (what the scanner actually types)
+   - Processes after short inactivity OR Enter
+   - Clears the field after processing so scans don't concatenate
+   - Uses .oninput/.onkeydown (overwrites any other handlers -> avoids multi-listener fights)
+*/
+let __scan_timer = null;
 
-document.getElementById('isbnInput').addEventListener('input', function(e) {
-  const currentValue = e.target.value;
-  
-  // Scanner detection: rapid input without user typing
-  const now = Date.now();
-  if (!this.lastInputTime || (now - this.lastInputTime) < 50) {
-    clearTimeout(scanTimeout);
-    scanBuffer = currentValue;
-    
-    scanTimeout = setTimeout(() => {
-      if (scanBuffer && scanBuffer.length >= 10) {
-        handleScannedIdentifier(scanBuffer.trim());
-        scanBuffer = '';
-        this.value = '';
-      }
-    }, SCAN_COMPLETE_DELAY);
-  }
-  
-  this.lastInputTime = now;
-});
-
-document.getElementById('isbnInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const value = this.value.trim();
-    if (value) {
-      handleScannedIdentifier(value);
-      this.value = '';
-    }
-  }
-});
-
-document.getElementById('lookupBtn').addEventListener('click', () => {
-  const value = document.getElementById('isbnInput').value.trim();
-  if (value) {
-    handleScannedIdentifier(value);
-    document.getElementById('isbnInput').value = '';
-  }
-});
-
-document.getElementById('scanBtn').addEventListener('click', () => {
-  document.getElementById('isbnInput').focus();
-});
-
-// =====================================================
-// 4. KEEPA CLIENT
-// =====================================================
-const KeepaClient = {
-  async fetchProduct(asin) {
-    const key = AppState.settings.keepaKey;
-    
-    if (!key) {
-      console.log('No Keepa key - using simulated data');
-      AppState.keepa.mode = 'SIMULATED';
-      return this.generateSimulatedData(asin);
-    }
-
-    // Try each CORS proxy in order
-    for (let i = 0; i < CONFIG.CORS_PROXIES.length; i++) {
-      const proxy = CONFIG.CORS_PROXIES[i];
-      const proxyName = proxy ? `Proxy ${i + 1}` : 'Direct';
-      
-      try {
-        AppState.keepa.mode = 'LIVE';
-        const baseUrl = `https://${CONFIG.KEEPA_DOMAIN}/product?key=${key}&domain=1&asin=${asin}&stats=180&offers=20`;
-        const url = proxy ? `${proxy}${encodeURIComponent(baseUrl)}` : baseUrl;
-        
-        console.log(`Trying Keepa via ${proxyName}...`);
-        
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('Keepa response:', data);
-        
-        if (data.error) {
-          throw new Error(`Keepa API error: ${data.error.message || data.error}`);
-        }
-        
-        if (data.products && data.products.length > 0) {
-          const product = data.products[0];
-          AppState.runtime.tokensUsed += (data.tokensConsumed || 1);
-          AppState.keepa.tokensRemaining = data.tokensLeft;
-          
-          console.log(`✓ Success via ${proxyName}! Tokens left: ${data.tokensLeft}`);
-          
-          // Save the working proxy for next time
-          if (i !== CONFIG.CORS_PROXIES.length - 1) {
-            // Move working proxy to front of array for next scan
-            CONFIG.CORS_PROXIES.unshift(CONFIG.CORS_PROXIES.splice(i, 1)[0]);
-          }
-          
-          return this.parseKeepaProduct(product);
-        } else {
-          throw new Error('Product not found in Keepa response');
-        }
-      } catch (error) {
-        console.warn(`${proxyName} failed:`, error.message);
-        
-        // If this was the last proxy, give up
-        if (i === CONFIG.CORS_PROXIES.length - 1) {
-          console.error('All proxies failed. Error details:', error);
-          alert(`Unable to reach Keepa API.\n\nError: ${error.message}\n\nFalling back to simulated data.\n\nTip: Check your API key in Settings.`);
-          AppState.keepa.mode = 'SIMULATED';
-          return this.generateSimulatedData(asin);
-        }
-        
-        // Otherwise, try next proxy
-        continue;
-      }
-    }
-  },
-
-  parseKeepaProduct(product) {
-    const stats = product.stats || {};
-    const current = stats.current || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    
-    // Extract FBA price (index 7 = FBA offers)
-    const fbaPrice = current[7] > 0 ? current[7] / 100 : null;
-    const buyBoxPrice = current[18] > 0 ? current[18] / 100 : null;
-    const amazonPrice = current[0] > 0 ? current[0] / 100 : null;
-    
-    // Sales rank
-    const salesRank = current[3] || 0;
-    const drops30 = stats.salesRankDrops30 || 0;
-    const drops90 = stats.salesRankDrops90 || 0;
-    const drops180 = stats.salesRankDrops180 || 0;
-    
-    return {
-      asin: product.asin,
-      title: product.title || 'Unknown Title',
-      brand: product.brand || null,
-      salesRank,
-      salesRankDrops30: drops30,
-      salesRankDrops90: drops90,
-      salesRankDrops180: drops180,
-      fbaPrice,
-      buyBoxPrice,
-      amazonPrice,
-      buyBoxWinner: fbaPrice && Math.abs(fbaPrice - (buyBoxPrice || 0)) < 0.50 ? 'FBA' : 'Other',
-      weight: product.packageWeight || 500,
-      category: product.categoryTree ? product.categoryTree[0]?.name : 'Books',
-      restrictionWarning: this.checkRestrictions(product)
-    };
-  },
-
-  checkRestrictions(product) {
-    if (product.brand && CONFIG.RESTRICTED_BRANDS.some(b => 
-      product.brand.toLowerCase().includes(b.toLowerCase())
-    )) {
-      return `⚠️ Restricted brand: ${product.brand}`;
-    }
-    return null;
-  },
-
-  generateSimulatedData(asin) {
-    // Simulated data for testing
-    const simulatedRank = Math.floor(Math.random() * 1000000) + 100000;
-    const simulatedPrice = (Math.random() * 20 + 10).toFixed(2);
-    
-    return {
-      asin,
-      title: `Simulated Book - ${asin}`,
-      brand: null,
-      salesRank: simulatedRank,
-      salesRankDrops30: Math.floor(Math.random() * 50) + 10,
-      salesRankDrops90: Math.floor(Math.random() * 150) + 30,
-      salesRankDrops180: Math.floor(Math.random() * 300) + 60,
-      fbaPrice: parseFloat(simulatedPrice),
-      buyBoxPrice: parseFloat(simulatedPrice),
-      amazonPrice: parseFloat((parseFloat(simulatedPrice) * 1.1).toFixed(2)),
-      buyBoxWinner: 'FBA',
-      weight: 500,
-      category: 'Books',
-      restrictionWarning: null,
-      _simulated: true
-    };
-  }
-};
-
-// =====================================================
-// 5. GEMINI CLIENT
-// =====================================================
-const GeminiClient = {
-  async analyze(keepaData, decision) {
-    const key = AppState.settings.geminiKey;
-    
-    if (!key) {
-      return {
-        analysis: 'Gemini API key not configured. Add your key in Settings to use AI analysis.',
-        recommendation: null
-      };
-    }
-
-    // Check cache
-    const cacheKey = `${keepaData.asin}-${decision.targetPrice}-${decision.profit}`;
-    if (AppState.runtime.geminiCache.has(cacheKey)) {
-      return AppState.runtime.geminiCache.get(cacheKey);
-    }
-
-    try {
-      const prompt = this.buildPrompt(keepaData, decision);
-      
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }]
-        })
-      });
-
-      const data = await response.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
-      
-      const result = this.parseResponse(text);
-      AppState.runtime.geminiCache.set(cacheKey, result);
-      
-      return result;
-    } catch (error) {
-      console.error('Gemini error:', error);
-      return {
-        analysis: `Error: ${error.message}`,
-        recommendation: null
-      };
-    }
-  },
-
-  buildPrompt(keepaData, decision) {
-    return `You are advising an experienced Amazon FBA bookseller. Your job is to evaluate whether this book is worth buying for FBA resale ONLY. Ignore FBM strategies.
-
-BOOK DETAILS:
-- Title: ${keepaData.title}
-- ASIN: ${keepaData.asin}
-- Sales Rank: ${keepaData.salesRank.toLocaleString()}
-- Rank Drops (30/90/180 days): ${keepaData.salesRankDrops30}/${keepaData.salesRankDrops90}/${keepaData.salesRankDrops180}
-- Current FBA Price: $${keepaData.fbaPrice || 'N/A'}
-- Buy Box: ${keepaData.buyBoxWinner}
-${keepaData.brand ? `- Brand: ${keepaData.brand}` : ''}
-
-DECISION MATH:
-- Target FBA Price: $${decision.targetPrice.toFixed(2)}
-- Est. Profit: $${decision.profit.toFixed(2)}
-- ROI: ${decision.roi}%
-- Confidence: ${decision.confidence}%
-
-Focus on:
-1. FBA demand outlook
-2. FBA competition risk
-3. Price stability
-4. Storage/long-tail risk
-5. Any book-specific red flags
-
-Format your response as:
-• [Point about demand]
-• [Point about competition]
-• [Point about risks]
-
-Then end with EXACTLY this format:
-Recommendation: BUY
-or
-Recommendation: REJECT`;
-  },
-
-  parseResponse(text) {
-    const lines = text.split('\n').filter(l => l.trim());
-    const recommendation = lines.find(l => l.toLowerCase().includes('recommendation:'));
-    
-    let rec = null;
-    if (recommendation) {
-      if (recommendation.toLowerCase().includes('buy')) rec = 'BUY';
-      else if (recommendation.toLowerCase().includes('reject')) rec = 'REJECT';
-    }
-
-    return {
-      analysis: text,
-      recommendation: rec
-    };
-  }
-};
-
-// =====================================================
-// 6. DECISION ENGINE (FBA-FIRST)
-// =====================================================
-const DecisionEngine = {
-  analyze(keepaData) {
-    const buyCost = AppState.settings.buyCost;
-    const profitFloor = AppState.settings.profitFloor;
-    
-    // Target price: FBA-first
-    const targetPrice = this.calculateTargetPrice(keepaData);
-    
-    // Fees
-    const fees = this.estimateFBAFees(targetPrice, keepaData.weight);
-    const totalCOGS = buyCost + CONFIG.SHIPPING_TO_AMAZON;
-    
-    // Profit calc
-    const profit = targetPrice - totalCOGS - fees.total;
-    const roi = Math.round((profit / Math.max(0.01, totalCOGS)) * 100);
-    
-    // Velocity signals
-    const velocity = this.computeVelocity(keepaData);
-    
-    // Effective floor (adjusted for velocity)
-    const effectiveFloor = this.getEffectiveFloor(profitFloor, velocity);
-    
-    // Slow mover check
-    const slowMover = keepaData.salesRank >= 900000 && velocity.drops30 < 5;
-    
-    // Decision logic
-    let verdict, reasoning;
-    
-    if (profit < 0) {
-      verdict = 'REJECT';
-      reasoning = `✗ Not profitable<br>✗ Est. loss: $${Math.abs(profit).toFixed(2)}<br>✗ Fees: $${fees.total.toFixed(2)}`;
-    } else if (slowMover && profit < (profitFloor * 1.25)) {
-      verdict = 'REJECT';
-      reasoning = `✗ Slow mover (rank ${keepaData.salesRank.toLocaleString()}, ${keepaData.salesRankDrops30} drops/30d)<br>✗ Profit $${profit.toFixed(2)} too low for storage risk`;
-    } else if (profit < effectiveFloor) {
-      verdict = 'REJECT';
-      reasoning = `✗ Profit $${profit.toFixed(2)} below floor ($${effectiveFloor.toFixed(2)})<br>✗ ROI: ${roi}%<br>✗ Target: $${targetPrice.toFixed(2)}`;
-    } else {
-      verdict = 'BUY';
-      const velocityTag = velocity.band === 'FAST' ? '✓ Good velocity' : '✓ Acceptable velocity';
-      reasoning = `✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>${velocityTag}<br>✓ Target: $${targetPrice.toFixed(2)} • BB: ${keepaData.buyBoxWinner}`;
-    }
-    
-    // Confidence
-    const confidence = this.computeConfidence(keepaData, velocity, { verdict }, profit, effectiveFloor);
-    
-    // Check if low confidence should reject
-    if (verdict === 'BUY' && confidence < 50) {
-      verdict = 'REJECT';
-      reasoning = `✗ Low confidence (${confidence}%)<br>✗ Profit exists but signals weak<br>✗ Rank: ${keepaData.salesRank.toLocaleString()} • Drops: ${keepaData.salesRankDrops30}`;
-    }
-    
-    return {
-      verdict,
-      targetPrice,
-      profit,
-      roi,
-      reasoning,
-      confidence,
-      velocity,
-      fees,
-      isBorderline: this.isBorderline(confidence, profit, profitFloor)
-    };
-  },
-
-  calculateTargetPrice(keepaData) {
-    // Priority: FBA > BuyBox (if FBA) > Amazon
-    if (keepaData.fbaPrice && keepaData.fbaPrice > 5) {
-      return keepaData.fbaPrice;
-    }
-    if (keepaData.buyBoxPrice && keepaData.buyBoxWinner === 'FBA' && keepaData.buyBoxPrice > 5) {
-      return keepaData.buyBoxPrice;
-    }
-    if (keepaData.amazonPrice && keepaData.amazonPrice > 5) {
-      return keepaData.amazonPrice * 0.95; // Slight discount
-    }
-    return 15.00; // Fallback
-  },
-
-  estimateFBAFees(price, weight) {
-    const referral = price * 0.15;
-    const closing = price < 10 ? 0 : 0;
-    
-    let fulfillment = 3.22; // Standard book
-    if (weight > 1000) fulfillment = 4.75;
-    if (weight > 2000) fulfillment = 6.50;
-    
-    return {
-      referral,
-      closing,
-      fulfillment,
-      total: referral + closing + fulfillment
-    };
-  },
-
-  computeVelocity(keepaData) {
-    const drops30 = keepaData.salesRankDrops30 || 0;
-    const drops90 = keepaData.salesRankDrops90 || 0;
-    
-    let band = 'SLOW';
-    if (drops30 >= 20) band = 'FAST';
-    else if (drops30 >= 10) band = 'MODERATE';
-    
-    const acceleration = drops90 > 0 ? (drops30 / (drops90 / 3)) : 1;
-    
-    return { drops30, drops90, band, acceleration };
-  },
-
-  getEffectiveFloor(baseFloor, velocity) {
-    if (velocity.band === 'FAST') return baseFloor * 0.8;
-    if (velocity.band === 'SLOW') return baseFloor * 1.2;
-    return baseFloor;
-  },
-
-  computeConfidence(keepaData, velocity, decision, profit, effectiveFloor) {
-    let score = 50;
-    
-    // Profit margin
-    const margin = profit - effectiveFloor;
-    if (margin > 3) score += 20;
-    else if (margin > 1.5) score += 10;
-    else if (margin < 0) score -= 20;
-    
-    // Velocity
-    if (velocity.band === 'FAST') score += 15;
-    else if (velocity.band === 'SLOW') score -= 10;
-    
-    // Rank
-    if (keepaData.salesRank < 100000) score += 10;
-    else if (keepaData.salesRank < 500000) score += 5;
-    else if (keepaData.salesRank > 900000) score -= 10;
-    
-    // Buy Box
-    if (keepaData.buyBoxWinner === 'FBA') score += 5;
-    
-    return Math.max(0, Math.min(100, score));
-  },
-
-  isBorderline(confidence, profit, profitFloor) {
-    const [minConf, maxConf] = CONFIG.BORDERLINE_CONFIDENCE_RANGE;
-    const confBorderline = confidence >= minConf && confidence <= maxConf;
-    const profitBorderline = Math.abs(profit - profitFloor) <= CONFIG.BORDERLINE_PROFIT_BUFFER;
-    
-    return confBorderline || profitBorderline;
-  },
-
-  detectHiddenGems(keepaData, decision) {
-    const gems = [];
-    
-    // High ROI
-    if (decision.roi > 150) {
-      gems.push({
-        label: 'High ROI',
-        icon: '💰',
-        details: `${decision.roi}% return on investment`
-      });
-    }
-    
-    // Fast mover + profit
-    if (decision.velocity.band === 'FAST' && decision.profit > 7) {
-      gems.push({
-        label: 'Fast Seller',
-        icon: '⚡',
-        details: `${decision.velocity.drops30} rank drops in 30 days`
-      });
-    }
-    
-    // Low rank + profit
-    if (keepaData.salesRank < 50000 && decision.profit > 5) {
-      gems.push({
-        label: 'Top Seller',
-        icon: '🏆',
-        details: `Rank: ${keepaData.salesRank.toLocaleString()}`
-      });
-    }
-    
-    return gems;
-  }
-};
-
-// =====================================================
-// 7. UI RENDERERS
-// =====================================================
-const UI = {
-  showProcessing(show) {
-    document.getElementById('processing').classList.toggle('hidden', !show);
-  },
-
-  showDuplicateWarning(show) {
-    document.getElementById('dupeWarning').classList.toggle('hidden', !show);
-  },
-
-  setStatus(text) {
-    document.getElementById('statusText').textContent = text;
-    
-    // Update Keepa mode indicator
-    const indicator = document.getElementById('keepaModeIndicator');
-    if (AppState.keepa.mode === 'LIVE') {
-      indicator.classList.remove('hidden', 'bg-yellow-500/20', 'text-yellow-400');
-      indicator.classList.add('bg-green-500/20', 'text-green-400');
-      indicator.textContent = 'LIVE';
-    } else if (AppState.keepa.mode === 'SIMULATED') {
-      indicator.classList.remove('hidden', 'bg-green-500/20', 'text-green-400');
-      indicator.classList.add('bg-yellow-500/20', 'text-yellow-400');
-      indicator.textContent = 'SIMULATED';
-    }
-  },
-
-  renderDecision(decision, keepaData) {
-    AppState.runtime.lastScanData = { decision, keepaData };
-    
-    const card = document.getElementById('resultCard');
-    const banner = document.getElementById('banner');
-    const decisionText = document.getElementById('decisionText');
-    
-    // Decision text + dot
-    let dotClass, displayText;
-    if (decision.verdict === 'BUY') {
-      dotClass = 'dot-green';
-      displayText = decision.isBorderline ? 'BORDERLINE BUY' : 'BUY';
-    } else {
-      dotClass = 'dot-red';
-      displayText = 'REJECT';
-    }
-    
-    decisionText.innerHTML = `<span class="decision-dot ${dotClass}"></span>${displayText}`;
-    
-    // Confidence
-    document.getElementById('confidence').textContent = `Confidence: ${decision.confidence}`;
-    
-    // Title
-    document.getElementById('bookTitle').textContent = keepaData.title;
-    
-    // Metrics
-    const avgPrice = keepaData.fbaPrice || keepaData.buyBoxPrice || keepaData.amazonPrice || 0;
-    document.getElementById('avgPrice').textContent = `$${avgPrice.toFixed(2)}`;
-    document.getElementById('salesVolume').textContent = `${keepaData.salesRankDrops180} drops`;
-    document.getElementById('profitValue').textContent = `$${decision.profit.toFixed(2)}`;
-    
-    // Explanation
-    let explanation = decision.reasoning;
-    if (keepaData.restrictionWarning) {
-      explanation += `<br><br><div class="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/50 rounded text-yellow-400 text-xs">${keepaData.restrictionWarning}</div>`;
-    }
-    document.getElementById('explanation').innerHTML = explanation;
-    
-    // Hidden gems
-    const gems = DecisionEngine.detectHiddenGems(keepaData, decision);
-    if (gems.length > 0) {
-      document.getElementById('gemBadge').classList.remove('hidden');
-      document.getElementById('gemDetails').classList.remove('hidden');
-      
-      const gemReasons = document.getElementById('gemReasons');
-      gemReasons.innerHTML = gems.map(g => 
-        `<div>${g.icon} <strong>${g.label}:</strong> ${g.details}</div>`
-      ).join('');
-    } else {
-      document.getElementById('gemBadge').classList.add('hidden');
-      document.getElementById('gemDetails').classList.add('hidden');
-    }
-    
-    // Gemini section
-    const geminiSection = document.getElementById('geminiSection');
-    if (decision.isBorderline && decision.verdict === 'BUY') {
-      geminiSection.classList.remove('hidden');
-      document.getElementById('geminiResult').classList.add('hidden');
-      document.getElementById('geminiResult').innerHTML = '';
-    } else {
-      geminiSection.classList.add('hidden');
-    }
-    
-    // Show card
-    card.classList.remove('hidden');
-    card.classList.add('animate-slide-in');
-    
-    // Update status
-    this.setStatus(keepaData.title);
-  },
-
-  renderGeminiResult(result) {
-    const container = document.getElementById('geminiResult');
-    
-    let html = '';
-    
-    // Recommendation badge at top
-    if (result.recommendation) {
-      const badgeClass = result.recommendation === 'BUY' ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-red-500/20 text-red-400 border-red-500/50';
-      html += `<div class="inline-block px-3 py-1 ${badgeClass} border rounded-lg font-bold text-sm mb-3">Gemini Recommendation: ${result.recommendation}</div><hr class="border-gray-800 mb-3">`;
-    }
-    
-    // Analysis
-    html += `<div class="text-sm text-gray-300 whitespace-pre-line leading-relaxed">${result.analysis}</div>`;
-    
-    container.innerHTML = html;
-    container.classList.remove('hidden');
-  },
-
-  updateProfitTally() {
-    const buyQueue = AppState.runtime.buyQueue;
-    const totalProfit = buyQueue.reduce((sum, item) => sum + parseFloat(item.profit), 0);
-    
-    document.getElementById('profitTally').innerHTML = `
-      <span class="font-semibold">Queue:</span> ${buyQueue.length} | 
-      <span class="font-semibold">Profit:</span> $${totalProfit.toFixed(2)}
-    `;
-  },
-
-  renderHistory() {
-    const list = document.getElementById('historyList');
-    const history = AppState.runtime.history;
-    
-    if (history.length === 0) {
-      list.innerHTML = '<div class="text-center text-gray-500 py-8">No scans yet</div>';
-      return;
-    }
-    
-    list.innerHTML = history.slice().reverse().map(item => {
-      const verdictClass = item.verdict === 'BUY' || item.verdict.includes('BORDERLINE') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400';
-      const gemBadge = item.isGem ? '<span class="text-yellow-400">✨</span>' : '';
-      
-      return `
-        <div class="p-4 bg-gray-900 rounded-xl border border-gray-800">
-          <div class="inline-block px-2 py-1 ${verdictClass} rounded text-xs font-bold mb-2">
-            ${gemBadge} ${item.verdict}
-          </div>
-          <div class="text-sm font-semibold mb-2">${item.title}</div>
-          <div class="text-xs text-gray-400 font-mono space-y-1">
-            <div>ASIN: ${item.asin}</div>
-            <div>Price: $${item.price} • Profit: $${item.profit} • ROI: ${item.roi}%</div>
-            ${item.gemTypes ? `<div class="text-yellow-400">💎 ${item.gemTypes}</div>` : ''}
-            <div>${item.time}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-};
-
-function updateProfitTally() {
-  UI.updateProfitTally();
+function __scan_clean(v){
+  return String(v || "").replace(/[^0-9xXbB]/g,"").trim();
 }
 
-// =====================================================
-// 8. EVENT HANDLERS
-// =====================================================
-async function handleScannedIdentifier(identifier) {
-  // Vibrate feedback
-  if (navigator.vibrate) {
-    navigator.vibrate(50);
-  }
-  
-  // Duplicate check
-  if (AppState.runtime.scannedIdentifiers.has(identifier)) {
-    UI.showDuplicateWarning(true);
-    setTimeout(() => UI.showDuplicateWarning(false), 3000);
+// Override-aware finalize: if the app defines finalizeScan(), we'll call it with a value.
+// If finalizeScan takes no args, we'll temporarily set scanInput.value then call it.
+function __scan_callFinalize(cleanVal){
+  if (!cleanVal) return;
+
+  try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
+
+  // Most robust: if app exposes finalizeScanWithValue
+  if (typeof window.finalizeScanWithValue === "function") {
+    window.finalizeScanWithValue(cleanVal);
     return;
   }
+
+  // If app has finalizeScan(), make it see this value
+  if (typeof window.finalizeScan === "function") {
+    const prev = scanInput.value;
+    scanInput.value = cleanVal;
+    try { window.finalizeScan(); }
+    finally { /* finalizeScan usually clears it; if not, restore to empty */ }
+    return;
+  }
+
+  // Fallback
+  console.warn("No finalizeScan() found; scanned:", cleanVal);
+}
+
+function __scan_processNow(){
+  if (__scan_timer) { clearTimeout(__scan_timer); __scan_timer = null; }
+  const raw = scanInput.value;
+  const cleaned = __scan_clean(raw);
+
+  // Many scanners type 12-14 digits (UPC/EAN) or 10/13 (ISBN)
+  if (cleaned.length >= 10) {
+    // Clear immediately so next scan doesn't append
+    scanInput.value = "";
+    __scan_callFinalize(cleaned);
+  }
+}
+
+scanInput.oninput = () => {
+  if (__scan_timer) clearTimeout(__scan_timer);
+  // short inactivity window; scanners type in ~50ms bursts
+  __scan_timer = setTimeout(__scan_processNow, 80);
+};
+
+scanInput.onkeydown = (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    __scan_processNow();
+  }
+};
+
+// Keep focus for scanner
+setTimeout(()=>{ try{ scanInput.focus(); }catch(e){} }, 50);
+scanInput.focus();
+
+/* ==================== UPDATE ENGINE BADGE ==================== */
+function updateKeepaIndicator() {
+  const keepaBadge = document.getElementById("keepaBadge");
+  if (CONFIG.keepaKey) {
+    keepaBadge.style.display = "flex";
+  } else {
+    keepaBadge.style.display = "none";
+  }
+}
+
+// Update on load
+updateKeepaIndicator();
+
+/* ==================== SLIDERS ==================== */
+const bcSlider = document.getElementById("buyCostSlider");
+const pfSlider = document.getElementById("profitFloorSlider");
+
+let sliderTimeout = null;
+
+// Slider UX (no-jitter):
+// - oninput only updates labels (no reflow)
+// - reanalysis happens on change / pointerup / keyup (after user finishes adjusting)
+function scheduleReanalysisAfterAdjust() {
+  clearTimeout(sliderTimeout);
+  sliderTimeout = setTimeout(() => {
+    if (lastScanData) reanalyzeWithNewThresholds();
+  }, 120);
+}
+
+bcSlider.oninput = () => {
+  BUY_COST = parseFloat(bcSlider.value);
+  document.getElementById("buyCostVal").textContent = BUY_COST.toFixed(2);
+};
+bcSlider.onchange = scheduleReanalysisAfterAdjust;
+bcSlider.onpointerup = scheduleReanalysisAfterAdjust;
+bcSlider.onkeyup = (e) => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") scheduleReanalysisAfterAdjust(); };
+
+pfSlider.oninput = () => {
+  PROFIT_FLOOR = parseFloat(pfSlider.value);
+  document.getElementById("profitFloorVal").textContent = PROFIT_FLOOR.toFixed(2);
+};
+pfSlider.onchange = scheduleReanalysisAfterAdjust;
+pfSlider.onpointerup = scheduleReanalysisAfterAdjust;
+pfSlider.onkeyup = (e) => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") scheduleReanalysisAfterAdjust(); };
+
+/* ==================== SETTINGS ==================== */
+document.getElementById("settingsBtn").onclick = () => {
+  document.getElementById("mainPage").style.display = "none";
+  document.getElementById("settingsPage").style.display = "block";
+  document.getElementById("keepaKey").value = CONFIG.keepaKey;
+};
+
+document.getElementById("saveSettings").onclick = () => {
+  CONFIG.keepaKey = document.getElementById("keepaKey").value.trim();
   
-  AppState.runtime.scannedIdentifiers.add(identifier);
-  UI.showProcessing(true);
-  UI.setStatus('Analyzing...');
+  localStorage.setItem('keepaKey', CONFIG.keepaKey);
+  
+  updateKeepaIndicator();
+  
+  alert('✅ Settings saved!');
+  document.getElementById("settingsPage").style.display = "none";
+  document.getElementById("mainPage").style.display = "block";
+};
+
+document.getElementById("backFromSettings").onclick = () => {
+  document.getElementById("settingsPage").style.display = "none";
+  document.getElementById("mainPage").style.display = "block";
+};
+
+/* ==================== FINALIZE SCAN ==================== */
+async function finalizeScan() {
+  const input = scanInput.value.trim();
+  scanInput.value = "";
+  scanInput.focus();
+
+  if (!input) return;
+  
+  // Vibrate feedback
+  if (navigator.vibrate) navigator.vibrate(40);
+  
+  // Check API keys
+  if (!CONFIG.keepaKey) {
+    console.warn('No Keepa key - using mock data');
+  }
+  
+  if (CONFIG.useGemini && !CONFIG.geminiKey) {
+    alert('⚠️ Gemini is enabled but no API key provided. Falling back to local engine.');
+    CONFIG.useGemini = false;
+  }
+  
+  // Detect input type
+  const identifier = detectInputType(input);
+  
+  if (checkDuplicate(identifier)) return;
+  
+  document.getElementById("statusText").textContent = `Processing: ${identifier}`;
+  
+  // Show processing state
+  document.getElementById("processing").style.display = "block";
+  document.getElementById("resultCard").classList.add("hidden");
   
   try {
-    // Fetch Keepa data
-    const keepaData = await KeepaClient.fetchProduct(identifier);
+    // Step 1: Query Keepa
+    const keepaData = await queryKeepa(identifier, input);
     
-    // Analyze
-    const decision = DecisionEngine.analyze(keepaData);
+    if (!keepaData) {
+      throw new Error("Item not found in Keepa database");
+    }
     
-    // Render
-    UI.renderDecision(decision, keepaData);
+    // Step 2: Analyze with local engine (not Gemini - that's only for double-checking)
+    const decision = localDecisionEngine(keepaData);
     
-    // Add to history
+    // Step 3: Display result
+    displayResult(decision, keepaData);
+    
+    // Step 4: Add to history
     addToHistory(decision, keepaData);
+    
+    document.getElementById("statusText").textContent = keepaData.title;
+    document.getElementById("processing").style.display = "none";
     
   } catch (error) {
     console.error('Scan error:', error);
-    UI.setStatus('Error: ' + error.message);
-  } finally {
-    UI.showProcessing(false);
+    
+    // More specific error messages
+    let errorMsg = error.message;
+    if (errorMsg.includes('Failed to fetch')) {
+      errorMsg = 'Network error. Check your internet connection.';
+    } else if (errorMsg.includes('API key')) {
+      errorMsg = 'Invalid API key. Check Settings.';
+    } else if (errorMsg.includes('not found')) {
+      errorMsg = 'Product not found in database.';
+    }
+    
+    document.getElementById("statusText").textContent = "Error — try again";
+    document.getElementById("processing").style.display = "none";
+    
+    // Show error in result card
+    document.getElementById("resultCard").classList.remove("hidden");
+    document.getElementById("banner").className = "banner pass";
+    document.getElementById("decision").textContent = "ERROR";
+    document.getElementById("reason").textContent = errorMsg;
+    document.getElementById("explanation").innerHTML = `⚠️ ${error.message}`;
   }
 }
 
+/* ==================== INPUT DETECTION ==================== */
+function detectInputType(input) {
+  const cleaned = input.replace(/[^0-9X]/gi, '');
+  
+  // ISBN-10 or ISBN-13
+  if (cleaned.length === 10 || cleaned.length === 13) {
+    return cleaned;
+  }
+  
+  // UPC/EAN (12-14 digits)
+  if (cleaned.length >= 12 && cleaned.length <= 14) {
+    return cleaned;
+  }
+  
+  // ASIN (B + 9 alphanumeric)
+  if (/^B[0-9A-Z]{9}$/i.test(input)) {
+    return input.toUpperCase();
+  }
+  
+  // Otherwise treat as title search
+  return input;
+}
+
+/* ==================== DUPLICATE CHECK ==================== */
+function checkDuplicate(identifier) {
+  if (seenIdentifiers.has(identifier)) {
+    document.getElementById("dupeWarning").style.display = "block";
+    setTimeout(() => document.getElementById("dupeWarning").style.display = "none", 2000);
+    return true;
+  }
+  seenIdentifiers.add(identifier);
+  return false;
+}
+
+/* ==================== KEEPA API ==================== */
+
+function normalizeKeepaIdentifier(raw) {
+  const original = String(raw || "").trim();
+  const s = original.replace(/[^0-9X]/gi, "");
+
+  // ISBN-13 (978/979)
+  if (/^(978|979)\d{10}$/.test(s)) return { type: "code", value: s };
+  // ISBN-10
+  if (/^\d{9}[\dX]$/.test(s)) return { type: "code", value: s };
+  // ASIN
+  if (/^B[0-9A-Z]{9}$/i.test(original)) return { type: "asin", value: original.toUpperCase() };
+
+  // Default: treat as code (UPC/EAN/etc)
+  return { type: "code", value: s || original };
+}
+
+async function queryKeepa(identifier, rawInput) {
+  // Check if we have a Keepa key
+  if (!CONFIG.keepaKey) {
+    console.warn('No Keepa key - using mock data');
+    return getMockKeepaData(identifier, rawInput);
+  }
+  
+  try {
+    // Keepa Product API endpoint
+    const domain = 1; // 1 = US Amazon (.com)
+    
+    // Build query based on identifier type (normalized for Keepa)
+    const kid = normalizeKeepaIdentifier(identifier);
+    let queryParam = "";
+    if (kid.type === "code") {
+      queryParam = `code=${encodeURIComponent(kid.value)}`;
+    } else if (kid.type === "asin") {
+      queryParam = `asin=${encodeURIComponent(kid.value)}`;
+    } else {
+      throw new Error('Title search not yet implemented. Please scan ISBN/UPC or enter ASIN.');
+    }
+
+// Keepa API parameters:
+    // stats: 0 = no stats, 1 = include stats like sales rank drops
+    // history: 0 = no history, 1 = price history (we need this for csv arrays!)
+    const stats = 1; // Include stats (sales rank drops, etc)
+    const history = 1; // Include price history (needed for csv arrays!)
+    
+    const keepaUrl = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&stats=${stats}&history=${history}`;
+    
+    // Use CORS proxy to avoid browser CORS restrictions
+    const corsProxy = 'https://corsproxy.io/?';
+    const url = corsProxy + encodeURIComponent(keepaUrl);
+    
+    console.log('Keepa API call:', keepaUrl.replace(CONFIG.keepaKey, 'HIDDEN'));
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Rate limit reached. Please wait a moment.');
+      }
+      throw new Error(`Keepa API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Check if product found
+    if (!data.products || data.products.length === 0) {
+      throw new Error('Product not found in Keepa database');
+    }
+    
+    const product = data.products[0];
+    
+    // Parse Keepa data
+    return parseKeepaProduct(product);
+    
+  } catch (error) {
+    console.error('Keepa query error:', error);
+    throw error;
+  }
+}
+
+/* ==================== PARSE KEEPA PRODUCT ==================== */
+function parseKeepaProduct(product) {
+  console.log('Raw Keepa product data:', product);
+
+  // Keepa uses -1 to indicate no data. Prices are returned in cents.
+  const toDollars = (v) => (v === -1 || v === null || v === undefined) ? 0 : (v / 100);
+  const toCount   = (v) => (v === -1 || v === null || v === undefined) ? 0 : v;
+
+  // Prefer the stats.current array when stats is requested.
+  // CsvType mapping (Keepa): AMAZON=0, NEW=1, USED=2, SALES=3, ... NEW_FBM_SHIPPING=7, NEW_FBA=10, BUY_BOX_SHIPPING=18
+  // See Keepa CsvType docs listing NEW_FBA + BUY_BOX_SHIPPING. 
+  const cur = product.stats && Array.isArray(product.stats.current) ? product.stats.current : null;
+
+  const pAmazon = cur ? toDollars(cur[0])  : 0;
+  const pNew    = cur ? toDollars(cur[1])  : 0;
+  const pUsed   = cur ? toDollars(cur[2])  : 0;
+  const pFBMShip= cur ? toDollars(cur[7])  : 0;   // FBM new incl shipping
+  const pFBA    = cur ? toDollars(cur[10]) : 0;   // lowest 3P FBA new
+  const pBuyBox = cur ? toDollars(cur[18]) : 0;   // buy box shipping (not full BB price)
+
+  // Avg price anchors (prefer 180-day averages when available)
+  const avg180 = (product.stats && Array.isArray(product.stats.avg180)) ? product.stats.avg180 : null;
+  const avgFBA180 = avg180 ? toDollars(avg180[10]) : 0;
+  const avgNew180 = avg180 ? toDollars(avg180[1]) : 0;
+  const avgUsed180 = avg180 ? toDollars(avg180[2]) : 0;
+  const avgBB180 = avg180 ? toDollars(avg180[18]) : 0; // may be shipping-only; still useful as fallback
+
+  const avgSale6mo = avgFBA180 || avgBB180 || avgNew180 || avgUsed180 || 0;
+
+
+  // Rank
+  const salesRank = cur ? toCount(cur[3]) : 999999;
+
+  // Offer counts (not split FBA/FBM unless offers=... is requested; we avoid that to save tokens)
+  const countNew = cur ? toCount(cur[11]) : 0; // COUNT_NEW
+  const countUsed = cur ? toCount(cur[12]) : 0; // COUNT_USED
+
+  // Derive "competitive sell price" for *your* listing:
+  // For books, Buy Box and "Marketplace New" can be FBM-heavy. NEW_FBA is usually the best proxy for Prime-competitive pricing.
+  // Strategy:
+  // 1) If Buy Box exists AND it's close to NEW_FBA -> treat as FBA market
+  // 2) Else prefer NEW_FBA (Prime price) if present
+  // 3) Else fall back to FBM+shipping, then NEW, then USED, then AMAZON
+  const competitiveFBA = pFBA > 0 ? pFBA : 0;
+  const competitiveFBM = pFBMShip > 0 ? pFBMShip : (pNew > 0 ? pNew : 0);
+
+  // Guess winner
+  let buyBoxWinner = "NONE";
+  if (pBuyBox > 0 && pAmazon > 0 && Math.abs(pBuyBox - pAmazon) <= 0.01) {
+    buyBoxWinner = "AMAZON";
+  } else if (pBuyBox > 0 && competitiveFBA > 0 && (Math.abs(pBuyBox - competitiveFBA) / competitiveFBA) <= 0.03) {
+    buyBoxWinner = "FBA";
+  } else if (pBuyBox > 0 && competitiveFBM > 0 && (Math.abs(pBuyBox - competitiveFBM) / competitiveFBM) <= 0.03) {
+    buyBoxWinner = "FBM";
+  } else if (competitiveFBA > 0) {
+    buyBoxWinner = "FBA";
+  } else if (competitiveFBM > 0) {
+    buyBoxWinner = "FBM";
+  }
+
+  // Choose the market price anchor we will price against
+  const marketPrice = (competitiveFBA > 0) ? competitiveFBA : (pBuyBox > 0 ? pBuyBox : (competitiveFBM > 0 ? competitiveFBM : (pUsed > 0 ? pUsed : pAmazon)));
+
+  const approxFBA = (competitiveFBA > 0) ? Math.max(1, Math.min(8, Math.round(countNew * 0.4) || 1)) : 0;
+  const approxFBM = Math.max(0, countNew - approxFBA);
+
+  const parsedData = {
+    asin: product.asin,
+    title: product.title || 'Unknown Title',
+    brand: product.brand || '',
+    manufacturer: product.manufacturer || '',
+    categoryTree: product.categoryTree || [],
+    salesRank: salesRank,
+    salesRankDrops30: toCount(product.stats?.salesRankDrops30) || 0,
+    salesRankDrops90: toCount(product.stats?.salesRankDrops90) || 0,
+
+    // Price signals
+    currentPriceAmazon: pAmazon,
+    currentPriceNew: pNew,
+    currentPriceUsed: pUsed,
+    currentPriceFBM: competitiveFBM,
+    currentPriceFBA: competitiveFBA,
+    currentPriceBuyBox: (competitiveFBA > 0 ? competitiveFBA : (pNew > 0 ? pNew : pBuyBox)),
+    avgSale6mo: avgSale6mo,
+    marketPrice: marketPrice,
+
+    buyBoxWinner: buyBoxWinner,
+
+    // Counts (approx; Keepa doesn't split FBA/FBM counts unless offers=... is requested)
+    offerCountNew: countNew,
+    offerCountUsed: countUsed,
+    offerCountFBA: approxFBA,
+    offerCountFBM: approxFBM,
+
+    // Weight: Keepa stores in 0.01 lb units
+    weight: product.packageWeight ? (product.packageWeight / 100) : 1.0,
+
+    publicationDate: product.releaseDate ? new Date(product.releaseDate * 60000) : null
+  };
+
+  console.log('Parsed Keepa data:', parsedData);
+  
+  // Check for restricted brands specific to books/media
+  const restrictedBrands = ['universal', 'national geographic', 'scholastic'];
+  const brandLower = (parsedData.brand || '').toLowerCase();
+  const isPotentiallyRestricted = restrictedBrands.some(b => brandLower.includes(b));
+  
+  if (isPotentiallyRestricted) {
+    parsedData.restrictionWarning = `⚠️ ${parsedData.brand} may require approval`;
+  }
+  
+  return parsedData;
+
+  console.log('Final parsed data:', parsedData);
+  return parsedData;
+}
+
+
+/* ==================== MOCK KEEPA DATA (for testing) ==================== */
+function getMockKeepaData(identifier, rawInput) {
+  console.log('Using mock data for:', identifier);
+  
+  // Generate semi-random but consistent data based on identifier
+  const hash = identifier.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
+  return {
+    asin: `B${identifier.slice(0, 9).padEnd(9, '0')}`,
+    title: `Mock Book: ${rawInput}`,
+    salesRank: 50000 + (hash % 200000),
+    salesRankDrops30: Math.floor(hash % 50),
+    salesRankDrops90: Math.floor(hash % 150),
+    currentPriceAmazon: hash % 3 === 0 ? 15 + (hash % 20) : 0,
+    currentPriceFBA: 12 + (hash % 15),
+    currentPriceFBM: 10 + (hash % 18),
+    buyBoxWinner: hash % 3 === 0 ? "AMAZON" : (hash % 2 === 0 ? "FBA" : "FBM"),
+    offerCountFBA: Math.floor(hash % 15) + 1,
+    offerCountFBM: Math.floor(hash % 10),
+    priceVolatility: "STABLE",
+    weight: 0.5 + (hash % 20) / 10,
+    publicationDate: new Date(2020 + (hash % 5), hash % 12, 1)
+  };
+}
+
+/* ==================== GEMINI ANALYSIS ENGINE (FIXED) ==================== */
+
+/* ==================== HIDDEN GEMS DETECTION ==================== */
+function detectHiddenGems(keepaData, decision) {
+  const gems = [];
+  const title = keepaData.title.toLowerCase();
+  
+  // CRITICAL: Only detect gems for BUY decisions with:
+  // 1. Positive profit above floor
+  // 2. High confidence (75%+) - we don't call borderline buys "hidden gems"
+  if (decision.verdict !== "BUY" || decision.profit < PROFIT_FLOOR) {
+    return gems; // No gems for rejects or unprofitable items
+  }
+  
+  const confidence = decision.confidence || 0;
+  if (confidence < 75) {
+    return gems; // No gems for low/medium confidence buys - reserve for strong buys only
+  }
+  
+  // GEM 1: High ROI despite borderline profit
+  if (decision.roi >= 200 && decision.profit >= PROFIT_FLOOR * 0.8) {
+    gems.push({
+      type: 'high-roi',
+      icon: '🚀',
+      label: 'Exceptional ROI',
+      details: `${decision.roi}% return on investment`
+    });
+  }
+  
+  // GEM 2: Low competition FBA
+  if (keepaData.offerCountFBA <= 3 && keepaData.salesRank < 200000) {
+    gems.push({
+      type: 'low-competition',
+      icon: '💎',
+      label: 'Low FBA competition',
+      details: `Only ${keepaData.offerCountFBA} FBA sellers on good rank`
+    });
+  }
+  
+  // GEM 3: Amazon controls BB but we can still profit
+  if (keepaData.buyBoxWinner === "AMAZON" && decision.verdict === "BUY") {
+    gems.push({
+      type: 'amazon-gap',
+      icon: '🎯',
+      label: 'Amazon gap opportunity',
+      details: 'Can undercut Amazon profitably'
+    });
+  }
+  
+  // GEM 4: High velocity (lots of sales)
+  if (keepaData.salesRankDrops30 >= 30) {
+    gems.push({
+      type: 'high-velocity',
+      icon: '⚡',
+      label: 'Fast seller',
+      details: `${keepaData.salesRankDrops30} rank drops in 30 days`
+    });
+  }
+  
+  // GEM 5: Price protection (high margin despite fees)
+  if (decision.profit >= PROFIT_FLOOR * 1.5) {
+    gems.push({
+      type: 'price-cushion',
+      icon: '🛡️',
+      label: 'Price cushion',
+      details: `$${decision.profit.toFixed(2)} profit gives pricing flexibility`
+    });
+  }
+  
+  // GEM 6: Top 50k sales rank
+  if (keepaData.salesRank < 50000) {
+    gems.push({
+      type: 'top-rank',
+      icon: '👑',
+      label: 'Top 50k rank',
+      details: 'Excellent sales velocity'
+    });
+  }
+  
+  // GEM 7: Lightweight (lower fees)
+  if (keepaData.weight < 1.0 && decision.profit > PROFIT_FLOOR) {
+    gems.push({
+      type: 'lightweight',
+      icon: '🪶',
+      label: 'Lightweight advantage',
+      details: 'Lower FBA fees boost margins'
+    });
+  }
+  
+  // GEM 8: Steady seller (90-day consistency)
+  if (keepaData.salesRankDrops90 >= 60 && keepaData.salesRankDrops30 >= 15) {
+    gems.push({
+      type: 'steady-seller',
+      icon: '📈',
+      label: 'Consistent sales',
+      details: 'Strong 90-day track record'
+    });
+  }
+  
+  // GEM 9: FBM dominant but FBA opportunity
+  if (keepaData.buyBoxWinner === "FBM" && keepaData.offerCountFBA <= 2 && decision.verdict === "BUY") {
+    gems.push({
+      type: 'fba-upgrade',
+      icon: '📦',
+      label: 'FBA upgrade play',
+      details: 'Win Buy Box with Prime shipping'
+    });
+  }
+  
+  // GEM 10: Monopoly opportunity
+  if (keepaData.offerCountFBA === 0 && keepaData.salesRank < 300000) {
+    gems.push({
+      type: 'monopoly',
+      icon: '🏆',
+      label: 'FBA monopoly',
+      details: 'Be the only FBA seller'
+    });
+  }
+  
+  // GEM 11: Rising rank (improving sales)
+  const rankImprovement = keepaData.salesRankDrops30 / Math.max(1, keepaData.salesRankDrops90 / 3);
+  if (rankImprovement >= 1.5) {
+    gems.push({
+      type: 'rising-trend',
+      icon: '📊',
+      label: 'Sales trending up',
+      details: 'Recent velocity increasing'
+    });
+  }
+  
+  // GEM 12: High profit absolute
+  if (decision.profit >= 15) {
+    gems.push({
+      type: 'high-profit',
+      icon: '💰',
+      label: 'High profit margin',
+      details: `$${decision.profit.toFixed(2)} profit per unit`
+    });
+  }
+  
+  // GEM 13: Sweet spot rank (100k-200k)
+  if (keepaData.salesRank >= 100000 && keepaData.salesRank <= 200000 && decision.profit >= PROFIT_FLOOR) {
+    gems.push({
+      type: 'sweet-spot',
+      icon: '🎪',
+      label: 'Sweet spot rank',
+      details: 'Good velocity without high competition'
+    });
+  }
+  
+  // GEM 14: No Amazon competition
+  if (keepaData.currentPriceAmazon === 0 && keepaData.salesRank < 200000) {
+    gems.push({
+      type: 'no-amazon',
+      icon: '🚫',
+      label: 'Amazon not competing',
+      details: 'Third-party sellers only'
+    });
+  }
+  
+  // GEM 15: Double ROI minimum
+  if (decision.roi >= 100 && decision.profit >= PROFIT_FLOOR) {
+    gems.push({
+      type: 'double-roi',
+      icon: '🎰',
+      label: 'Double your money',
+      details: `${decision.roi}% ROI`
+    });
+  }
+  
+  // GEM 16: Underpriced market
+  if (keepaData.currentPriceFBA > 0 && decision.targetPrice >= keepaData.currentPriceFBA * 1.1) {
+    gems.push({
+      type: 'underpriced',
+      icon: '💸',
+      label: 'Underpriced market',
+      details: 'Current pricing leaves room'
+    });
+  }
+  
+  // GEM 17: Niche dominance (few sellers, good rank)
+  if ((keepaData.offerCountFBA + keepaData.offerCountFBM) <= 5 && keepaData.salesRank < 150000) {
+    gems.push({
+      type: 'niche',
+      icon: '🎯',
+      label: 'Niche opportunity',
+      details: 'Low competition in active market'
+    });
+  }
+  
+  // GEM 18: Buy Box ready (can win immediately)
+  if (keepaData.buyBoxWinner === "FBA" && decision.targetPrice < keepaData.currentPriceFBA) {
+    gems.push({
+      type: 'bb-ready',
+      icon: '🎁',
+      label: 'Buy Box ready',
+      details: 'Will win Buy Box immediately'
+    });
+  }
+  
+  // GEM 19: Seasonal timing (basic detection)
+  const month = new Date().getMonth();
+  const seasonal = (month >= 10 || month <= 1) && (title.includes('christmas') || title.includes('holiday') || title.includes('winter'));
+  if (seasonal) {
+    gems.push({
+      type: 'seasonal',
+      icon: '🎯',
+      label: 'Seasonal timing',
+      details: 'Peak demand window for this topic'
+    });
+  }
+  
+  // GEM 20: New release momentum
+  if (keepaData.publicationDate) {
+    const pubDate = new Date(keepaData.publicationDate);
+    const monthsOld = (Date.now() - pubDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+    if (monthsOld < 6 && keepaData.salesRank < 100000) {
+      gems.push({
+        type: 'new-release',
+        icon: '🆕',
+        label: 'New release momentum',
+        details: `Published ${Math.round(monthsOld)} months ago with strong rank`
+      });
+    }
+  }
+  
+  // GEM 21: Textbook potential
+  if (decision.targetPrice > 30 && (title.includes('edition') || title.includes('textbook'))) {
+    gems.push({
+      type: 'textbook',
+      icon: '🎓',
+      label: 'Textbook potential',
+      details: 'High-value educational book'
+    });
+  }
+  
+  // GEM 22: Collectible premium
+  if (keepaData.condition && keepaData.condition.includes('Collectible') && decision.profit > 8) {
+    gems.push({
+      type: 'collectible',
+      icon: '🏺',
+      label: 'Collectible premium',
+      details: 'Collectible condition commands higher prices'
+    });
+  }
+  
+  // GEM 23: First edition
+  if (title.includes('first edition') || title.includes('1st edition')) {
+    gems.push({
+      type: 'first-edition',
+      icon: '📖',
+      label: 'First edition',
+      details: 'First editions have collector value'
+    });
+  }
+  
+  // GEM 24: Out of print
+  if (keepaData.outOfPrint) {
+    gems.push({
+      type: 'out-of-print',
+      icon: '🔒',
+      label: 'Out of print',
+      details: 'Limited supply increases value'
+    });
+  }
+  
+  // GEM 25: Floor protection working
+  if (decision.targetPrice === 8.00 && decision.profit >= 5) {
+    gems.push({
+      type: 'floor-protection',
+      icon: '🛡️',
+      label: 'Floor protection active',
+      details: 'Raised to $8 floor but still profitable'
+    });
+  }
+  
+  return gems;
+}
+
+/* ==================== LOCAL FALLBACK DECISION ENGINE ==================== */
+
+/* ==================== VELOCITY + ACCELERATION ==================== */
+function computeVelocitySignals(keepaData) {
+  const d30 = Number(keepaData.salesRankDrops30 || 0);
+  const d90 = Number(keepaData.salesRankDrops90 || 0);
+
+  // Weighted toward recent activity
+  const velocityScore = (d30 * 3 + d90) / 4;
+
+  let velocityBand = "VERY_SLOW";
+  if (d30 >= 30) velocityBand = "FAST";
+  else if (d30 >= 15) velocityBand = "STEADY";
+  else if (d30 >= 5) velocityBand = "SLOW";
+
+  // Compare recent 30d drops to the 90d average pace
+  const expected30 = d90 / 3;
+  let trend = "STABLE";
+  if (d30 > expected30 * 1.25) trend = "ACCELERATING";
+  else if (d30 < expected30 * 0.75) trend = "DECLINING";
+
+  return {
+    drops30: d30,
+    drops90: d90,
+    expected30: Math.round(expected30),
+    velocityScore: Math.round(velocityScore),
+    velocityBand,
+    trend
+  };
+}
+
+/* Auto-tune profit floor based on velocity + trend (Scoutly-style) */
+function getEffectiveProfitFloor(baseFloor, velocity) {
+  let soft = baseFloor;
+
+  if (velocity.velocityBand === "FAST") soft = Math.max(baseFloor * 1.25, baseFloor);
+  else if (velocity.velocityBand === "STEADY") soft = Math.max(baseFloor * 1.15, baseFloor);
+  else if (velocity.velocityBand === "SLOW") soft = Math.max(baseFloor * 1.05, baseFloor);
+  else soft = Math.max(baseFloor * 1.5, baseFloor);
+
+  if (velocity.trend === "ACCELERATING") soft *= 1.1;
+  if (velocity.trend === "DECLINING") soft *= 0.95;
+
+  // HARD FLOOR: never allow below slider
+  return Math.round(Math.max(baseFloor, soft) * 4) / 4;
+}
+
+/* Simple confidence heuristic for LOCAL engine (Gemini can override with its own confidence) */
+/* ==================== CONFIDENCE CALCULATION ==================== 
+ * Confidence score (5-95%) represents how sure we are about the decision.
+ * 
+ * For BUY decisions:
+ *   - 75%+ = Strong buy (good profit, good velocity, clear price signals)
+ *   - 50-75% = Moderate buy (acceptable profit but some risk factors)
+ *   - <50% = REJECT (auto-converted - we don't recommend low-confidence buys)
+ * 
+ * For REJECT decisions:
+ *   - Higher % = More confident in rejecting (clear reasons to pass)
+ *   - Lower % = Borderline reject (might work but too risky)
+ * 
+ * Factors that increase confidence:
+ *   + Clear market price data (FBA/Buy Box prices available)
+ *   + Profit well above floor ($5+ cushion)
+ *   + Fast/Steady sales velocity (many rank drops)
+ *   + Accelerating trend (sales speeding up)
+ * 
+ * Factors that decrease confidence:
+ *   - Missing price data
+ *   - Thin margins (profit barely above floor)
+ *   - Slow/Very slow velocity
+ *   - Declining trend
+ *   - Extremely high rank (>1M) with low margin
+ */
+function computeLocalConfidence(keepaData, velocity, decision, profit, effectiveFloor) {
+  let score = 50;
+
+  // Price signal quality
+  const hasMarket = (keepaData.currentPriceFBA && keepaData.currentPriceFBA > 0) || (keepaData.currentPriceBuyBox && keepaData.currentPriceBuyBox > 0);
+  score += hasMarket ? 10 : -20;
+
+  // Margin strength
+  const marginDelta = profit - effectiveFloor;
+  if (marginDelta >= 5) score += 20;
+  else if (marginDelta >= 2) score += 12;
+  else if (marginDelta >= 0) score += 6;
+  else score -= 12;
+
+  // Velocity
+  if (velocity.velocityBand === "FAST") score += 15;
+  else if (velocity.velocityBand === "STEADY") score += 10;
+  else if (velocity.velocityBand === "SLOW") score += 2;
+  else score -= 12;
+
+  // Trend
+  if (velocity.trend === "ACCELERATING") score += 8;
+  else if (velocity.trend === "DECLINING") score -= 10;
+
+  // Extreme slow mover penalty unless big margin
+  if ((keepaData.salesRank || 0) >= 1000000 && velocity.velocityBand === "VERY_SLOW" && profit < (effectiveFloor * 1.5)) score -= 15;
+
+  // Clamp
+  score = Math.max(5, Math.min(95, Math.round(score)));
+
+  // If decision is REJECT but confidence too high, keep it realistic
+  if (decision.verdict === "REJECT") score = Math.min(score, 85);
+
+  return score;
+}
+
+function localDecisionEngine(keepaData) {
+  // -------- Pricing anchor (FBA books, book-aware) --------
+  // Use 6-month average sale price when available (most stable anchor for books).
+  // Then prefer current FBA, then NEW (often a good FBA proxy), then marketPrice.
+  // As a last resort, allow USED only if demand exists.
+  const demand6mo = (keepaData.salesRankDrops180 || 0) || ((keepaData.salesRankDrops90 || 0) * 2) || 0;
+
+  const baseAnchor =
+    ((keepaData.avgSale6mo && keepaData.avgSale6mo > 0) ? keepaData.avgSale6mo : 0) ||
+    ((keepaData.currentPriceFBA && keepaData.currentPriceFBA > 0) ? keepaData.currentPriceFBA : 0) ||
+    ((keepaData.currentPriceNew && keepaData.currentPriceNew > 0) ? keepaData.currentPriceNew : 0) ||
+    ((keepaData.marketPrice && keepaData.marketPrice > 0) ? keepaData.marketPrice : 0) ||
+    (((keepaData.currentPriceUsed && keepaData.currentPriceUsed > 0) && demand6mo >= 30) ? keepaData.currentPriceUsed * 1.05 : 0);
+
+  const market = baseAnchor;
+
+  // Undercut strategy by who appears to control the BB
+
+  let targetPrice = market || 0;
+  if (keepaData.buyBoxWinner === "AMAZON" && keepaData.currentPriceAmazon > 0) {
+    targetPrice = keepaData.currentPriceAmazon * 0.95; // undercut Amazon
+  } else if (keepaData.buyBoxWinner === "FBM" && targetPrice > 0) {
+    targetPrice = targetPrice * 0.98;
+  } else if (keepaData.buyBoxWinner === "FBA" && targetPrice > 0) {
+    targetPrice = targetPrice * 0.97;
+  }
+
+  // If we don't have any price signal, it's unsafe.
+  if (!targetPrice || targetPrice <= 0) {
+    return {
+      verdict: "BORDERLINE BUY",
+      targetPrice: 0,
+      profit: -999,
+      roi: -999,
+      reasoning: "⚠ FBA price not explicit — using inferred market pricing. Consider Gemini / caution."
+    };
+  }
+
+  // -------- Fee model (book-aware, Scoutly-ish) --------
+  // We don't have exact dimensions, so we use a conservative estimator:
+  // - Referral fee: ~15% for most categories
+  // - Closing fee (media): ~$1.80 per unit (books are media) 
+  // - Fulfillment fee: weight-based approximation; if < $10, apply Low-Price FBA discount (about $0.86 on avg)
+  // Sources (high-level): Amazon Seller Central low-price FBA discount + media closing fee references.
+  function estimateFbaFees(price, weightLbs) {
+    const referral = price * 0.15;
+
+    // Media closing fee (books)
+    const closing = 1.80;
+
+    // Fulfillment fee rough model:
+    // Base for ~1 lb standard-size is ~3.2; add ~0.35 per extra lb (conservative)
+    const w = Math.max(0.25, weightLbs || 1.0);
+    let fulfillment = 3.20 + Math.max(0, w - 1.0) * 0.35;
+
+    // Low-Price FBA (under $10) discount
+    if (price < 10) fulfillment = Math.max(2.00, fulfillment - 0.86);
+
+    return { referral, closing, fulfillment, total: (referral + closing + fulfillment) };
+  }
+
+  const shippingToAmazon = 0.75; // inbound prep/ship estimate
+  const totalCOGS = BUY_COST + shippingToAmazon;
+
+  const fees = estimateFbaFees(targetPrice, keepaData.weight);
+  const profit = targetPrice - totalCOGS - fees.total;
+  const roi = Math.round((profit / Math.max(0.01, totalCOGS)) * 100);
+
+  // Confidence (local heuristic)
+
+  // -------- Decision logic tuned for real-world book scans --------
+  // Rank is a snapshot; drops are the story.
+  const velocity = computeVelocitySignals(keepaData);
+
+  // Auto-tuned profit floor (soft for FAST/ACCELERATING, stricter for VERY_SLOW/DECLINING)
+  const effectiveFloor = getEffectiveProfitFloor(PROFIT_FLOOR, velocity);
+
+  // Slow mover heuristic: very high rank + very low drops
+  const slowMover = ((keepaData.salesRank || 0) >= 900000 && velocity.drops30 < 5);
+
+
+
+  let verdict = "REJECT";
+  let reasoning = "";
+
+  if (profit < 0) {
+    reasoning = `✗ Not profitable<br>✗ Est. loss: $${Math.abs(profit).toFixed(2)}<br>✗ Fees (est): $${fees.total.toFixed(2)} (ref $${fees.referral.toFixed(2)} + close $${fees.closing.toFixed(2)} + FBA $${fees.fulfillment.toFixed(2)})`;
+  } else if (slowMover && profit < (PROFIT_FLOOR * 1.25)) {
+    reasoning = `✗ Likely slow mover (rank ${keepaData.salesRank.toLocaleString()}, drops30 ${keepaData.salesRankDrops30})<br>✗ Profit $${profit.toFixed(2)} not high enough to justify storage risk`;
+  } else if (profit < effectiveFloor) {
+    reasoning = `✗ Profit $${profit.toFixed(2)} below floor ($${effectiveFloor.toFixed(2)})<br>✗ ROI: ${roi}%<br>✗ Price signal: $${targetPrice.toFixed(2)} vs market $${(market||0).toFixed(2)}`;
+  } else {
+    // Temporarily set to BUY to calculate confidence
+    verdict = "BUY";
+    
+    // Calculate confidence BEFORE finalizing verdict
+    const tempConfidence = computeLocalConfidence(keepaData, velocity, { verdict }, profit, effectiveFloor);
+    
+    // If confidence is too low, reject it - we shouldn't recommend low-confidence buys
+    if (tempConfidence < 50) {
+      verdict = "REJECT";
+      reasoning = `✗ Low confidence buy (${tempConfidence}%)<br>✗ Profit $${profit.toFixed(2)} exists but signals are weak<br>✗ Rank: ${(keepaData.salesRank || 0).toLocaleString()} • Drops: ${keepaData.salesRankDrops30}`;
+    } else {
+      // Good confidence - proceed with BUY
+      const velocityTag = velocity.velocityBand === 'FAST' ? "✓ Good velocity signals" : "✓ Profit meets target";
+      reasoning =
+        `✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>` +
+        `${velocityTag}<br>` +
+        `✓ Target: $${targetPrice.toFixed(2)} • Market: $${(market||0).toFixed(2)} • BB: ${keepaData.buyBoxWinner}`;
+    }
+  }
+
+    // Finalize local confidence
+  const confidence = computeLocalConfidence(keepaData, velocity, { verdict }, profit, effectiveFloor);
+
+  return {
+    verdict,
+    targetPrice: Math.round(targetPrice * 100) / 100,
+    profit: Math.round(profit * 100) / 100,
+    roi,
+    reasoning,
+    confidence,
+    velocity
+  };
+}
+
+/* ==================== DISPLAY RESULT ==================== */
+function displayResult(decision, keepaData) {
+  lastScanData = { decision, keepaData };
+  
+  const banner = document.getElementById("banner");
+  const cls = decision.verdict === "BUY" ? "buy" : "pass";
+  
+  // Detect hidden gems
+  const gems = detectHiddenGems(keepaData, decision);
+  const isGem = gems.length > 0;
+  
+  banner.className = `banner ${cls}${isGem ? ' gem' : ''}`;
+  
+  // Show/hide gem badge
+  const gemBadge = document.getElementById("gemBadge");
+  if (isGem) {
+    gemBadge.style.display = "inline-flex";
+  } else {
+    gemBadge.style.display = "none";
+  }
+  
+  document.getElementById("decision").textContent = decision.verdict;
+  document.getElementById("reason").textContent = keepaData.title;
+  
+  document.getElementById("targetPrice").textContent = `$${decision.targetPrice.toFixed(2)}`;
+  document.getElementById("profit").textContent = `$${decision.profit.toFixed(2)}`;
+  document.getElementById("roi").textContent = `${decision.roi}%`;
+  document.getElementById("bb").textContent = keepaData.buyBoxWinner;
+  
+  // Calculate average sales rank (simple approximation - current rank)
+  const avgRank = keepaData.salesRank;
+  document.getElementById("avgRank").textContent = avgRank > 0 ? avgRank.toLocaleString() : "—";
+  
+  // Calculate confidence
+  const v = (decision && decision.velocity) ? decision.velocity : computeVelocitySignals(keepaData);
+  const effFloor = getEffectiveProfitFloor(PROFIT_FLOOR, v);
+  const conf = (typeof decision.confidence === "number") ? decision.confidence : computeLocalConfidence(keepaData, v, decision, decision.profit, effFloor);
+  
+  // Update confidence label and value - show as STRONG/MODERATE/WEAK signal
+  const confidenceLabel = document.getElementById("confidenceLabel");
+  
+  // For REJECT decisions, invert the confidence and change label
+  // Low buy confidence = High reject confidence
+  let displayConf = conf;
+  if (decision.verdict === "REJECT") {
+    confidenceLabel.textContent = "Pass Confidence";
+    displayConf = 100 - conf;
+  } else {
+    confidenceLabel.textContent = "Buy Confidence";
+  }
+  
+  let signalStrength = "WEAK";
+  if (displayConf >= 75) {
+    signalStrength = "STRONG";
+  } else if (displayConf >= 50) {
+    signalStrength = "MODERATE";
+  }
+  
+  document.getElementById("confidence").textContent = `${signalStrength} (${Math.round(displayConf)}%)`;
+  
+  const profitEl = document.getElementById("profit");
+  profitEl.className = "stat-value"; // Always regular styling, no color change
+  
+  // Build explanation with gem reasons
+  let explanationHTML = decision.reasoning;
+  
+  // Add brand info if available
+  if (keepaData.brand) {
+    explanationHTML += `<br><br><strong>Brand:</strong> ${keepaData.brand}`;
+  }
+  
+  // Add restriction warning if present
+  if (keepaData.restrictionWarning) {
+    explanationHTML += `<br><div style="margin-top:8px;padding:8px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.4);border-radius:6px;color:#fbbf24;font-size:12px;">${keepaData.restrictionWarning}</div>`;
+  }
+  
+  if (isGem) {
+    explanationHTML += '<details class="gem-reasons" open><summary>✨ Why This is a Hidden Gem</summary><div class="gem-reasons-content">';
+    gems.forEach(gem => {
+      explanationHTML += `<div style="margin:6px 0;">${gem.icon} <strong>${gem.label}:</strong> ${gem.details}</div>`;
+    });
+    explanationHTML += '</div></details>';
+  }
+  
+  document.getElementById("explanation").innerHTML = explanationHTML;
+  
+  document.getElementById("resultCard").classList.remove("hidden");
+  document.getElementById("resultCard").classList.add("flash");
+  setTimeout(() => document.getElementById("resultCard").classList.remove("flash"), 300);
+}
+
+/* ==================== REANALYZE ==================== */
+async function reanalyzeWithNewThresholds() {
+  if (!lastScanData) return;
+  
+  // Don't show spinner for reanalysis - update in place
+  // Always use local engine for reanalysis (not Gemini)
+  try {
+    const decision = localDecisionEngine(lastScanData.keepaData);
+    displayResult(decision, lastScanData.keepaData);
+    document.getElementById("statusText").textContent = lastScanData.keepaData.title;
+  } catch (error) {
+    console.error('Reanalysis error:', error);
+    // Silently fail - keep showing old data
+  }
+}
+
+/* ==================== HISTORY ==================== */
 function addToHistory(decision, keepaData) {
-  const gems = DecisionEngine.detectHiddenGems(keepaData, decision);
+  const gems = detectHiddenGems(keepaData, decision);
   
   const record = {
     verdict: decision.verdict,
@@ -1016,146 +1909,84 @@ function addToHistory(decision, keepaData) {
     gemTypes: gems.map(g => g.label).join(', ')
   };
   
-  AppState.runtime.history.push(record);
-  
-  if (decision.verdict === 'BUY' || decision.verdict.includes('BORDERLINE')) {
-    AppState.runtime.buyQueue.push(record);
+  scanHistory.push(record);
+  if (decision.verdict === "BUY") {
+    buyList.push(record);
   }
   
-  UI.updateProfitTally();
+  updateHistoryUI();
+  document.getElementById("itemCount").innerHTML = `<span class="status-label">Queue:</span> ${buyList.length}`;
 }
 
-async function reanalyzeWithCurrentSettings() {
-  if (!AppState.runtime.lastScanData) return;
+function updateHistoryUI() {
+  const list = document.getElementById("historyList");
+  list.innerHTML = '';
   
-  const { keepaData } = AppState.runtime.lastScanData;
-  const decision = DecisionEngine.analyze(keepaData);
-  UI.renderDecision(decision, keepaData);
-  
-  // Clear Gemini result since settings changed
-  document.getElementById('geminiResult').classList.add('hidden');
+  scanHistory.slice().reverse().forEach(rec => {
+    const div = document.createElement("div");
+    div.className = "history-item";
+    
+    const gemBadge = rec.isGem ? `<span style="color:#fbbf24;font-size:14px;margin-right:4px;">✨</span>` : '';
+    
+    div.innerHTML = `
+      <div class="history-decision ${rec.verdict}">${gemBadge}${rec.verdict}</div>
+      <div class="history-title">${rec.title}</div>
+      <div class="history-meta">
+        ASIN: ${rec.asin}<br>
+        Price: $${rec.price} • Profit: $${rec.profit} • ROI: ${rec.roi}%<br>
+        ${rec.isGem ? `<span style="color:#fbbf24;">💎 ${rec.gemTypes}</span><br>` : ''}
+        ${rec.time}
+      </div>
+    `;
+    list.appendChild(div);
+  });
 }
 
-// Slider events
-document.getElementById('buyCostSlider').addEventListener('input', (e) => {
-  const value = parseFloat(e.target.value);
-  AppState.settings.buyCost = value;
-  localStorage.setItem('buyCost', value);
-  document.getElementById('buyCostValue').textContent = `$${value.toFixed(2)}`;
-  reanalyzeWithCurrentSettings();
-});
+/* ==================== NAVIGATION ==================== */
+document.getElementById("historyBtn").onclick = () => {
+  document.getElementById("mainPage").style.display = "none";
+  document.getElementById("historyPage").style.display = "block";
+};
 
-document.getElementById('profitFloorSlider').addEventListener('input', (e) => {
-  const value = parseFloat(e.target.value);
-  AppState.settings.profitFloor = value;
-  localStorage.setItem('profitFloor', value);
-  document.getElementById('profitFloorValue').textContent = `$${value.toFixed(2)}`;
-  reanalyzeWithCurrentSettings();
-});
+document.getElementById("backBtn").onclick = () => {
+  document.getElementById("historyPage").style.display = "none";
+  document.getElementById("mainPage").style.display = "block";
+};
 
-// Gemini button
-document.getElementById('askGeminiBtn').addEventListener('click', async () => {
-  if (!AppState.runtime.lastScanData) return;
-  
-  const btn = document.getElementById('askGeminiBtn');
-  btn.disabled = true;
-  btn.textContent = 'Analyzing...';
-  
-  try {
-    const { decision, keepaData } = AppState.runtime.lastScanData;
-    const result = await GeminiClient.analyze(keepaData, decision);
-    UI.renderGeminiResult(result);
-  } catch (error) {
-    console.error('Gemini error:', error);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Ask Gemini for more detail';
-  }
-});
+/* ==================== CSV DOWNLOAD ==================== */
+document.getElementById("downloadBtn").onclick = () => {
+  if (buyList.length === 0) return alert("No items in buy queue.");
 
-// Settings
-document.getElementById('settingsBtn').addEventListener('click', () => {
-  document.getElementById('settingsModal').classList.remove('hidden');
-  document.getElementById('keepaKeyInput').value = AppState.settings.keepaKey;
-  document.getElementById('geminiKeyInput').value = AppState.settings.geminiKey;
-  document.getElementById('tokenBudgetInput').value = AppState.settings.tokenBudget;
-  
-  const tokenStatus = AppState.keepa.tokensRemaining 
-    ? `Available: ${AppState.keepa.tokensRemaining}` 
-    : 'Available: Unknown';
-  document.getElementById('tokenStatus').textContent = tokenStatus;
-});
-
-document.getElementById('closeSettingsBtn').addEventListener('click', () => {
-  document.getElementById('settingsModal').classList.add('hidden');
-});
-
-document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-  AppState.settings.keepaKey = document.getElementById('keepaKeyInput').value.trim();
-  AppState.settings.geminiKey = document.getElementById('geminiKeyInput').value.trim();
-  AppState.settings.tokenBudget = parseInt(document.getElementById('tokenBudgetInput').value);
-  
-  localStorage.setItem('keepaKey', AppState.settings.keepaKey);
-  localStorage.setItem('geminiKey', AppState.settings.geminiKey);
-  localStorage.setItem('tokenBudget', AppState.settings.tokenBudget);
-  
-  document.getElementById('settingsModal').classList.add('hidden');
-  UI.setStatus('Settings saved');
-});
-
-// History
-document.getElementById('historyBtn').addEventListener('click', () => {
-  document.getElementById('mainPage').classList.add('hidden');
-  document.getElementById('historyPage').classList.remove('hidden');
-  UI.renderHistory();
-});
-
-document.getElementById('backBtn').addEventListener('click', () => {
-  document.getElementById('historyPage').classList.add('hidden');
-  document.getElementById('mainPage').classList.remove('hidden');
-});
-
-// Export CSV
-document.getElementById('downloadBtn').addEventListener('click', () => {
-  if (AppState.runtime.buyQueue.length === 0) {
-    alert('No items in buy queue');
-    return;
-  }
-  
-  let csv = 'Title,ASIN,Price,Profit,ROI,HiddenGem,GemReasons\n';
-  AppState.runtime.buyQueue.forEach(r => {
+  let csv = "Title,ASIN,TargetPrice,Profit,ROI,HiddenGem,GemReasons\n";
+  buyList.forEach(r => {
     const gemFlag = r.isGem ? 'YES' : 'NO';
     const gemReasons = r.isGem ? `"${r.gemTypes}"` : '';
     csv += `"${r.title}",${r.asin},${r.price},${r.profit},${r.roi}%,${gemFlag},${gemReasons}\n`;
   });
-  
-  const totalProfit = AppState.runtime.buyQueue.reduce((sum, r) => sum + parseFloat(r.profit), 0);
-  csv += `\nTOTAL PROFIT,$${totalProfit.toFixed(2)}`;
-  
-  const blob = new Blob([csv], { type: 'text/csv' });
+
+  const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = `scoutpro_buylist_${Date.now()}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-});
+};
 
-// Clear
-document.getElementById('clearBtn').addEventListener('click', () => {
-  if (!confirm('Clear all scan data and buy queue?')) return;
-  
-  AppState.runtime.history = [];
-  AppState.runtime.buyQueue = [];
-  AppState.runtime.scannedIdentifiers.clear();
-  AppState.runtime.lastScanData = null;
-  AppState.runtime.geminiCache.clear();
-  
-  document.getElementById('resultCard').classList.add('hidden');
-  UI.setStatus('Ready to scan');
-  UI.updateProfitTally();
-});
+/* ==================== CLEAR DATA ==================== */
+document.getElementById("clearBtn").onclick = () => {
+  if (!confirm("Clear all scan data and buy queue?")) return;
 
+  scanHistory.length = 0;
+  buyList.length = 0;
+  lastScanData = null;
+  seenIdentifiers.clear();
+
+  document.getElementById("historyList").innerHTML = "";
+  document.getElementById("itemCount").innerHTML = `<span class="status-label">Queue:</span> 0`;
+  document.getElementById("statusText").textContent = "Ready to scan";
+  document.getElementById("resultCard").classList.add("hidden");
+};
 </script>
 
 </body>
