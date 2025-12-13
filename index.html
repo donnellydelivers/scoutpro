@@ -1763,13 +1763,30 @@ function displayResult(decision, keepaData) {
   const effFloor = getEffectiveProfitFloor(PROFIT_FLOOR, v);
   const conf = (typeof decision.confidence === "number") ? decision.confidence : computeLocalConfidence(keepaData, v, decision, decision.profit, effFloor);
   
-  // Update confidence label and value based on verdict
+  // Update confidence label and value - show as STRONG/MODERATE/WEAK signal
   const confidenceLabel = document.getElementById("confidenceLabel");
-  confidenceLabel.textContent = decision.verdict === "ACCEPT" ? "Buy Confidence" : "Reject Confidence";
-  document.getElementById("confidence").textContent = `${Math.round(conf)}%`;
+  
+  // For REJECT decisions, invert the confidence and change label
+  // Low buy confidence = High reject confidence
+  let displayConf = conf;
+  if (decision.verdict === "REJECT") {
+    confidenceLabel.textContent = "Pass Confidence";
+    displayConf = 100 - conf;
+  } else {
+    confidenceLabel.textContent = "Buy Confidence";
+  }
+  
+  let signalStrength = "WEAK";
+  if (displayConf >= 75) {
+    signalStrength = "STRONG";
+  } else if (displayConf >= 50) {
+    signalStrength = "MODERATE";
+  }
+  
+  document.getElementById("confidence").textContent = `${signalStrength} (${Math.round(displayConf)}%)`;
   
   const profitEl = document.getElementById("profit");
-  profitEl.className = "stat-value" + (decision.profit < 0 ? " negative" : "");
+  profitEl.className = "stat-value"; // Always regular styling, no color change
   
   // Build explanation with gem reasons
   let explanationHTML = decision.reasoning;
