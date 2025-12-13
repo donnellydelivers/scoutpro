@@ -1,0 +1,17 @@
+{
+  "name": "ScoutPro AI (FBA Only)",
+  "short_name": "ScoutPro",
+  "start_url": "./scoutpro_pwa.html",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
+  "description": "FBA-only book sourcing assistant with locked scanner and Keepa-powered Buy Score.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIj4KPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSI5NiIgZmlsbD0iIzBhMGUxYSIvPgo8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjE3MiIgZmlsbD0iIzE0MWIyZCIgc3Ryb2tlPSIjM2I4MmY2IiBzdHJva2Utd2lkdGg9IjE4Ii8+CjxwYXRoIGQ9Ik0xNzAgMjk4YzIyIDQyIDU4IDY0IDk4IDY0IDY0IDAgMTE2LTU2IDExNi0xMjYgMC05LTEtMTgtMy0yNyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjJjNTVlIiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPHBhdGggZD0iTTE4MCAyMzhoOTIiIHN0cm9rZT0iI2VhYjMwOCIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxwYXRoIGQ9Ik0xODAgMTkwaDE1MCIgc3Ryb2tlPSIjZWFiMzA4IiBzdHJva2Utd2lkdGg9IjIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPHRleHQgeD0iMjU2IiB5PSIyOTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksU2Vnb2UgVUksQXJpYWwiIGZvbnQtc2l6ZT0iNTYiIGZpbGw9IiNmZmYiIGZvbnQtd2VpZ2h0PSI3MDAiPlNQPC90ZXh0Pgo8L3N2Zz4=",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
