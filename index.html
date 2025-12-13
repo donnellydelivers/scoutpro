@@ -10,8 +10,7 @@
   :root{
     --bg:#0a0e1a; --panel:#111a33; --panel2:#0e1426; --text:#e8eefc; --muted:#a8b3d6;
     --border:#243157; --blue:#3b82f6; --green:#22c55e; --yellow:#eab308; --red:#ef4444;
-    });
-}
+  }
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
   header{position:sticky;top:0;z-index:5;background:var(--panel2);border-bottom:1px solid var(--border);padding:12px}
@@ -313,7 +312,6 @@ document.getElementById("saveSettings").onclick = () => {
   localStorage.setItem("dailyBudget", String(CONFIG.dailyBudget));
   localStorage.setItem("warmupEnabled", String(CONFIG.warmupEnabled));
   updateKeepaIndicator();
-try{ renderKeepaHealth(); }catch(e){}
   try { renderKeepaHealth(); } catch(e) {}
   alert("✅ Settings saved!");
   showPage("main");
@@ -501,32 +499,33 @@ async function processKeepaQueue() {
 /* ==================== KEEPA API ==================== */
 async function queryKeepa(identifier, rawInput) {
   return enqueueKeepa(async () => {
-  if (!CONFIG.keepaKey) return getMockKeepaData(identifier, rawInput);
+    if (!CONFIG.keepaKey) return getMockKeepaData(identifier, rawInput);
 
-  const domain = 1;
-  let queryParam = '';
-  const isNumeric = /^[0-9X]+$/i.test(identifier);
+    const domain = 1;
+    let queryParam = '';
+    const isNumeric = /^[0-9X]+$/i.test(identifier);
 
-  if (isNumeric) queryParam = `code=${encodeURIComponent(identifier)}`;
-  else if (/^B[0-9A-Z]{9}$/i.test(identifier)) queryParam = `asin=${encodeURIComponent(identifier)}`;
-  else throw new Error('Title search not implemented. Scan ISBN/UPC or enter ASIN.');
+    if (isNumeric) queryParam = `code=${encodeURIComponent(identifier)}`;
+    else if (/^B[0-9A-Z]{9}$/i.test(identifier)) queryParam = `asin=${encodeURIComponent(identifier)}`;
+    else throw new Error('Title search not implemented. Scan ISBN/UPC or enter ASIN.');
 
-  const stats = 1;
-  const history = 0;
+    const stats = 1;
+    const history = 0;
 
-  const keepaUrl = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&stats=${stats}&history=${history}`;
-  const corsProxy = 'https://corsproxy.io/?';
-  const url = corsProxy + encodeURIComponent(keepaUrl);
+    const keepaUrl = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&stats=${stats}&history=${history}`;
+    const corsProxy = 'https://corsproxy.io/?';
+    const url = corsProxy + encodeURIComponent(keepaUrl);
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    if (response.status === 429) throw new Error('Rate limit reached. Please wait a moment.');
-    throw new Error(`Keepa API error: ${response.status}`);
-  }
-  const data = await response.json();
-  if (!data.products || data.products.length === 0) return Object.assign(getMockKeepaData(identifier, rawInput), {_simulated:true, _reason:'NO_MATCH'});
-  updateTokenWindow(estimateTokens({stats:true, history:false}));
+    const response = await fetch(url);
+    if (!response.ok) {
+      if (response.status === 429) throw new Error('Rate limit reached. Please wait a moment.');
+      throw new Error(`Keepa API error: ${response.status}`);
+    }
+    const data = await response.json();
+    if (!data.products || data.products.length === 0) return Object.assign(getMockKeepaData(identifier, rawInput), {_simulated:true, _reason:'NO_MATCH'});
+    updateTokenWindow(estimateTokens({stats:true, history:false}));
     return parseKeepaProduct(data.products[0]);
+  });
 }
 
 /* ==================== PARSE KEEPA PRODUCT ==================== */
