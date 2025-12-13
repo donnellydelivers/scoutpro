@@ -1,793 +1,1196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ScoutPro AI v4.0 - FBA Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        /* === BASE STYLES === */
-        :root {
-            --bg-dark: #0f1115;
-            --panel-dark: #161b22;
-            --border-dark: #30363d;
-            --accent-blue: #3b82f6;
-            --text-main: #e6edf3;
-            --text-muted: #8b949e;
-        }
-        body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        
-        /* === UTILITIES === */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        
-        /* === SLIDERS === */
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; 
-            background: var(--accent-blue); cursor: pointer; margin-top: -10px; 
-            box-shadow: 0 0 10px rgba(59,130,246,0.4); border: 2px solid #fff;
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%; height: 4px; cursor: pointer; background: #30363d; border-radius: 2px;
-        }
-
-        /* === ANIMATIONS === */
-        @keyframes pulse-dot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
-        .animate-pulse-dot { animation: pulse-dot 2s infinite; }
-        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* === STATUS DOTS === */
-        .dot-green { background-color: #2ea043; box-shadow: 0 0 8px rgba(46,160,67,0.4); }
-        .dot-yellow { background-color: #d29922; box-shadow: 0 0 8px rgba(210,153,34,0.4); }
-        .dot-red { background-color: #f85149; box-shadow: 0 0 8px rgba(248,81,73,0.4); }
-
-        /* === SCANNER INPUT (Hidden but functional) === */
-        #scanInput { opacity: 0.05; position: absolute; top: -1000px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScoutPro AI v4.0 - FBA Edition</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+  }
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .decision-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  .dot-green { background: #10b981; }
+  .dot-yellow { background: #fbbf24; }
+  .dot-red { background: #ef4444; }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+</style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body class="bg-gray-950 text-white min-h-screen">
 
-    <header class="flex-none bg-[#161b22] border-b border-[#30363d] p-3 flex justify-between items-center z-50">
-        <div class="flex items-center gap-3">
-            <h1 class="font-bold text-lg tracking-tight text-white">ScoutPro<span class="text-blue-500">AI</span></h1>
-            <div id="sessionTally" class="hidden flex flex-col leading-none ml-2 border-l border-gray-700 pl-3">
-                <span class="text-[10px] text-gray-400 uppercase font-bold">Session Profit</span>
-                <span id="sessionProfitVal" class="text-sm font-mono text-green-400 font-bold">$0.00</span>
-            </div>
+<!-- ============================================ -->
+<!-- MAIN SCAN PAGE -->
+<!-- ============================================ -->
+<div id="mainPage" class="max-w-md mx-auto pb-32">
+  
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-gray-950 border-b border-gray-800 p-3">
+    <div class="flex items-center justify-between mb-3">
+      <div class="text-lg font-bold">ScoutPro AI</div>
+      <div class="flex items-center gap-2">
+        <button id="settingsBtn" class="p-2 hover:bg-gray-800 rounded-lg transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+        </button>
+        <div class="px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-xs font-semibold text-blue-400">
+          v4.0
         </div>
-        <div class="flex items-center gap-4">
-            <div id="tokenBadge" class="hidden flex items-center gap-1.5 bg-[#0d1117] px-2 py-1 rounded border border-gray-800">
-                <div id="tokenDot" class="w-2 h-2 rounded-full bg-gray-600"></div>
-                <span id="tokenCount" class="text-xs font-mono text-gray-400">--</span>
-            </div>
-            <button id="btnSettings" class="text-2xl text-gray-400 hover:text-white transition">⚙️</button>
-        </div>
-    </header>
+      </div>
+    </div>
+    
+    <!-- Scanner Input -->
+    <div class="grid grid-cols-[1fr_auto_auto] gap-2">
+      <input 
+        type="text" 
+        id="isbnInput" 
+        placeholder="Scan or enter ISBN/ASIN"
+        autocomplete="off"
+        class="px-4 py-3 rounded-xl bg-gray-900 border border-gray-800 text-white font-mono text-sm focus:outline-none focus:border-blue-500 transition"
+      />
+      <button id="scanBtn" class="px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl hover:bg-gray-800 transition">
+        📷
+      </button>
+      <button id="lookupBtn" class="px-6 py-3 bg-blue-600 rounded-xl font-semibold hover:bg-blue-700 transition">
+        GO
+      </button>
+    </div>
+  </header>
 
-    <main id="mainView" class="flex-1 overflow-y-auto no-scrollbar relative bg-[#0f1115]">
-        
-        <div id="viewWelcome" class="flex flex-col items-center justify-center h-full text-center p-6 space-y-6">
-            <div class="w-20 h-20 bg-[#161b22] rounded-full flex items-center justify-center border border-gray-800">
-                <span class="text-4xl">📡</span>
-            </div>
-            <div>
-                <h2 class="text-xl font-bold text-white mb-2">Ready to Scan</h2>
-                <p class="text-sm text-gray-500 max-w-xs mx-auto">Bluetooth scanner active.<br>FBA-First Logic Loaded.</p>
-            </div>
-            <button onclick="document.getElementById('manualInputModal').classList.remove('hidden')" class="text-xs text-blue-500 underline mt-8">Type ISBN/ASIN Manually</button>
-        </div>
+  <!-- Status Bar -->
+  <div class="mx-3 mt-3 px-4 py-2 bg-gray-900 rounded-lg font-mono text-xs text-gray-400 flex justify-between items-center">
+    <div class="flex items-center gap-2">
+      <span id="statusText">Ready to scan</span>
+      <span id="keepaModeIndicator" class="hidden px-2 py-0.5 rounded text-[10px] font-bold"></span>
+    </div>
+    <span id="profitTally" class="text-blue-400">
+      <span class="font-semibold">Queue:</span> 0 | <span class="font-semibold">Profit:</span> $0
+    </span>
+  </div>
 
-        <div id="viewLoading" class="hidden flex flex-col items-center justify-center h-full">
-            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-blue-400 font-mono animate-pulse text-sm tracking-widest">ANALYZING MARKET...</p>
-        </div>
+  <!-- Duplicate Warning -->
+  <div id="dupeWarning" class="hidden mx-3 mt-3 px-4 py-2 bg-yellow-500/10 border border-yellow-500/50 rounded-lg text-yellow-400 text-sm">
+    ⚠️ Already scanned this item
+  </div>
 
-        <div id="viewResult" class="hidden pb-32 fade-in">
-            
-            <div class="p-5 border-b border-[#30363d] bg-[#161b22] sticky top-0 z-10 shadow-xl">
-                <div class="flex items-center gap-4 mb-3">
-                    <div id="decisionDot" class="w-6 h-6 rounded-full dot-green animate-pulse-dot flex-none"></div>
-                    <h1 id="decisionText" class="text-4xl font-black tracking-tight text-white uppercase leading-none">BUY</h1>
-                </div>
-                
-                <div class="space-y-1">
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Confidence</span>
-                        <span id="confidenceVal" class="text-lg font-mono font-bold text-white">88</span>
-                        <span class="text-xs text-gray-600">/ 100</span>
-                    </div>
-                    <div id="itemTitle" class="text-sm text-gray-300 font-medium leading-tight line-clamp-2 py-1">
-                        Book Title Goes Here
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 mt-2 pt-2 border-t border-gray-800">
-                        <div>
-                            <div class="text-[10px] text-gray-500 uppercase font-bold">Avg Price (6mo)</div>
-                            <div id="avgPriceVal" class="text-base font-mono text-white font-bold">$18.45</div>
-                        </div>
-                        <div>
-                            <div class="text-[10px] text-gray-500 uppercase font-bold">Demand (6mo)</div>
-                            <div id="demandVal" class="text-base font-mono text-white font-bold">High</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <!-- Processing -->
+  <div id="processing" class="hidden mx-3 mt-3 p-6 bg-gray-900 rounded-2xl border border-gray-800 text-center">
+    <div class="w-10 h-10 mx-auto mb-4 border-3 border-gray-800 border-t-blue-500 rounded-full animate-spin"></div>
+    <div class="text-sm text-gray-400">Analyzing with Keepa...</div>
+  </div>
 
-            <div class="p-5 border-b border-[#30363d]">
-                <div class="flex justify-between items-end mb-6">
-                    <div>
-                        <div class="text-xs text-gray-400 mb-1">Net Profit (FBA)</div>
-                        <div id="profitVal" class="text-3xl font-bold text-white font-mono">$7.42</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-xs text-gray-500 mb-1">ROI</div>
-                        <div id="roiVal" class="text-xl font-mono text-gray-300">124%</div>
-                    </div>
-                </div>
+  <!-- Sliders (Always Visible) -->
+  <div class="mx-3 mt-3 p-4 bg-gray-900 rounded-xl border border-gray-800 space-y-4">
+    <div>
+      <label class="flex justify-between text-xs font-semibold text-gray-400 mb-2">
+        <span>Buy Cost</span>
+        <span id="buyCostValue" class="text-white font-mono">$1.00</span>
+      </label>
+      <input type="range" id="buyCostSlider" min="0.25" max="10" step="0.25" value="1.00" class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer slider">
+    </div>
+    <div>
+      <label class="flex justify-between text-xs font-semibold text-gray-400 mb-2">
+        <span>Profit Floor</span>
+        <span id="profitFloorValue" class="text-white font-mono">$5.00</span>
+      </label>
+      <input type="range" id="profitFloorSlider" min="1" max="15" step="0.50" value="5.00" class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer slider">
+    </div>
+  </div>
 
-                <div class="space-y-6">
-                    <div>
-                        <div class="flex justify-between text-xs mb-2">
-                            <span class="text-gray-400 font-semibold">Buy Cost</span>
-                            <span id="buyCostDisplay" class="text-blue-400 font-mono font-bold">$1.00</span>
-                        </div>
-                        <input type="range" id="sliderBuyCost" min="0" max="20" step="0.25" value="1.00">
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-xs mb-2">
-                            <span class="text-gray-400 font-semibold">Profit Floor</span>
-                            <span id="floorDisplay" class="text-blue-400 font-mono font-bold">$5.00</span>
-                        </div>
-                        <input type="range" id="sliderFloor" min="1" max="30" step="1" value="5">
-                    </div>
-                </div>
-            </div>
-
-            <div id="geminiSection" class="hidden p-4 border-b border-[#30363d] bg-[#1c222e]">
-                <button id="btnAskGemini" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg border border-indigo-400">
-                    <span>🧠 Ask Gemini for Second Opinion</span>
-                </button>
-                
-                <div id="geminiOutput" class="hidden mt-4 bg-[#0f1115] rounded-lg border border-gray-700 overflow-hidden">
-                    <div id="geminiBadgeArea" class="p-3 border-b border-gray-800 bg-gray-900 flex items-center gap-2">
-                        </div>
-                    <div id="geminiText" class="p-4 text-sm text-gray-300 leading-relaxed whitespace-pre-wrap font-sans"></div>
-                </div>
-            </div>
-
-            <div id="gemsSection" class="hidden p-4 border-b border-[#30363d]">
-                <div class="text-[10px] uppercase text-yellow-500 font-bold mb-3 tracking-widest">Hidden Gems Detected</div>
-                <div id="gemsList" class="flex flex-wrap gap-2"></div>
-            </div>
-
-            <details class="group p-4 border-b border-[#30363d]">
-                <summary class="list-none flex justify-between items-center cursor-pointer text-gray-500 text-sm font-medium">
-                    <span>Fees & Raw Data</span>
-                    <span class="group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div class="mt-4 space-y-2 text-xs font-mono text-gray-400 bg-[#0d1117] p-3 rounded">
-                    <div class="flex justify-between"><span>Sales Rank</span><span id="rawRank" class="text-white">--</span></div>
-                    <div class="flex justify-between"><span>Weight</span><span id="rawWeight" class="text-white">--</span></div>
-                    <div class="flex justify-between"><span>Buy Box Price</span><span id="rawBB" class="text-white">--</span></div>
-                    <div class="flex justify-between"><span>FBA Lowest</span><span id="rawFBA" class="text-white">--</span></div>
-                    <div class="border-t border-gray-700 my-2"></div>
-                    <div class="flex justify-between"><span>Referral Fee</span><span id="feeRef">--</span></div>
-                    <div class="flex justify-between"><span>Closing Fee</span><span id="feeClose">--</span></div>
-                    <div class="flex justify-between"><span>FBA Fee</span><span id="feeFBA">--</span></div>
-                </div>
-            </details>
-        </div>
-    </main>
-
-    <div id="settingsModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex items-end sm:items-center justify-center">
-        <div class="bg-[#161b22] w-full max-w-md rounded-t-2xl sm:rounded-xl border border-gray-700 p-6 space-y-4">
-            <h2 class="text-white font-bold text-lg">Settings</h2>
-            
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">Keepa API Key</label>
-                <input type="password" id="inputKeepaKey" class="w-full bg-[#0d1117] border border-gray-700 rounded p-3 text-white font-mono text-sm focus:border-blue-500 outline-none" placeholder="Enter Keepa Key">
-            </div>
-
-            <div>
-                <label class="block text-xs text-gray-400 mb-1">Gemini API Key</label>
-                <input type="password" id="inputGeminiKey" class="w-full bg-[#0d1117] border border-gray-700 rounded p-3 text-white font-mono text-sm focus:border-blue-500 outline-none" placeholder="Enter Gemini Key">
-            </div>
-
-            <div class="flex gap-2 pt-2">
-                <button id="btnSaveSettings" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg">Save & Close</button>
-                <button onclick="document.getElementById('settingsModal').classList.add('hidden')" class="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg">Cancel</button>
-            </div>
-            <div class="text-center">
-                 <button id="btnClearHistory" class="text-xs text-red-500 underline mt-2">Clear History & Session</button>
-            </div>
-        </div>
+  <!-- Result Card -->
+  <div id="resultCard" class="hidden mx-3 mt-3 bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+    
+    <!-- Decision Banner -->
+    <div id="banner" class="p-6 text-center border-b border-gray-800">
+      <div id="gemBadge" class="hidden inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-xs font-bold text-black mb-2">
+        <span>✨</span>
+        HIDDEN GEM
+      </div>
+      <div id="decisionText" class="text-3xl font-bold mb-2 flex items-center justify-center">
+        <!-- Decision word goes here -->
+      </div>
+      <div id="confidence" class="text-sm text-gray-400 font-mono mb-3">Confidence: --</div>
+      <div id="bookTitle" class="text-sm text-gray-300 leading-relaxed">--</div>
     </div>
 
-    <div id="manualInputModal" class="hidden fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-        <div class="bg-[#161b22] w-full max-w-sm rounded-xl border border-gray-700 p-5">
-            <h3 class="text-white font-bold mb-3">Manual Entry</h3>
-            <input type="text" id="manualInputField" class="w-full bg-[#0d1117] border border-gray-700 rounded p-3 text-white font-mono text-lg mb-4" placeholder="ISBN or ASIN">
-            <div class="flex gap-2">
-                <button id="btnManualSubmit" class="flex-1 bg-blue-600 text-white font-bold py-2 rounded">Scan</button>
-                <button onclick="document.getElementById('manualInputModal').classList.add('hidden')" class="px-4 bg-gray-700 text-white rounded">Cancel</button>
-            </div>
-        </div>
+    <!-- Key Metrics -->
+    <div class="p-4 border-b border-gray-800 space-y-2 text-sm">
+      <div class="flex justify-between">
+        <span class="text-gray-400">Avg Sale Price (6 mo)</span>
+        <span id="avgPrice" class="font-mono font-semibold">--</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">6-Month Sales</span>
+        <span id="salesVolume" class="font-mono font-semibold">--</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-gray-400">Est. Profit</span>
+        <span id="profitValue" class="font-mono font-semibold text-green-400">--</span>
+      </div>
     </div>
 
-    <input type="text" id="scanInput" autocomplete="off" />
+    <!-- Gemini Section -->
+    <div id="geminiSection" class="hidden p-4 border-b border-gray-800">
+      <button id="askGeminiBtn" class="w-full px-4 py-3 bg-purple-600/20 border border-purple-500/50 rounded-xl text-purple-300 font-semibold hover:bg-purple-600/30 transition">
+        Ask Gemini for more detail
+      </button>
+      <div id="geminiResult" class="hidden mt-4"></div>
+    </div>
+
+    <!-- Explanation/Reasoning -->
+    <div id="explanation" class="p-4 text-sm text-gray-300 leading-relaxed">
+      <!-- Reasoning text goes here -->
+    </div>
+
+    <!-- Hidden Gems Details -->
+    <div id="gemDetails" class="hidden p-4 bg-yellow-500/5 border-t border-yellow-500/20">
+      <details class="text-sm" open>
+        <summary class="font-semibold text-yellow-400 cursor-pointer mb-2">✨ Why This is a Hidden Gem</summary>
+        <div id="gemReasons" class="space-y-1 text-gray-300 ml-4">
+          <!-- Gem reasons go here -->
+        </div>
+      </details>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- HISTORY PAGE -->
+<!-- ============================================ -->
+<div id="historyPage" class="hidden max-w-md mx-auto pb-32">
+  <div class="sticky top-0 z-50 bg-gray-950 border-b border-gray-800 p-4 flex items-center gap-3">
+    <button id="backBtn" class="p-2 hover:bg-gray-800 rounded-lg transition">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+    </button>
+    <div class="text-lg font-bold flex-1">Scan History</div>
+  </div>
+  
+  <div id="historyList" class="p-3 space-y-3">
+    <!-- History items go here -->
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- SETTINGS MODAL -->
+<!-- ============================================ -->
+<div id="settingsModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+  <div class="bg-gray-900 rounded-2xl border border-gray-800 max-w-md w-full p-6 space-y-4">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-bold">Settings</h2>
+      <button id="closeSettingsBtn" class="p-2 hover:bg-gray-800 rounded-lg transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-400 mb-2">Keepa API Key</label>
+      <input type="password" id="keepaKeyInput" placeholder="Enter Keepa API key" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-400 mb-2">Gemini API Key</label>
+      <input type="password" id="geminiKeyInput" placeholder="Enter Gemini API key" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-400 mb-2">Token Budget (per session)</label>
+      <input type="number" id="tokenBudgetInput" value="500" min="100" max="5000" step="100" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500">
+    </div>
+
+    <div class="pt-4 border-t border-gray-800">
+      <div class="text-xs text-gray-400 mb-2">Keepa Tokens</div>
+      <div id="tokenStatus" class="font-mono text-sm text-green-400">Available: Unknown</div>
+    </div>
+
+    <button id="saveSettingsBtn" class="w-full px-4 py-3 bg-blue-600 rounded-xl font-semibold hover:bg-blue-700 transition">
+      Save Settings
+    </button>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- BOTTOM NAV -->
+<!-- ============================================ -->
+<div class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 p-3 z-40">
+  <div class="max-w-md mx-auto grid grid-cols-3 gap-2">
+    <button id="historyBtn" class="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-700 transition">
+      History
+    </button>
+    <button id="downloadBtn" class="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-700 transition">
+      Export CSV
+    </button>
+    <button id="clearBtn" class="px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-700 transition">
+      Clear
+    </button>
+  </div>
+</div>
 
 <script>
-/**
- * SCOUTPRO AI v4.0 - FBA EDITION
- * Single-File Architecture
- */
+/* =====================================================
+   SCOUTPRO AI v4.0 - CLEAN REBUILD (FBA EDITION)
+   
+   Architecture:
+   1. CONFIG - Settings and constants
+   2. STATE - Centralized app state
+   3. SCANNER - Bluetooth scanner (FROZEN - DO NOT MODIFY)
+   4. KEEPA - API client with token management
+   5. GEMINI - Optional AI advisor
+   6. DECISION ENGINE - FBA-first buy/reject logic
+   7. UI RENDERERS - Display functions
+   8. EVENT HANDLERS - User interactions
+   ===================================================== */
 
-/* =========================================
-   1. CONFIG & STATE
-   ========================================= */
-const STATE = {
-    settings: {
-        keepaKey: localStorage.getItem('sp_keepa') || '',
-        geminiKey: localStorage.getItem('sp_gemini') || '',
-        buyCost: parseFloat(localStorage.getItem('sp_buyCost')) || 1.00,
-        profitFloor: parseFloat(localStorage.getItem('sp_profitFloor')) || 5.00
-    },
-    runtime: {
-        lastScanData: null, // Holds raw Keepa data
-        sessionProfit: 0,
-        profitableCount: 0,
-        history: [] // Only current session
-    }
+// =====================================================
+// 1. CONFIG
+// =====================================================
+const CONFIG = {
+  KEEPA_DOMAIN: 'api.keepa.com',
+  // CORS proxies - try these in order if direct call fails
+  CORS_PROXIES: [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?',
+    'https://cors-anywhere.herokuapp.com/',
+    '' // Empty string = direct call (no proxy)
+  ],
+  BUY_COST_DEFAULT: 1.00,
+  PROFIT_FLOOR_DEFAULT: 5.00,
+  SHIPPING_TO_AMAZON: 0.75,
+  TOKEN_BUDGET_DEFAULT: 500,
+  BORDERLINE_CONFIDENCE_RANGE: [45, 65],
+  BORDERLINE_PROFIT_BUFFER: 1.50,
+  RESTRICTED_BRANDS: ['Apple', 'Sony', 'Samsung', 'Microsoft', 'Nintendo', 'LEGO', 'Hasbro']
 };
 
-const UI = {
-    views: {
-        welcome: document.getElementById('viewWelcome'),
-        loading: document.getElementById('viewLoading'),
-        result: document.getElementById('viewResult')
-    },
-    elements: {
-        decisionText: document.getElementById('decisionText'),
-        decisionDot: document.getElementById('decisionDot'),
-        confidence: document.getElementById('confidenceVal'),
-        title: document.getElementById('itemTitle'),
-        avgPrice: document.getElementById('avgPriceVal'),
-        demand: document.getElementById('demandVal'),
-        profit: document.getElementById('profitVal'),
-        roi: document.getElementById('roiVal'),
-        geminiSection: document.getElementById('geminiSection'),
-        geminiBtn: document.getElementById('btnAskGemini'),
-        geminiOutput: document.getElementById('geminiOutput'),
-        geminiText: document.getElementById('geminiText'),
-        geminiBadgeArea: document.getElementById('geminiBadgeArea'),
-        gemsSection: document.getElementById('gemsSection'),
-        gemsList: document.getElementById('gemsList'),
-        sessionTally: document.getElementById('sessionTally'),
-        sessionProfitVal: document.getElementById('sessionProfitVal'),
-        tokenBadge: document.getElementById('tokenBadge'),
-        tokenCount: document.getElementById('tokenCount'),
-        tokenDot: document.getElementById('tokenDot'),
-        rawRank: document.getElementById('rawRank'),
-        rawWeight: document.getElementById('rawWeight'),
-        rawBB: document.getElementById('rawBB'),
-        rawFBA: document.getElementById('rawFBA'),
-        feeRef: document.getElementById('feeRef'),
-        feeClose: document.getElementById('feeClose'),
-        feeFBA: document.getElementById('feeFBA')
-    },
-    sliders: {
-        buyCost: document.getElementById('sliderBuyCost'),
-        floor: document.getElementById('sliderFloor'),
-        buyCostDisp: document.getElementById('buyCostDisplay'),
-        floorDisp: document.getElementById('floorDisplay')
-    }
+// =====================================================
+// 2. STATE
+// =====================================================
+const AppState = {
+  settings: {
+    buyCost: parseFloat(localStorage.getItem('buyCost')) || CONFIG.BUY_COST_DEFAULT,
+    profitFloor: parseFloat(localStorage.getItem('profitFloor')) || CONFIG.PROFIT_FLOOR_DEFAULT,
+    keepaKey: localStorage.getItem('keepaKey') || '',
+    geminiKey: localStorage.getItem('geminiKey') || '',
+    tokenBudget: parseInt(localStorage.getItem('tokenBudget')) || CONFIG.TOKEN_BUDGET_DEFAULT
+  },
+  runtime: {
+    lastScanData: null,
+    history: [],
+    buyQueue: [],
+    scannedIdentifiers: new Set(),
+    tokensUsed: 0,
+    geminiCache: new Map()
+  },
+  keepa: {
+    mode: 'LIVE', // or 'SIMULATED'
+    tokensRemaining: null
+  }
 };
 
-/* =========================================
-   2. THE "SACRED" SCANNER CODE
-   (Lifted Verbatim as requested)
-   ========================================= */
-const scanInput = document.getElementById("scanInput");
-let __scan_timer = null;
+// Initialize sliders from saved state
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('buyCostSlider').value = AppState.settings.buyCost;
+  document.getElementById('profitFloorSlider').value = AppState.settings.profitFloor;
+  document.getElementById('buyCostValue').textContent = `$${AppState.settings.buyCost.toFixed(2)}`;
+  document.getElementById('profitFloorValue').textContent = `$${AppState.settings.profitFloor.toFixed(2)}`;
+  updateProfitTally();
+});
 
-function __scan_clean(v){
-  return String(v || "").replace(/[^0-9xXbB]/g,"").trim();
-}
+// =====================================================
+// 3. SCANNER (FROZEN - EXACT COPY FROM WORKING VERSION)
+// =====================================================
+let scanBuffer = '';
+let scanTimeout = null;
+const SCAN_COMPLETE_DELAY = 100;
 
-function __scan_callFinalize(cleanVal){
-  if (!cleanVal) return;
-  try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
+document.getElementById('isbnInput').addEventListener('input', function(e) {
+  const currentValue = e.target.value;
   
-  // Bridge to new architecture
-  handleScannedIdentifier(cleanVal);
-}
-
-function __scan_processNow(){
-  if (__scan_timer) { clearTimeout(__scan_timer); __scan_timer = null; }
-  const raw = scanInput.value;
-  const cleaned = __scan_clean(raw);
-
-  if (cleaned.length >= 10) {
-    scanInput.value = "";
-    __scan_callFinalize(cleaned);
+  // Scanner detection: rapid input without user typing
+  const now = Date.now();
+  if (!this.lastInputTime || (now - this.lastInputTime) < 50) {
+    clearTimeout(scanTimeout);
+    scanBuffer = currentValue;
+    
+    scanTimeout = setTimeout(() => {
+      if (scanBuffer && scanBuffer.length >= 10) {
+        handleScannedIdentifier(scanBuffer.trim());
+        scanBuffer = '';
+        this.value = '';
+      }
+    }, SCAN_COMPLETE_DELAY);
   }
-}
+  
+  this.lastInputTime = now;
+});
 
-scanInput.oninput = () => {
-  if (__scan_timer) clearTimeout(__scan_timer);
-  __scan_timer = setTimeout(__scan_processNow, 80);
-};
-
-scanInput.onkeydown = (e) => {
-  if (e.key === "Enter") {
+document.getElementById('isbnInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
     e.preventDefault();
-    __scan_processNow();
+    const value = this.value.trim();
+    if (value) {
+      handleScannedIdentifier(value);
+      this.value = '';
+    }
+  }
+});
+
+document.getElementById('lookupBtn').addEventListener('click', () => {
+  const value = document.getElementById('isbnInput').value.trim();
+  if (value) {
+    handleScannedIdentifier(value);
+    document.getElementById('isbnInput').value = '';
+  }
+});
+
+document.getElementById('scanBtn').addEventListener('click', () => {
+  document.getElementById('isbnInput').focus();
+});
+
+// =====================================================
+// 4. KEEPA CLIENT
+// =====================================================
+const KeepaClient = {
+  detectIdentifierType(input) {
+    const cleaned = input.replace(/[^0-9XB]/gi, '').toUpperCase();
+    
+    // ASIN format (B + 9 characters)
+    if (/^B[0-9A-Z]{9}$/i.test(input)) {
+      return { type: 'asin', value: input.toUpperCase() };
+    }
+    
+    // ISBN-10 or ISBN-13 or UPC
+    if (cleaned.length === 10 || cleaned.length === 13 || (cleaned.length >= 12 && cleaned.length <= 14)) {
+      return { type: 'code', value: cleaned };
+    }
+    
+    // Default to treating as ASIN/code
+    return { type: 'code', value: input };
+  },
+
+  async fetchProduct(identifier) {
+    const key = AppState.settings.keepaKey;
+    
+    if (!key) {
+      console.log('No Keepa key - using simulated data');
+      AppState.keepa.mode = 'SIMULATED';
+      return this.generateSimulatedData(identifier);
+    }
+
+    // Detect what type of identifier this is
+    const detected = this.detectIdentifierType(identifier);
+    console.log(`Detected identifier type: ${detected.type} = ${detected.value}`);
+
+    try {
+      AppState.keepa.mode = 'LIVE';
+      
+      // Build Keepa URL with proper parameter (asin= or code=)
+      const queryParam = detected.type === 'asin' 
+        ? `asin=${encodeURIComponent(detected.value)}`
+        : `code=${encodeURIComponent(detected.value)}`;
+      
+      const keepaUrl = `https://api.keepa.com/product?key=${key}&domain=1&${queryParam}&stats=180&history=1`;
+      
+      // Use CORS proxy (same as old app)
+      const corsProxy = 'https://corsproxy.io/?';
+      const url = corsProxy + encodeURIComponent(keepaUrl);
+      
+      console.log('Keepa API call:', keepaUrl.replace(key, 'HIDDEN'));
+      console.log('Full proxy URL:', url.substring(0, 50) + '...');
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Rate limit reached');
+        }
+        throw new Error(`Keepa API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Keepa response received:', data);
+      
+      // Check for errors
+      if (data.error) {
+        const errorMsg = data.error.message || data.error;
+        console.error('Keepa error:', errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      // Check if product found
+      if (!data.products || data.products.length === 0) {
+        console.log('Product not found in Keepa database');
+        AppState.keepa.mode = 'SIMULATED';
+        UI.setStatus('⚠️ Not in Keepa - using estimated data');
+        return this.generateSimulatedData(detected.value);
+      }
+      
+      const product = data.products[0];
+      AppState.runtime.tokensUsed += (data.tokensConsumed || 1);
+      AppState.keepa.tokensRemaining = data.tokensLeft;
+      
+      console.log(`✓ Keepa success! Product: ${product.title}`);
+      console.log(`✓ Tokens left: ${data.tokensLeft}`);
+      
+      return this.parseKeepaProduct(product);
+      
+    } catch (error) {
+      console.error('Keepa fetch error:', error);
+      
+      // If it's a "not found" error, use simulated quietly
+      if (error.message.includes('not found') || error.message.includes('Invalid product identifier')) {
+        AppState.keepa.mode = 'SIMULATED';
+        UI.setStatus('⚠️ Not in Keepa - using estimated data');
+        return this.generateSimulatedData(detected.value);
+      }
+      
+      // For other errors, alert and fallback
+      console.log(`Keepa error: ${error.message} - falling back to simulated`);
+      AppState.keepa.mode = 'SIMULATED';
+      UI.setStatus('Keepa unavailable - using estimated data');
+      return this.generateSimulatedData(detected.value);
+    }
+  },
+
+  parseKeepaProduct(product) {
+    const stats = product.stats || {};
+    const current = stats.current || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    
+    // Extract FBA price (index 7 = FBA offers)
+    const fbaPrice = current[7] > 0 ? current[7] / 100 : null;
+    const buyBoxPrice = current[18] > 0 ? current[18] / 100 : null;
+    const amazonPrice = current[0] > 0 ? current[0] / 100 : null;
+    
+    // Sales rank
+    const salesRank = current[3] || 0;
+    const drops30 = stats.salesRankDrops30 || 0;
+    const drops90 = stats.salesRankDrops90 || 0;
+    const drops180 = stats.salesRankDrops180 || 0;
+    
+    return {
+      asin: product.asin,
+      title: product.title || 'Unknown Title',
+      brand: product.brand || null,
+      salesRank,
+      salesRankDrops30: drops30,
+      salesRankDrops90: drops90,
+      salesRankDrops180: drops180,
+      fbaPrice,
+      buyBoxPrice,
+      amazonPrice,
+      buyBoxWinner: fbaPrice && Math.abs(fbaPrice - (buyBoxPrice || 0)) < 0.50 ? 'FBA' : 'Other',
+      weight: product.packageWeight || 500,
+      category: product.categoryTree ? product.categoryTree[0]?.name : 'Books',
+      restrictionWarning: this.checkRestrictions(product)
+    };
+  },
+
+  checkRestrictions(product) {
+    if (product.brand && CONFIG.RESTRICTED_BRANDS.some(b => 
+      product.brand.toLowerCase().includes(b.toLowerCase())
+    )) {
+      return `⚠️ Restricted brand: ${product.brand}`;
+    }
+    return null;
+  },
+
+  generateSimulatedData(asin) {
+    // Simulated data for testing
+    const simulatedRank = Math.floor(Math.random() * 1000000) + 100000;
+    const simulatedPrice = (Math.random() * 20 + 10).toFixed(2);
+    
+    return {
+      asin,
+      title: `Simulated Book - ${asin}`,
+      brand: null,
+      salesRank: simulatedRank,
+      salesRankDrops30: Math.floor(Math.random() * 50) + 10,
+      salesRankDrops90: Math.floor(Math.random() * 150) + 30,
+      salesRankDrops180: Math.floor(Math.random() * 300) + 60,
+      fbaPrice: parseFloat(simulatedPrice),
+      buyBoxPrice: parseFloat(simulatedPrice),
+      amazonPrice: parseFloat((parseFloat(simulatedPrice) * 1.1).toFixed(2)),
+      buyBoxWinner: 'FBA',
+      weight: 500,
+      category: 'Books',
+      restrictionWarning: null,
+      _simulated: true
+    };
   }
 };
 
-// Keep focus
-document.addEventListener('click', (e) => {
-    // Don't steal focus if user is in an input field
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    scanInput.focus();
-});
-setTimeout(()=>{ try{ scanInput.focus(); }catch(e){} }, 50);
+// =====================================================
+// 5. GEMINI CLIENT
+// =====================================================
+const GeminiClient = {
+  async analyze(keepaData, decision) {
+    const key = AppState.settings.geminiKey;
+    
+    if (!key) {
+      return {
+        analysis: 'Gemini API key not configured. Add your key in Settings to use AI analysis.',
+        recommendation: null
+      };
+    }
 
-/* =========================================
-   3. KEEPA CLIENT (Smart Token Usage)
-   ========================================= */
-async function fetchKeepaData(identifier) {
-    if (!STATE.settings.keepaKey) return mockKeepaData(identifier);
-
-    // 1. Determine Type
-    let type = "asin";
-    if (/^\d{9,13}[xX]?$/.test(identifier)) type = "isbn";
-    
-    const query = type === "isbn" ? `code=${identifier}` : `asin=${identifier}`;
-    
-    // 2. Request stats-heavy, history-light to save tokens (stats=1, history=0)
-    // We only need history=1 if we want to graph it, but for decision we need stats.
-    // However, user requested 6mo avg price, which requires history or stats.
-    // stats object usually contains avg30, avg90, avg180.
-    const url = `https://api.keepa.com/product?key=${STATE.settings.keepaKey}&domain=1&${query}&stats=1&history=0`;
-    
-    // Proxy for CORS
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+    // Check cache
+    const cacheKey = `${keepaData.asin}-${decision.targetPrice}-${decision.profit}`;
+    if (AppState.runtime.geminiCache.has(cacheKey)) {
+      return AppState.runtime.geminiCache.get(cacheKey);
+    }
 
     try {
-        const res = await fetch(proxyUrl);
-        const data = await res.json();
-        
-        if (data.error) throw new Error(data.error.message);
-        if (!data.products || !data.products.length) throw new Error("Product not found");
+      const prompt = this.buildPrompt(keepaData, decision);
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        })
+      });
 
-        updateTokenDisplay(data.tokensLeft);
-        return parseKeepa(data.products[0]);
-
-    } catch (e) {
-        console.error("Keepa Error", e);
-        throw e;
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+      
+      const result = this.parseResponse(text);
+      AppState.runtime.geminiCache.set(cacheKey, result);
+      
+      return result;
+    } catch (error) {
+      console.error('Gemini error:', error);
+      return {
+        analysis: `Error: ${error.message}`,
+        recommendation: null
+      };
     }
-}
+  },
 
-function updateTokenDisplay(tokens) {
-    if (tokens === undefined) return;
-    UI.elements.tokenBadge.classList.remove('hidden');
-    UI.elements.tokenCount.textContent = tokens;
+  buildPrompt(keepaData, decision) {
+    return `You are advising an experienced Amazon FBA bookseller. Your job is to evaluate whether this book is worth buying for FBA resale ONLY. Ignore FBM strategies.
+
+BOOK DETAILS:
+- Title: ${keepaData.title}
+- ASIN: ${keepaData.asin}
+- Sales Rank: ${keepaData.salesRank.toLocaleString()}
+- Rank Drops (30/90/180 days): ${keepaData.salesRankDrops30}/${keepaData.salesRankDrops90}/${keepaData.salesRankDrops180}
+- Current FBA Price: $${keepaData.fbaPrice || 'N/A'}
+- Buy Box: ${keepaData.buyBoxWinner}
+${keepaData.brand ? `- Brand: ${keepaData.brand}` : ''}
+
+DECISION MATH:
+- Target FBA Price: $${decision.targetPrice.toFixed(2)}
+- Est. Profit: $${decision.profit.toFixed(2)}
+- ROI: ${decision.roi}%
+- Confidence: ${decision.confidence}%
+
+Focus on:
+1. FBA demand outlook
+2. FBA competition risk
+3. Price stability
+4. Storage/long-tail risk
+5. Any book-specific red flags
+
+Format your response as:
+• [Point about demand]
+• [Point about competition]
+• [Point about risks]
+
+Then end with EXACTLY this format:
+Recommendation: BUY
+or
+Recommendation: REJECT`;
+  },
+
+  parseResponse(text) {
+    const lines = text.split('\n').filter(l => l.trim());
+    const recommendation = lines.find(l => l.toLowerCase().includes('recommendation:'));
     
-    const dot = UI.elements.tokenDot;
-    dot.className = "w-2 h-2 rounded-full"; // reset
-    if (tokens > 500) dot.classList.add("bg-green-500");
-    else if (tokens > 100) dot.classList.add("bg-yellow-500");
-    else dot.classList.add("bg-red-500");
-}
-
-function parseKeepa(p) {
-    // Helpers
-    const toPrice = (v) => (v && v > 0) ? v / 100 : 0;
-    const s = p.stats?.current || [];
-    const avg = p.stats || {};
-
-    // Pricing
-    const fbaPrice = toPrice(s[10]); // NEW_FBA
-    const bbPrice = toPrice(s[18]);  // BUY_BOX
-    const fbmPrice = toPrice(s[7]);  // NEW_FBM (shipping included)
-    const amazonPrice = toPrice(s[0]);
-
-    // Sales Rank
-    const rank = s[3] || -1;
-    
-    // Drops (Velocity)
-    const drops30 = p.stats?.salesRankDrops30 || 0;
-    const drops90 = p.stats?.salesRankDrops90 || 0;
-    const drops180 = p.stats?.salesRankDrops180 || 0;
-
-    // Averages (6mo = 180 days)
-    const avgPrice180 = toPrice(avg.avg180?.[10] || avg.avg180?.[18] || 0); // Prefer FBA avg, then BB avg
-
-    // Weight (g to lbs)
-    const weight = (p.packageWeight || 500) / 453.592;
+    let rec = null;
+    if (recommendation) {
+      if (recommendation.toLowerCase().includes('buy')) rec = 'BUY';
+      else if (recommendation.toLowerCase().includes('reject')) rec = 'REJECT';
+    }
 
     return {
-        title: p.title,
-        asin: p.asin,
-        image: p.imagesCSV ? `https://images-na.ssl-images-amazon.com/images/I/${p.imagesCSV.split(',')[0]}` : null,
-        rank: rank,
-        drops30: drops30,
-        drops180: drops180,
-        fbaPrice: fbaPrice,
-        bbPrice: bbPrice,
-        fbmPrice: fbmPrice,
-        amazonPrice: amazonPrice,
-        avgPrice6mo: avgPrice180,
-        weight: weight,
-        category: p.categoryTree?.[0]?.name || "Unknown"
+      analysis: text,
+      recommendation: rec
     };
-}
+  }
+};
 
-function mockKeepaData(id) {
-    // For testing without API key
-    return {
-        title: "Mock Book Title (No API Key)",
-        asin: id,
-        rank: 50000,
-        drops30: 15,
-        drops180: 80,
-        fbaPrice: 18.50,
-        bbPrice: 18.00,
-        fbmPrice: 14.00,
-        amazonPrice: 0,
-        avgPrice6mo: 19.00,
-        weight: 1.2,
-        category: "Books"
-    };
-}
-
-/* =========================================
-   4. FBA DECISION ENGINE
-   ========================================= */
-function analyze(data, buyCost, profitFloor) {
-    // 1. Determine Market Price (FBA First)
-    let marketPrice = 0;
+// =====================================================
+// 6. DECISION ENGINE (FBA-FIRST)
+// =====================================================
+const DecisionEngine = {
+  analyze(keepaData) {
+    const buyCost = AppState.settings.buyCost;
+    const profitFloor = AppState.settings.profitFloor;
     
-    if (data.fbaPrice > 0) {
-        marketPrice = data.fbaPrice; // Primary Anchor
-    } else if (data.bbPrice > 0) {
-        // If BuyBox exists but no FBA price, assume BB is valid if acceptable
-        marketPrice = data.bbPrice; 
+    // Target price: FBA-first
+    const targetPrice = this.calculateTargetPrice(keepaData);
+    
+    // Fees
+    const fees = this.estimateFBAFees(targetPrice, keepaData.weight);
+    const totalCOGS = buyCost + CONFIG.SHIPPING_TO_AMAZON;
+    
+    // Profit calc
+    const profit = targetPrice - totalCOGS - fees.total;
+    const roi = Math.round((profit / Math.max(0.01, totalCOGS)) * 100);
+    
+    // Velocity signals
+    const velocity = this.computeVelocity(keepaData);
+    
+    // Effective floor (adjusted for velocity)
+    const effectiveFloor = this.getEffectiveFloor(profitFloor, velocity);
+    
+    // Slow mover check
+    const slowMover = keepaData.salesRank >= 900000 && velocity.drops30 < 5;
+    
+    // Decision logic
+    let verdict, reasoning;
+    
+    if (profit < 0) {
+      verdict = 'REJECT';
+      reasoning = `✗ Not profitable<br>✗ Est. loss: $${Math.abs(profit).toFixed(2)}<br>✗ Fees: $${fees.total.toFixed(2)}`;
+    } else if (slowMover && profit < (profitFloor * 1.25)) {
+      verdict = 'REJECT';
+      reasoning = `✗ Slow mover (rank ${keepaData.salesRank.toLocaleString()}, ${keepaData.salesRankDrops30} drops/30d)<br>✗ Profit $${profit.toFixed(2)} too low for storage risk`;
+    } else if (profit < effectiveFloor) {
+      verdict = 'REJECT';
+      reasoning = `✗ Profit $${profit.toFixed(2)} below floor ($${effectiveFloor.toFixed(2)})<br>✗ ROI: ${roi}%<br>✗ Target: $${targetPrice.toFixed(2)}`;
     } else {
-        // Fallback (weak signal)
-        marketPrice = data.fbmPrice > 0 ? data.fbmPrice + 4 : 0; // Padding for FBA premium
+      verdict = 'BUY';
+      const velocityTag = velocity.band === 'FAST' ? '✓ Good velocity' : '✓ Acceptable velocity';
+      reasoning = `✓ Profit: $${profit.toFixed(2)} (${roi}% ROI)<br>${velocityTag}<br>✓ Target: $${targetPrice.toFixed(2)} • BB: ${keepaData.buyBoxWinner}`;
     }
-
-    // 2. Calculate Fees (Conservative Estimation)
-    const referral = marketPrice * 0.15;
-    const closing = 1.80; // Media closing
-    // Weight handling: First lb ~3.22, addl lbs ~0.40 (Rough 2024/2025 avg)
-    let fbaFee = 3.22 + (Math.max(0, data.weight - 1) * 0.40);
-    if (marketPrice < 10) fbaFee -= 0.50; // Low price fba discount approx
-
-    const totalFees = referral + closing + fbaFee;
-    const netProfit = marketPrice - buyCost - totalFees;
-    const roi = (netProfit / buyCost) * 100;
-
-    // 3. Confidence & Velocity
-    // eScore / Demand Score calc
-    const monthlySalesEst = data.drops30; // 1 drop ~= 1 sale roughly for books
-    const sales6mo = data.drops180;
     
-    // Confidence Score (0-100)
-    let confidence = 50;
+    // Confidence
+    const confidence = this.computeConfidence(keepaData, velocity, { verdict }, profit, effectiveFloor);
     
-    // Boost for data presence
-    if (data.fbaPrice > 0) confidence += 20;
-    if (data.drops30 > 5) confidence += 10;
-    if (data.drops30 > 20) confidence += 10;
-    if (netProfit > (profitFloor + 3)) confidence += 10;
-    
-    // Penalties
-    if (data.rank > 2000000) confidence -= 30;
-    if (netProfit < profitFloor) confidence -= 20;
-    if (marketPrice === 0) confidence = 0;
-
-    confidence = Math.max(0, Math.min(100, confidence));
-
-    // 4. Decision Logic (Taxonomy: BUY / BORDERLINE BUY / REJECT)
-    let label = "REJECT";
-    let colorClass = "dot-red";
-
-    if (netProfit >= profitFloor && confidence >= 65) {
-        label = "BUY";
-        colorClass = "dot-green";
-    } else if (netProfit > 0 && (netProfit >= (profitFloor * 0.5) || confidence >= 40)) {
-        label = "BORDERLINE BUY";
-        colorClass = "dot-yellow";
+    // Check if low confidence should reject
+    if (verdict === 'BUY' && confidence < 50) {
+      verdict = 'REJECT';
+      reasoning = `✗ Low confidence (${confidence}%)<br>✗ Profit exists but signals weak<br>✗ Rank: ${keepaData.salesRank.toLocaleString()} • Drops: ${keepaData.salesRankDrops30}`;
     }
+    
+    return {
+      verdict,
+      targetPrice,
+      profit,
+      roi,
+      reasoning,
+      confidence,
+      velocity,
+      fees,
+      isBorderline: this.isBorderline(confidence, profit, profitFloor)
+    };
+  },
 
-    // Hard Reject overrides
-    if (netProfit < 0) {
-        label = "REJECT";
-        colorClass = "dot-red";
+  calculateTargetPrice(keepaData) {
+    // Priority: FBA > BuyBox (if FBA) > Amazon
+    if (keepaData.fbaPrice && keepaData.fbaPrice > 5) {
+      return keepaData.fbaPrice;
     }
+    if (keepaData.buyBoxPrice && keepaData.buyBoxWinner === 'FBA' && keepaData.buyBoxPrice > 5) {
+      return keepaData.buyBoxPrice;
+    }
+    if (keepaData.amazonPrice && keepaData.amazonPrice > 5) {
+      return keepaData.amazonPrice * 0.95; // Slight discount
+    }
+    return 15.00; // Fallback
+  },
 
-    // 5. Hidden Gems
+  estimateFBAFees(price, weight) {
+    const referral = price * 0.15;
+    const closing = price < 10 ? 0 : 0;
+    
+    let fulfillment = 3.22; // Standard book
+    if (weight > 1000) fulfillment = 4.75;
+    if (weight > 2000) fulfillment = 6.50;
+    
+    return {
+      referral,
+      closing,
+      fulfillment,
+      total: referral + closing + fulfillment
+    };
+  },
+
+  computeVelocity(keepaData) {
+    const drops30 = keepaData.salesRankDrops30 || 0;
+    const drops90 = keepaData.salesRankDrops90 || 0;
+    
+    let band = 'SLOW';
+    if (drops30 >= 20) band = 'FAST';
+    else if (drops30 >= 10) band = 'MODERATE';
+    
+    const acceleration = drops90 > 0 ? (drops30 / (drops90 / 3)) : 1;
+    
+    return { drops30, drops90, band, acceleration };
+  },
+
+  getEffectiveFloor(baseFloor, velocity) {
+    if (velocity.band === 'FAST') return baseFloor * 0.8;
+    if (velocity.band === 'SLOW') return baseFloor * 1.2;
+    return baseFloor;
+  },
+
+  computeConfidence(keepaData, velocity, decision, profit, effectiveFloor) {
+    let score = 50;
+    
+    // Profit margin
+    const margin = profit - effectiveFloor;
+    if (margin > 3) score += 20;
+    else if (margin > 1.5) score += 10;
+    else if (margin < 0) score -= 20;
+    
+    // Velocity
+    if (velocity.band === 'FAST') score += 15;
+    else if (velocity.band === 'SLOW') score -= 10;
+    
+    // Rank
+    if (keepaData.salesRank < 100000) score += 10;
+    else if (keepaData.salesRank < 500000) score += 5;
+    else if (keepaData.salesRank > 900000) score -= 10;
+    
+    // Buy Box
+    if (keepaData.buyBoxWinner === 'FBA') score += 5;
+    
+    return Math.max(0, Math.min(100, score));
+  },
+
+  isBorderline(confidence, profit, profitFloor) {
+    const [minConf, maxConf] = CONFIG.BORDERLINE_CONFIDENCE_RANGE;
+    const confBorderline = confidence >= minConf && confidence <= maxConf;
+    const profitBorderline = Math.abs(profit - profitFloor) <= CONFIG.BORDERLINE_PROFIT_BUFFER;
+    
+    return confBorderline || profitBorderline;
+  },
+
+  detectHiddenGems(keepaData, decision) {
     const gems = [];
-    if (data.drops30 > 30 && data.fbaPrice === 0) gems.push("High Demand / No FBA");
-    if (roi > 200 && label !== "REJECT") gems.push("Mega ROI");
-    if (data.rank < 10000 && label === "BUY") gems.push("Fast Mover");
-
-    return {
-        label,
-        colorClass,
-        marketPrice,
-        netProfit,
-        roi,
-        confidence,
-        fees: { referral, closing, fbaFee },
-        gems,
-        monthlySales: monthlySalesEst,
-        sales6mo: sales6mo
-    };
-}
-
-/* =========================================
-   5. UI RENDERER
-   ========================================= */
-function render(analysis) {
-    const d = STATE.runtime.lastScanData; // Raw keepa data
-
-    // Switch View
-    UI.views.welcome.classList.add('hidden');
-    UI.views.loading.classList.add('hidden');
-    UI.views.result.classList.remove('hidden');
-
-    // 1. Decision Hero
-    UI.elements.decisionText.textContent = analysis.label;
-    UI.elements.decisionDot.className = `w-6 h-6 rounded-full animate-pulse-dot flex-none ${analysis.colorClass}`;
     
-    UI.elements.confidence.textContent = analysis.confidence;
-    UI.elements.title.textContent = d.title;
-    UI.elements.avgPrice.textContent = `$${d.avgPrice6mo.toFixed(2)}`;
-    UI.elements.demand.textContent = analysis.sales6mo > 0 ? analysis.sales6mo : "Low";
-
-    // 2. Profit & Sliders
-    UI.elements.profit.textContent = `$${analysis.netProfit.toFixed(2)}`;
-    UI.elements.profit.className = analysis.netProfit > 0 ? "text-3xl font-bold text-green-400 font-mono" : "text-3xl font-bold text-red-400 font-mono";
-    UI.elements.roi.textContent = isFinite(analysis.roi) ? `${Math.round(analysis.roi)}%` : "--%";
-
-    // 3. Details
-    UI.elements.rawRank.textContent = d.rank.toLocaleString();
-    UI.elements.rawWeight.textContent = `${d.weight.toFixed(2)} lbs`;
-    UI.elements.rawBB.textContent = `$${d.bbPrice.toFixed(2)}`;
-    UI.elements.rawFBA.textContent = `$${d.fbaPrice.toFixed(2)}`;
+    // High ROI
+    if (decision.roi > 150) {
+      gems.push({
+        label: 'High ROI',
+        icon: '💰',
+        details: `${decision.roi}% return on investment`
+      });
+    }
     
-    UI.elements.feeRef.textContent = `$${analysis.fees.referral.toFixed(2)}`;
-    UI.elements.feeClose.textContent = `$${analysis.fees.closing.toFixed(2)}`;
-    UI.elements.feeFBA.textContent = `$${analysis.fees.fbaFee.toFixed(2)}`;
+    // Fast mover + profit
+    if (decision.velocity.band === 'FAST' && decision.profit > 7) {
+      gems.push({
+        label: 'Fast Seller',
+        icon: '⚡',
+        details: `${decision.velocity.drops30} rank drops in 30 days`
+      });
+    }
+    
+    // Low rank + profit
+    if (keepaData.salesRank < 50000 && decision.profit > 5) {
+      gems.push({
+        label: 'Top Seller',
+        icon: '🏆',
+        details: `Rank: ${keepaData.salesRank.toLocaleString()}`
+      });
+    }
+    
+    return gems;
+  }
+};
 
-    // 4. Gems
-    if (analysis.gems.length > 0) {
-        UI.elements.gemsSection.classList.remove('hidden');
-        UI.elements.gemsList.innerHTML = analysis.gems.map(g => 
-            `<span class="bg-yellow-900/30 text-yellow-400 border border-yellow-700/50 text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wide">✨ ${g}</span>`
-        ).join('');
+// =====================================================
+// 7. UI RENDERERS
+// =====================================================
+const UI = {
+  showProcessing(show) {
+    document.getElementById('processing').classList.toggle('hidden', !show);
+  },
+
+  showDuplicateWarning(show) {
+    document.getElementById('dupeWarning').classList.toggle('hidden', !show);
+  },
+
+  setStatus(text) {
+    document.getElementById('statusText').textContent = text;
+    
+    // Update Keepa mode indicator
+    const indicator = document.getElementById('keepaModeIndicator');
+    if (AppState.keepa.mode === 'LIVE') {
+      indicator.classList.remove('hidden', 'bg-yellow-500/20', 'text-yellow-400');
+      indicator.classList.add('bg-green-500/20', 'text-green-400');
+      indicator.textContent = 'LIVE';
+    } else if (AppState.keepa.mode === 'SIMULATED') {
+      indicator.classList.remove('hidden', 'bg-green-500/20', 'text-green-400');
+      indicator.classList.add('bg-yellow-500/20', 'text-yellow-400');
+      indicator.textContent = 'SIMULATED';
+    }
+  },
+
+  renderDecision(decision, keepaData) {
+    AppState.runtime.lastScanData = { decision, keepaData };
+    
+    const card = document.getElementById('resultCard');
+    const banner = document.getElementById('banner');
+    const decisionText = document.getElementById('decisionText');
+    
+    // Decision text + dot
+    let dotClass, displayText;
+    if (decision.verdict === 'BUY') {
+      dotClass = 'dot-green';
+      displayText = decision.isBorderline ? 'BORDERLINE BUY' : 'BUY';
     } else {
-        UI.elements.gemsSection.classList.add('hidden');
+      dotClass = 'dot-red';
+      displayText = 'REJECT';
     }
-
-    // 5. Gemini Trigger logic
-    // Hide previous output when rendering new analysis
-    if (!STATE.runtime.geminiActive) {
-        UI.elements.geminiOutput.classList.add('hidden');
+    
+    decisionText.innerHTML = `<span class="decision-dot ${dotClass}"></span>${displayText}`;
+    
+    // Confidence
+    document.getElementById('confidence').textContent = `Confidence: ${decision.confidence}`;
+    
+    // Title
+    document.getElementById('bookTitle').textContent = keepaData.title;
+    
+    // Metrics
+    const avgPrice = keepaData.fbaPrice || keepaData.buyBoxPrice || keepaData.amazonPrice || 0;
+    document.getElementById('avgPrice').textContent = `$${avgPrice.toFixed(2)}`;
+    document.getElementById('salesVolume').textContent = `${keepaData.salesRankDrops180} drops`;
+    document.getElementById('profitValue').textContent = `$${decision.profit.toFixed(2)}`;
+    
+    // Explanation
+    let explanation = decision.reasoning;
+    if (keepaData.restrictionWarning) {
+      explanation += `<br><br><div class="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/50 rounded text-yellow-400 text-xs">${keepaData.restrictionWarning}</div>`;
     }
-
-    if (analysis.label === "BORDERLINE BUY") {
-        UI.elements.geminiSection.classList.remove('hidden');
-        UI.elements.geminiBtn.classList.remove('hidden');
+    document.getElementById('explanation').innerHTML = explanation;
+    
+    // Hidden gems
+    const gems = DecisionEngine.detectHiddenGems(keepaData, decision);
+    if (gems.length > 0) {
+      document.getElementById('gemBadge').classList.remove('hidden');
+      document.getElementById('gemDetails').classList.remove('hidden');
+      
+      const gemReasons = document.getElementById('gemReasons');
+      gemReasons.innerHTML = gems.map(g => 
+        `<div>${g.icon} <strong>${g.label}:</strong> ${g.details}</div>`
+      ).join('');
     } else {
-        // Hide Gemini button on clear BUY or REJECT, unless output already showing
-        UI.elements.geminiBtn.classList.add('hidden');
-        if (!STATE.runtime.geminiActive) {
-            UI.elements.geminiSection.classList.add('hidden');
-        }
+      document.getElementById('gemBadge').classList.add('hidden');
+      document.getElementById('gemDetails').classList.add('hidden');
     }
+    
+    // Gemini section
+    const geminiSection = document.getElementById('geminiSection');
+    if (decision.isBorderline && decision.verdict === 'BUY') {
+      geminiSection.classList.remove('hidden');
+      document.getElementById('geminiResult').classList.add('hidden');
+      document.getElementById('geminiResult').innerHTML = '';
+    } else {
+      geminiSection.classList.add('hidden');
+    }
+    
+    // Show card
+    card.classList.remove('hidden');
+    card.classList.add('animate-slide-in');
+    
+    // Update status
+    this.setStatus(keepaData.title);
+  },
+
+  renderGeminiResult(result) {
+    const container = document.getElementById('geminiResult');
+    
+    let html = '';
+    
+    // Recommendation badge at top
+    if (result.recommendation) {
+      const badgeClass = result.recommendation === 'BUY' ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-red-500/20 text-red-400 border-red-500/50';
+      html += `<div class="inline-block px-3 py-1 ${badgeClass} border rounded-lg font-bold text-sm mb-3">Gemini Recommendation: ${result.recommendation}</div><hr class="border-gray-800 mb-3">`;
+    }
+    
+    // Analysis
+    html += `<div class="text-sm text-gray-300 whitespace-pre-line leading-relaxed">${result.analysis}</div>`;
+    
+    container.innerHTML = html;
+    container.classList.remove('hidden');
+  },
+
+  updateProfitTally() {
+    const buyQueue = AppState.runtime.buyQueue;
+    const totalProfit = buyQueue.reduce((sum, item) => sum + parseFloat(item.profit), 0);
+    
+    document.getElementById('profitTally').innerHTML = `
+      <span class="font-semibold">Queue:</span> ${buyQueue.length} | 
+      <span class="font-semibold">Profit:</span> $${totalProfit.toFixed(2)}
+    `;
+  },
+
+  renderHistory() {
+    const list = document.getElementById('historyList');
+    const history = AppState.runtime.history;
+    
+    if (history.length === 0) {
+      list.innerHTML = '<div class="text-center text-gray-500 py-8">No scans yet</div>';
+      return;
+    }
+    
+    list.innerHTML = history.slice().reverse().map(item => {
+      const verdictClass = item.verdict === 'BUY' || item.verdict.includes('BORDERLINE') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400';
+      const gemBadge = item.isGem ? '<span class="text-yellow-400">✨</span>' : '';
+      
+      return `
+        <div class="p-4 bg-gray-900 rounded-xl border border-gray-800">
+          <div class="inline-block px-2 py-1 ${verdictClass} rounded text-xs font-bold mb-2">
+            ${gemBadge} ${item.verdict}
+          </div>
+          <div class="text-sm font-semibold mb-2">${item.title}</div>
+          <div class="text-xs text-gray-400 font-mono space-y-1">
+            <div>ASIN: ${item.asin}</div>
+            <div>Price: $${item.price} • Profit: $${item.profit} • ROI: ${item.roi}%</div>
+            ${item.gemTypes ? `<div class="text-yellow-400">💎 ${item.gemTypes}</div>` : ''}
+            <div>${item.time}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+};
+
+function updateProfitTally() {
+  UI.updateProfitTally();
 }
 
-/* =========================================
-   6. MAIN CONTROLLER
-   ========================================= */
-async function handleScannedIdentifier(id) {
-    // UI Reset
-    UI.views.welcome.classList.add('hidden');
-    UI.views.result.classList.add('hidden');
-    UI.views.loading.classList.remove('hidden');
-    UI.elements.geminiOutput.classList.add('hidden');
-    STATE.runtime.geminiActive = false;
-
-    try {
-        // Fetch
-        const data = await fetchKeepaData(id);
-        STATE.runtime.lastScanData = data;
-
-        // Analyze & Render
-        runAnalysis();
-
-    } catch (e) {
-        alert("Scan failed: " + e.message);
-        UI.views.loading.classList.add('hidden');
-        UI.views.welcome.classList.remove('hidden');
-    }
+// =====================================================
+// 8. EVENT HANDLERS
+// =====================================================
+async function handleScannedIdentifier(identifier) {
+  // Vibrate feedback
+  if (navigator.vibrate) {
+    navigator.vibrate(50);
+  }
+  
+  // Duplicate check
+  if (AppState.runtime.scannedIdentifiers.has(identifier)) {
+    UI.showDuplicateWarning(true);
+    setTimeout(() => UI.showDuplicateWarning(false), 3000);
+    return;
+  }
+  
+  AppState.runtime.scannedIdentifiers.add(identifier);
+  UI.showProcessing(true);
+  UI.setStatus('Analyzing...');
+  
+  try {
+    // Fetch Keepa data
+    const keepaData = await KeepaClient.fetchProduct(identifier);
+    
+    // Analyze
+    const decision = DecisionEngine.analyze(keepaData);
+    
+    // Render
+    UI.renderDecision(decision, keepaData);
+    
+    // Add to history
+    addToHistory(decision, keepaData);
+    
+  } catch (error) {
+    console.error('Scan error:', error);
+    UI.setStatus('Error: ' + error.message);
+  } finally {
+    UI.showProcessing(false);
+  }
 }
 
-function runAnalysis() {
-    if (!STATE.runtime.lastScanData) return;
-
-    // Get current slider values
-    const buyCost = parseFloat(UI.sliders.buyCost.value);
-    const floor = parseFloat(UI.sliders.floor.value);
-
-    // Save defaults
-    localStorage.setItem('sp_buyCost', buyCost);
-    localStorage.setItem('sp_profitFloor', floor);
-
-    // Run Engine
-    const results = analyze(STATE.runtime.lastScanData, buyCost, floor);
-    STATE.runtime.lastAnalysis = results;
-
-    // Update UI
-    render(results);
-    
-    // Handle Session Profit (Add logic: only add if user "keeps" it? 
-    // For now, let's auto-tally if it's a new scan and it's a BUY/BORDERLINE)
-    // *Simplified: We won't auto-add to tally on slider move, only on initial scan.*
-    // *Correction per user request: "Tallies profit from all profitable scans"*
-    // We'll implemented a "Session List" logic later if needed, for now visual tally.
+function addToHistory(decision, keepaData) {
+  const gems = DecisionEngine.detectHiddenGems(keepaData, decision);
+  
+  const record = {
+    verdict: decision.verdict,
+    title: keepaData.title,
+    asin: keepaData.asin,
+    price: decision.targetPrice.toFixed(2),
+    profit: decision.profit.toFixed(2),
+    roi: decision.roi,
+    time: new Date().toLocaleTimeString(),
+    isGem: gems.length > 0,
+    gemTypes: gems.map(g => g.label).join(', ')
+  };
+  
+  AppState.runtime.history.push(record);
+  
+  if (decision.verdict === 'BUY' || decision.verdict.includes('BORDERLINE')) {
+    AppState.runtime.buyQueue.push(record);
+  }
+  
+  UI.updateProfitTally();
 }
 
-// Slider Listeners (Real-time updates)
-function onSliderChange() {
-    UI.sliders.buyCostDisp.textContent = `$${parseFloat(UI.sliders.buyCost.value).toFixed(2)}`;
-    UI.sliders.floorDisp.textContent = `$${parseFloat(UI.sliders.floor.value).toFixed(2)}`;
-    
-    // Clear Gemini badge if logic changes significantly
-    if (STATE.runtime.geminiActive) {
-        UI.elements.geminiOutput.classList.add('hidden');
-        UI.elements.geminiBtn.classList.remove('hidden'); // Show button again
-        STATE.runtime.geminiActive = false;
-    }
-
-    runAnalysis();
+async function reanalyzeWithCurrentSettings() {
+  if (!AppState.runtime.lastScanData) return;
+  
+  const { keepaData } = AppState.runtime.lastScanData;
+  const decision = DecisionEngine.analyze(keepaData);
+  UI.renderDecision(decision, keepaData);
+  
+  // Clear Gemini result since settings changed
+  document.getElementById('geminiResult').classList.add('hidden');
 }
 
-UI.sliders.buyCost.addEventListener('input', onSliderChange);
-UI.sliders.floor.addEventListener('input', onSliderChange);
-
-// Set initial slider visual values
-UI.sliders.buyCost.value = STATE.settings.buyCost;
-UI.sliders.floor.value = STATE.settings.profitFloor;
-onSliderChange();
-
-/* =========================================
-   7. GEMINI CLIENT
-   ========================================= */
-UI.elements.geminiBtn.addEventListener('click', async () => {
-    if (!STATE.settings.geminiKey) {
-        alert("Please set Gemini API Key in Settings (⚙️)");
-        return;
-    }
-    
-    const btn = UI.elements.geminiBtn;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = "Thinking...";
-    btn.disabled = true;
-
-    try {
-        const d = STATE.runtime.lastScanData;
-        const a = STATE.runtime.lastAnalysis;
-        
-        // FBA BOOKSELLER PROMPT
-        const prompt = `
-            You are an expert FBA Bookseller Advisor.
-            Evaluate this book for FBA resale. IGNORE FBM.
-            
-            Title: ${d.title}
-            Rank: ${d.rank}
-            FBA Price: $${d.fbaPrice}
-            Net Profit: $${a.netProfit}
-            6-mo Sales Est: ${a.sales6mo}
-            Weight: ${d.weight} lbs
-
-            Provide:
-            1. FBA Demand analysis.
-            2. Competitive risk.
-            3. Verdict badge (BUY or REJECT) at the top.
-        `;
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${STATE.settings.geminiKey}`;
-        
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            })
-        });
-
-        const json = await response.json();
-        const text = json.candidates?.[0]?.content?.parts?.[0]?.text || "No analysis generated.";
-
-        // Parse Badge
-        let badgeType = "REJECT";
-        if (text.toLowerCase().includes("recommendation: buy") || text.toLowerCase().includes("verdict: buy")) {
-            badgeType = "BUY";
-        }
-
-        // Render Badge
-        let badgeHtml = badgeType === "BUY" 
-            ? `<span class="bg-green-900/40 text-green-400 border border-green-700 px-3 py-1 rounded font-bold text-xs uppercase tracking-wider">Gemini says: BUY</span>`
-            : `<span class="bg-red-900/40 text-red-400 border border-red-700 px-3 py-1 rounded font-bold text-xs uppercase tracking-wider">Gemini says: REJECT</span>`;
-        
-        UI.elements.geminiBadgeArea.innerHTML = badgeHtml;
-        UI.elements.geminiText.innerText = text.replace(/\*/g, '').replace(/#/g, ''); // Simple cleanup
-        
-        UI.elements.geminiOutput.classList.remove('hidden');
-        btn.classList.add('hidden'); // Hide button after asking
-        STATE.runtime.geminiActive = true;
-
-    } catch (e) {
-        alert("Gemini Error: " + e.message);
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
+// Slider events
+document.getElementById('buyCostSlider').addEventListener('input', (e) => {
+  const value = parseFloat(e.target.value);
+  AppState.settings.buyCost = value;
+  localStorage.setItem('buyCost', value);
+  document.getElementById('buyCostValue').textContent = `$${value.toFixed(2)}`;
+  reanalyzeWithCurrentSettings();
 });
 
-/* =========================================
-   8. SETTINGS & UTILS
-   ========================================= */
-const settingsModal = document.getElementById('settingsModal');
-const btnSettings = document.getElementById('btnSettings');
-const btnSaveSettings = document.getElementById('btnSaveSettings');
-const inputKeepa = document.getElementById('inputKeepaKey');
-const inputGemini = document.getElementById('inputGeminiKey');
-
-btnSettings.addEventListener('click', () => {
-    inputKeepa.value = STATE.settings.keepaKey;
-    inputGemini.value = STATE.settings.geminiKey;
-    settingsModal.classList.remove('hidden');
+document.getElementById('profitFloorSlider').addEventListener('input', (e) => {
+  const value = parseFloat(e.target.value);
+  AppState.settings.profitFloor = value;
+  localStorage.setItem('profitFloor', value);
+  document.getElementById('profitFloorValue').textContent = `$${value.toFixed(2)}`;
+  reanalyzeWithCurrentSettings();
 });
 
-btnSaveSettings.addEventListener('click', () => {
-    STATE.settings.keepaKey = inputKeepa.value.trim();
-    STATE.settings.geminiKey = inputGemini.value.trim();
-    
-    localStorage.setItem('sp_keepa', STATE.settings.keepaKey);
-    localStorage.setItem('sp_gemini', STATE.settings.geminiKey);
-    
-    settingsModal.classList.add('hidden');
-    alert("Settings Saved");
+// Gemini button
+document.getElementById('askGeminiBtn').addEventListener('click', async () => {
+  if (!AppState.runtime.lastScanData) return;
+  
+  const btn = document.getElementById('askGeminiBtn');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing...';
+  
+  try {
+    const { decision, keepaData } = AppState.runtime.lastScanData;
+    const result = await GeminiClient.analyze(keepaData, decision);
+    UI.renderGeminiResult(result);
+  } catch (error) {
+    console.error('Gemini error:', error);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Ask Gemini for more detail';
+  }
 });
 
-document.getElementById('btnClearHistory').addEventListener('click', () => {
-    if(confirm("Clear local cache and history?")) {
-        localStorage.clear();
-        location.reload();
-    }
+// Settings
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.remove('hidden');
+  document.getElementById('keepaKeyInput').value = AppState.settings.keepaKey;
+  document.getElementById('geminiKeyInput').value = AppState.settings.geminiKey;
+  document.getElementById('tokenBudgetInput').value = AppState.settings.tokenBudget;
+  
+  const tokenStatus = AppState.keepa.tokensRemaining 
+    ? `Available: ${AppState.keepa.tokensRemaining}` 
+    : 'Available: Unknown';
+  document.getElementById('tokenStatus').textContent = tokenStatus;
 });
 
-// Manual Input Logic
-document.getElementById('btnManualSubmit').addEventListener('click', () => {
-    const val = document.getElementById('manualInputField').value.trim();
-    if(val) {
-        document.getElementById('manualInputModal').classList.add('hidden');
-        handleScannedIdentifier(val);
-        document.getElementById('manualInputField').value = "";
-    }
+document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.add('hidden');
+});
+
+document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+  AppState.settings.keepaKey = document.getElementById('keepaKeyInput').value.trim();
+  AppState.settings.geminiKey = document.getElementById('geminiKeyInput').value.trim();
+  AppState.settings.tokenBudget = parseInt(document.getElementById('tokenBudgetInput').value);
+  
+  localStorage.setItem('keepaKey', AppState.settings.keepaKey);
+  localStorage.setItem('geminiKey', AppState.settings.geminiKey);
+  localStorage.setItem('tokenBudget', AppState.settings.tokenBudget);
+  
+  document.getElementById('settingsModal').classList.add('hidden');
+  UI.setStatus('Settings saved');
+});
+
+// History
+document.getElementById('historyBtn').addEventListener('click', () => {
+  document.getElementById('mainPage').classList.add('hidden');
+  document.getElementById('historyPage').classList.remove('hidden');
+  UI.renderHistory();
+});
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('historyPage').classList.add('hidden');
+  document.getElementById('mainPage').classList.remove('hidden');
+});
+
+// Export CSV
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  if (AppState.runtime.buyQueue.length === 0) {
+    alert('No items in buy queue');
+    return;
+  }
+  
+  let csv = 'Title,ASIN,Price,Profit,ROI,HiddenGem,GemReasons\n';
+  AppState.runtime.buyQueue.forEach(r => {
+    const gemFlag = r.isGem ? 'YES' : 'NO';
+    const gemReasons = r.isGem ? `"${r.gemTypes}"` : '';
+    csv += `"${r.title}",${r.asin},${r.price},${r.profit},${r.roi}%,${gemFlag},${gemReasons}\n`;
+  });
+  
+  const totalProfit = AppState.runtime.buyQueue.reduce((sum, r) => sum + parseFloat(r.profit), 0);
+  csv += `\nTOTAL PROFIT,$${totalProfit.toFixed(2)}`;
+  
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `scoutpro_buylist_${Date.now()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Clear
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!confirm('Clear all scan data and buy queue?')) return;
+  
+  AppState.runtime.history = [];
+  AppState.runtime.buyQueue = [];
+  AppState.runtime.scannedIdentifiers.clear();
+  AppState.runtime.lastScanData = null;
+  AppState.runtime.geminiCache.clear();
+  
+  document.getElementById('resultCard').classList.add('hidden');
+  UI.setStatus('Ready to scan');
+  UI.updateProfitTally();
 });
 
 </script>
+
 </body>
 </html>
