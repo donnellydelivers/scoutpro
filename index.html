@@ -361,17 +361,6 @@ button:disabled {
   font-family: 'JetBrains Mono', 'Courier New', monospace;
 }
 
-/* Make profit stand out */
-#profit {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--green);
-}
-
-#profit.negative {
-  color: var(--red);
-}
-
 .stat-value.negative {
   color: var(--red);
 }
@@ -1157,6 +1146,9 @@ function parseKeepaProduct(product) {
   const parsedData = {
     asin: product.asin,
     title: product.title || 'Unknown Title',
+    brand: product.brand || '',
+    manufacturer: product.manufacturer || '',
+    categoryTree: product.categoryTree || [],
     salesRank: salesRank,
     salesRankDrops30: toCount(product.stats?.salesRankDrops30) || 0,
     salesRankDrops90: toCount(product.stats?.salesRankDrops90) || 0,
@@ -1183,6 +1175,19 @@ function parseKeepaProduct(product) {
 
     publicationDate: product.releaseDate ? new Date(product.releaseDate * 60000) : null
   };
+
+  console.log('Parsed Keepa data:', parsedData);
+  
+  // Check for restricted brands specific to books/media
+  const restrictedBrands = ['universal', 'national geographic', 'scholastic'];
+  const brandLower = (parsedData.brand || '').toLowerCase();
+  const isPotentiallyRestricted = restrictedBrands.some(b => brandLower.includes(b));
+  
+  if (isPotentiallyRestricted) {
+    parsedData.restrictionWarning = `⚠️ ${parsedData.brand} may require approval`;
+  }
+  
+  return parsedData;
 
   console.log('Final parsed data:', parsedData);
   return parsedData;
@@ -1221,9 +1226,16 @@ function detectHiddenGems(keepaData, decision) {
   const gems = [];
   const title = keepaData.title.toLowerCase();
   
-  // CRITICAL: Only detect gems for ACCEPT decisions with positive profit
+  // CRITICAL: Only detect gems for ACCEPT decisions with:
+  // 1. Positive profit above floor
+  // 2. High confidence (75%+) - we don't call borderline buys "hidden gems"
   if (decision.verdict !== "ACCEPT" || decision.profit < PROFIT_FLOOR) {
     return gems; // No gems for rejects or unprofitable items
+  }
+  
+  const confidence = decision.confidence || 0;
+  if (confidence < 75) {
+    return gems; // No gems for low/medium confidence buys - reserve for strong buys only
   }
   
   // GEM 1: High ROI despite borderline profit
@@ -1761,6 +1773,16 @@ function displayResult(decision, keepaData) {
   
   // Build explanation with gem reasons
   let explanationHTML = decision.reasoning;
+  
+  // Add brand info if available
+  if (keepaData.brand) {
+    explanationHTML += `<br><br><strong>Brand:</strong> ${keepaData.brand}`;
+  }
+  
+  // Add restriction warning if present
+  if (keepaData.restrictionWarning) {
+    explanationHTML += `<br><div style="margin-top:8px;padding:8px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.4);border-radius:6px;color:#fbbf24;font-size:12px;">${keepaData.restrictionWarning}</div>`;
+  }
   
   if (isGem) {
     explanationHTML += '<details class="gem-reasons" open><summary>✨ Why This is a Hidden Gem</summary><div class="gem-reasons-content">';
