@@ -10,7 +10,8 @@
   :root{
     --bg:#0a0e1a; --panel:#111a33; --panel2:#0e1426; --text:#e8eefc; --muted:#a8b3d6;
     --border:#243157; --blue:#3b82f6; --green:#22c55e; --yellow:#eab308; --red:#ef4444;
-  }
+    });
+}
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
   header{position:sticky;top:0;z-index:5;background:var(--panel2);border-bottom:1px solid var(--border);padding:12px}
@@ -98,6 +99,7 @@
           <div><div class="k">Est. profit</div><div class="v" id="profit">$—</div></div>
           <div><div class="k">Drops (30d)</div><div class="v" id="drops30">—</div></div>
           <div><div class="k">Avg rank</div><div class="v" id="avgRank">—</div></div>
+          <div><div class="k">Keepa confidence</div><div class="v" id="keepaConfidence">—</div></div>
         </div>
         <div class="divider"></div>
         <div class="row">
@@ -152,6 +154,20 @@
         <input id="keepaKey" type="text" placeholder="Enter Keepa API key" />
         <div class="tiny" style="margin-top:6px">Uses a lightweight Keepa Product call via a CORS proxy. <a href="https://keepa.com/#!api" target="_blank">Get a key</a>.</div>
       </div>
+
+      <div style="margin-top:12px">
+        <div class="label">Daily token budget (auto-protect)</div>
+        <input id="dailyBudget" type="text" placeholder="e.g. 800" />
+        <div class="tiny" style="margin-top:6px">When exceeded, ScoutPro stops calling Keepa and uses Estimated mode until tomorrow.</div>
+      </div>
+      <div style="margin-top:12px">
+        <label class="tiny" style="display:flex;gap:8px;align-items:center">
+          <input id="warmupToggle" type="checkbox" />
+          Background warm-up cache for hot ISBNs (uses tokens)
+        </label>
+        <div class="tiny" style="margin-top:6px">Warms cache only when idle and within budget.</div>
+      </div>
+
     </details>
     <button id="saveSettings" class="good" style="margin-top:12px">Save</button>
     <button id="backFromSettings" class="ghost" style="margin-top:10px">Back</button>
@@ -191,13 +207,39 @@ let PROFIT_FLOOR = 5.00;
 
 const CONFIG = {
   keepaKey: localStorage.getItem('keepaKey') || '',
-  itemCondition: localStorage.getItem('itemCondition') || 'NEW'
+  itemCondition: localStorage.getItem('itemCondition') || 'NEW',
+  dailyBudget: parseInt(localStorage.getItem('dailyBudget') || '800', 10),
+  warmupEnabled: (localStorage.getItem('warmupEnabled') || 'true') === 'true'
 };
 
 const seenIdentifiers = new Set();
 let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
 let buyList = JSON.parse(localStorage.getItem('buyList') || '[]');
 let lastScanData = null;
+
+
+/* ==================== KEEPA CACHE (localStorage) ==================== */
+const KEEPA_CACHE_KEY = "keepaCache_v1";
+let keepaCache = (() => {
+  try { return JSON.parse(localStorage.getItem(KEEPA_CACHE_KEY) || "{}"); } catch(e) { return {}; }
+})();
+
+function cacheGet(id) {
+  const rec = keepaCache[id];
+  if (!rec) return null;
+  if (Date.now() - rec.ts > 7*24*60*60*1000) return null; // 7-day TTL
+  return rec.data;
+}
+
+function cacheSet(id, data) {
+  keepaCache[id] = { ts: Date.now(), data };
+  const keys = Object.keys(keepaCache);
+  if (keys.length > 500) {
+    keys.sort((a,b)=>keepaCache[a].ts - keepaCache[b].ts);
+    for (let i=0;i<keys.length-500;i++) delete keepaCache[keys[i]];
+  }
+  try { localStorage.setItem(KEEPA_CACHE_KEY, JSON.stringify(keepaCache)); } catch(e) {}
+}
 
 /* ==================== DOM ==================== */
 const scanInput = document.getElementById("scanInput");
@@ -255,6 +297,8 @@ function showPage(page){
 
 document.getElementById("settingsBtn").onclick = () => {
   document.getElementById("keepaKey").value = CONFIG.keepaKey;
+  document.getElementById("dailyBudget").value = String(CONFIG.dailyBudget || 800);
+  document.getElementById("warmupToggle").checked = !!CONFIG.warmupEnabled;
   showPage("settings");
 };
 document.getElementById("historyBtn").onclick = () => { renderHistory(); showPage("history"); };
@@ -263,8 +307,14 @@ document.getElementById("backFromHistory").onclick = () => showPage("main");
 
 document.getElementById("saveSettings").onclick = () => {
   CONFIG.keepaKey = document.getElementById("keepaKey").value.trim();
+  CONFIG.dailyBudget = Math.max(0, parseInt(document.getElementById("dailyBudget").value || "800", 10) || 0);
+  CONFIG.warmupEnabled = !!document.getElementById("warmupToggle").checked;
   localStorage.setItem("keepaKey", CONFIG.keepaKey);
+  localStorage.setItem("dailyBudget", String(CONFIG.dailyBudget));
+  localStorage.setItem("warmupEnabled", String(CONFIG.warmupEnabled));
   updateKeepaIndicator();
+try{ renderKeepaHealth(); }catch(e){}
+  try { renderKeepaHealth(); } catch(e) {}
   alert("✅ Settings saved!");
   showPage("main");
 };
@@ -319,6 +369,7 @@ function updateKeepaIndicator() {
   }
 }
 updateKeepaIndicator();
+try{ renderKeepaHealth(); }catch(e){}
 
 /* ==================== INPUT DETECTION ==================== */
 function detectInputType(input) {
@@ -340,8 +391,116 @@ function checkDuplicate(identifier) {
   return false;
 }
 
+
+/* ==================== KEEPA THROTTLING + HEALTH ==================== */
+const KEEPA = {
+  queue: [],
+  busy: false,
+  lastCall: 0,
+  spacingMs: 3100, // ~1 call per 3s for 20 TPM plan
+  tokensThisMinute: 0,
+  minuteStart: Date.now(),
+  health: "SIMULATED" // LIVE | THROTTLED | SIMULATED
+};
+
+function dayKey() {
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+const KEEPA_DAILY_KEY = "keepaTokensDaily_v1";
+let keepaDaily = (() => {
+  try { return JSON.parse(localStorage.getItem(KEEPA_DAILY_KEY) || "{}"); } catch(e) { return {}; }
+})();
+function getTokensToday() {
+  const k = dayKey();
+  if (!keepaDaily[k]) keepaDaily[k] = 0;
+  return keepaDaily[k];
+}
+function addTokensToday(t) {
+  const k = dayKey();
+  if (!keepaDaily[k]) keepaDaily[k] = 0;
+  keepaDaily[k] += t;
+  const keys = Object.keys(keepaDaily).sort();
+  if (keys.length > 10) for (let i=0;i<keys.length-10;i++) delete keepaDaily[keys[i]];
+  try { localStorage.setItem(KEEPA_DAILY_KEY, JSON.stringify(keepaDaily)); } catch(e) {}
+}
+function budgetRemaining() {
+  return Math.max(0, (CONFIG.dailyBudget || 0) - getTokensToday());
+}
+
+
+function estimateTokens(params={stats:true, history:false}) {
+  let t = 1;
+  if (params.stats) t += 1;
+  if (params.history) t += 1;
+  return t;
+}
+
+function updateTokenWindow(tokens) {
+  const now = Date.now();
+  if (now - KEEPA.minuteStart > 60000) {
+    KEEPA.minuteStart = now;
+    KEEPA.tokensThisMinute = 0;
+  }
+  KEEPA.tokensThisMinute += tokens;
+  addTokensToday(tokens);
+  renderKeepaHealth();
+}
+
+function renderKeepaHealth() {
+  const badge = document.getElementById("keepaBadge");
+  const txt = document.getElementById("keepaBadgeText");
+  if (!CONFIG.keepaKey) {
+    KEEPA.health = "SIMULATED";
+    badge.className = "badge warn";
+    txt.textContent = "Keepa: Simulated";
+    return;
+  }
+  if (KEEPA.health === "THROTTLED") {
+    badge.className = "badge warn";
+    txt.textContent = `Keepa: Throttled (${KEEPA.tokensThisMinute}/20, ${budgetRemaining()}/${CONFIG.dailyBudget} day)`;
+  } else {
+    badge.className = "badge ok";
+    txt.textContent = `Keepa: Live (${KEEPA.tokensThisMinute}/20, ${budgetRemaining()}/${CONFIG.dailyBudget} day)`;
+  }
+}
+
+async function enqueueKeepa(task) {
+  return new Promise((resolve) => {
+    KEEPA.queue.push({ task, resolve });
+    processKeepaQueue();
+  });
+}
+
+async function processKeepaQueue() {
+  if (KEEPA.busy || !KEEPA.queue.length) return;
+  const now = Date.now();
+  const wait = Math.max(0, KEEPA.spacingMs - (now - KEEPA.lastCall));
+  if (wait > 0) {
+    KEEPA.health = "THROTTLED";
+    setTimeout(processKeepaQueue, wait);
+    return;
+  }
+  KEEPA.busy = true;
+  const { task, resolve } = KEEPA.queue.shift();
+  KEEPA.lastCall = Date.now();
+  try {
+    const result = await task();
+    KEEPA.health = "LIVE";
+    resolve(result);
+  } catch (e) {
+    KEEPA.health = "THROTTLED";
+    resolve({ _fallback: true, error: e });
+  } finally {
+    KEEPA.busy = false;
+    setTimeout(processKeepaQueue, KEEPA.spacingMs);
+  }
+}
+
+
 /* ==================== KEEPA API ==================== */
 async function queryKeepa(identifier, rawInput) {
+  return enqueueKeepa(async () => {
   if (!CONFIG.keepaKey) return getMockKeepaData(identifier, rawInput);
 
   const domain = 1;
@@ -353,7 +512,7 @@ async function queryKeepa(identifier, rawInput) {
   else throw new Error('Title search not implemented. Scan ISBN/UPC or enter ASIN.');
 
   const stats = 1;
-  const history = 1;
+  const history = 0;
 
   const keepaUrl = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=${domain}&${queryParam}&stats=${stats}&history=${history}`;
   const corsProxy = 'https://corsproxy.io/?';
@@ -365,8 +524,9 @@ async function queryKeepa(identifier, rawInput) {
     throw new Error(`Keepa API error: ${response.status}`);
   }
   const data = await response.json();
-  if (!data.products || data.products.length === 0) throw new Error('Product not found in Keepa database');
-  return parseKeepaProduct(data.products[0]);
+  if (!data.products || data.products.length === 0) return Object.assign(getMockKeepaData(identifier, rawInput), {_simulated:true, _reason:'NO_MATCH'});
+  updateTokenWindow(estimateTokens({stats:true, history:false}));
+    return parseKeepaProduct(data.products[0]);
 }
 
 /* ==================== PARSE KEEPA PRODUCT ==================== */
@@ -504,28 +664,65 @@ function computeBuyScore(keepa, pricing) {
   const expected30 = d90 / 3 || 0.0001;
   const accelRatio = d30 / Math.max(1, expected30);
 
-  if (d30 >= 30) { score += 30; reasons.push("🔥 Strong sales velocity (30+ sales/month)"); }
-  else if (d30 >= 20) { score += 25; reasons.push("✅ Healthy monthly sales volume"); }
-  else if (d30 >= 10) { score += 18; reasons.push("✅ Consistent ongoing demand"); }
-  else if (d30 >= 5) { score += 10; reasons.push("⚠️ Slow but real sales activity"); }
-  else if (d30 >= 3) { score += 5; reasons.push("⚠️ Very limited sales velocity"); }
-  else { reasons.push("⛔ No meaningful sales activity detected"); return { score: 39, reasons: reasons.concat("⛔ Auto-pass: Drops30 < 3"), verdict: getVerdictFromScore(39) }; }
+  // Velocity — hard gate (different curves for NEW vs USED)
+  if (itemType === "NEW") {
+    if (d30 >= 30) { score += 32; reasons.push("🔥 Strong sales velocity (30+ / 30d)"); }
+    else if (d30 >= 20) { score += 26; reasons.push("✅ Healthy monthly sales volume"); }
+    else if (d30 >= 10) { score += 18; reasons.push("✅ Consistent ongoing demand"); }
+    else if (d30 >= 5)  { score += 10; reasons.push("⚠️ Slow but real sales activity"); }
+    else if (d30 >= 3)  { score += 6;  reasons.push("⚠️ Very limited sales velocity"); }
+    else {
+      reasons.push("⛔ No meaningful sales activity detected");
+      return { score: 39, reasons: reasons.concat("⛔ Auto-pass: Drops30 < 3"), verdict: getVerdictFromScore(39) };
+    }
+  } else {
+    if (d30 >= 20) { score += 24; reasons.push("✅ Strong used demand (20+ / 30d)"); }
+    else if (d30 >= 10) { score += 18; reasons.push("✅ Healthy used demand"); }
+    else if (d30 >= 5)  { score += 12; reasons.push("⚠️ Moderate used velocity"); }
+    else if (d30 >= 3)  { score += 8;  reasons.push("⚠️ Low but viable used velocity"); }
+    else {
+      reasons.push("⛔ Insufficient used velocity");
+      return { score: 39, reasons: reasons.concat("⛔ Auto-pass: Drops30 < 3"), verdict: getVerdictFromScore(39) };
+    }
+  }
 
-  if (accelRatio >= 1.5) { score += 15; reasons.push("📈 Sales accelerating"); }
-  else if (accelRatio >= 1.1) { score += 10; reasons.push("📈 Sales improving"); }
-  else if (accelRatio >= 0.9) { score += 7; reasons.push("➖ Sales stable"); }
-  else if (accelRatio >= 0.7) { score += 3; reasons.push("⚠️ Sales slowing"); }
-  else reasons.push("⛔ Sales declining");
+  // Acceleration (NEW weighted heavier than USED)
+  if (itemType === "NEW") {
+    if (accelRatio >= 1.5) { score += 15; reasons.push("📈 Sales accelerating"); }
+    else if (accelRatio >= 1.1) { score += 10; reasons.push("📈 Sales improving"); }
+    else if (accelRatio >= 0.9) { score += 7; reasons.push("➖ Sales stable"); }
+    else if (accelRatio >= 0.7) { score += 3; reasons.push("⚠️ Sales slowing"); }
+    else reasons.push("⛔ Sales declining");
+  } else {
+    if (accelRatio >= 1.5) { score += 10; reasons.push("📈 Used sales accelerating"); }
+    else if (accelRatio >= 1.1) { score += 7; reasons.push("📈 Used sales improving"); }
+    else if (accelRatio >= 0.9) { score += 5; reasons.push("➖ Used sales stable"); }
+    else if (accelRatio >= 0.7) { score += 2; reasons.push("⚠️ Used sales slowing"); }
+    else reasons.push("⛔ Used sales declining");
+  }
 
+
+  // Profit strength (NEW vs USED curves) — hard gate
   let effectiveProfit = pricing.profit;
-  if (itemType === "USED") effectiveProfit *= usedConditionMultiplier(CONFIG.itemCondition);
+  let minRatio = 1.0;
+
+  if (itemType === "USED") {
+    if (CONFIG.itemCondition === "ACCEPTABLE") minRatio = 1.25;
+    else if (CONFIG.itemCondition === "GOOD") minRatio = 1.15;
+    else minRatio = 1.05;
+    effectiveProfit *= usedConditionMultiplier(CONFIG.itemCondition);
+  }
+
   const profitRatio = effectiveProfit / Math.max(0.01, PROFIT_FLOOR);
 
-  if (profitRatio >= 2.0) { score += 25; reasons.push("💰 Exceptional profit cushion"); }
-  else if (profitRatio >= 1.5) { score += 20; reasons.push("💰 Strong margin above target"); }
-  else if (profitRatio >= 1.2) { score += 15; reasons.push("✅ Healthy margin"); }
-  else if (profitRatio >= 1.0) { score += 8; reasons.push("⚠️ Meets minimum profit"); }
-  else { reasons.push("⛔ Profit below minimum target"); return { score: 39, reasons: reasons.concat("⛔ Auto-pass: Below profit floor"), verdict: getVerdictFromScore(39) }; }
+  if (profitRatio >= 2.0) { score += (itemType==="USED"?30:25); reasons.push("💰 Exceptional profit cushion"); }
+  else if (profitRatio >= 1.5) { score += (itemType==="USED"?24:20); reasons.push("💰 Strong margin above target"); }
+  else if (profitRatio >= 1.2) { score += (itemType==="USED"?18:15); reasons.push("✅ Healthy margin"); }
+  else if (profitRatio >= minRatio) { score += (itemType==="USED"?10:8); reasons.push("⚠️ Meets minimum profit"); }
+  else {
+    reasons.push("⛔ Profit below minimum target");
+    return { score: 39, reasons: reasons.concat("⛔ Auto-pass: Below profit floor"), verdict: getVerdictFromScore(39) };
+  }
 
   if (keepa.priceFBA > 0 && keepa.priceBuyBox > 0) { score += 10; reasons.push("📦 Clear FBA + Buy Box price signal"); }
   else if (keepa.priceFBA > 0) { score += 7; reasons.push("📦 Reliable FBA pricing"); }
@@ -538,13 +735,21 @@ function computeBuyScore(keepa, pricing) {
   else if (fbaCount <= 10) { score += 4; reasons.push("⚠️ Crowded FBA listing"); }
   else reasons.push("⛔ Highly competitive listing");
 
+  // Rank context (NEW weighted heavier than USED)
   const r = keepa.avgRank || keepa.salesRank || 999999;
-  if (r < 200000) { score += 10; reasons.push("📊 Strong historical demand"); }
-  else if (r < 500000) { score += 7; reasons.push("📊 Healthy long-tail demand"); }
-  else if (r < 1000000) { score += 4; reasons.push("⚠️ Moderate historical demand"); }
-  else reasons.push("⚠️ Weak historical demand");
+  if (itemType === "NEW") {
+    if (r < 200000) { score += 10; reasons.push("📊 Strong historical demand"); }
+    else if (r < 500000) { score += 7; reasons.push("📊 Healthy long-tail demand"); }
+    else if (r < 1000000) { score += 4; reasons.push("⚠️ Moderate historical demand"); }
+    else reasons.push("⚠️ Weak historical demand");
+  } else {
+    if (r < 200000) { score += 6; reasons.push("📊 Strong used demand history"); }
+    else if (r < 500000) { score += 4; reasons.push("📊 Solid used demand history"); }
+    else if (r < 1000000) { score += 2; reasons.push("⚠️ Moderate used demand history"); }
+    else reasons.push("⚠️ Weak used demand history");
+  }
 
-  const rotation = detectBuyBoxRotation(keepa);
+const rotation = detectBuyBoxRotation(keepa);
   if (itemType === "NEW") {
     if (keepa.buyBoxWinner === "FBA") { score += 10; reasons.push("📦 FBA sellers control Buy Box — Prime advantage confirmed"); }
     else if (keepa.buyBoxWinner === "FBM") { score -= 3; reasons.push("⚠️ FBM controls Buy Box — price pressure risk"); }
@@ -587,14 +792,24 @@ async function finalizeScanWithValue(inputCode) {
   document.getElementById("resultCard").classList.add("hidden");
 
   try {
+    
     const keepaData = await queryKeepa(identifier, raw);
+    if (keepaData && keepaData._fallback) {
+      keepaData = Object.assign(getMockKeepaData(identifier, raw), { _simulated:true, _reason:'PROXY_FAIL' });
+    }
+    
     const pricing = computeProfit(keepaData.sellPrice || 0);
     const scored = computeBuyScore(keepaData, pricing);
 
     seenIdentifiers.add(identifier);
     lastScanData = { identifier, keepaData };
 
+    
+    if (keepaData._simulated) {
+      scored.reasons.unshift("⚠️ Keepa unavailable or throttled — estimated data used");
+    }
     displayResult(scored, keepaData, pricing);
+    
     addToHistory(identifier, keepaData, pricing, scored);
 
     statusText.textContent = keepaData.title;
@@ -619,7 +834,22 @@ function reanalyzeWithNewThresholds() {
   const keepaData = lastScanData.keepaData;
   const pricing = computeProfit(keepaData.sellPrice || 0);
   const scored = computeBuyScore(keepaData, pricing);
-  displayResult(scored, keepaData, pricing);
+  
+    if (keepaData._simulated) {
+      scored.reasons.unshift("⚠️ Keepa unavailable or throttled — estimated data used");
+    }
+    displayResult(scored, keepaData, pricing);
+    
+}
+
+
+function computeKeepaConfidence(keepaData){
+  if (!CONFIG.keepaKey) return { label:"LOW", icon:"🔴", detail:"No Keepa key" };
+  if (keepaData._simulated) return { label:"LOW", icon:"🔴", detail:(keepaData._reason || "Estimated") };
+  if (keepaData._cached) return { label:"MED", icon:"🟡", detail:"Cached" };
+  const strong = (keepaData.drops30||0) >= 10 && (keepaData.sellPrice||0) > 0 && (keepaData.avgRank||0) > 0;
+  if (typeof KEEPA !== "undefined" && KEEPA.health === "THROTTLED") return { label:"MED", icon:"🟡", detail:"Throttled" };
+  return strong ? { label:"HIGH", icon:"🟢", detail:"Live" } : { label:"MED", icon:"🟡", detail:"Live (weak signal)" };
 }
 
 function setVerdictPill(v){
@@ -638,6 +868,8 @@ function displayResult(scored, keepaData, pricing) {
   document.getElementById("profit").textContent = `$${(pricing.profit||0).toFixed(2)}`;
   document.getElementById("drops30").textContent = String(keepaData.drops30||0);
   document.getElementById("avgRank").textContent = String(Math.round(keepaData.avgRank||keepaData.salesRank||0)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const kc = computeKeepaConfidence(keepaData);
+  document.getElementById("keepaConfidence").textContent = `${kc.icon} ${kc.label}`;
 
   document.getElementById("scoreWhy").textContent = scored.score;
   const list = document.getElementById("reasonsList");
@@ -651,6 +883,32 @@ function displayResult(scored, keepaData, pricing) {
   const borderline = document.getElementById("borderlineNote");
   const v = scored.verdict || getVerdictFromScore(scored.score);
   borderline.classList.toggle("hidden", v.label !== "BORDERLINE BUY");
+}
+
+
+/* ==================== WARM-UP CACHE (hot ISBNs) ==================== */
+let warmupTimer = null;
+function scheduleWarmup() {
+  if (!CONFIG.warmupEnabled) return;
+  if (warmupTimer) return;
+  warmupTimer = setTimeout(async () => {
+    warmupTimer = null;
+    if (!CONFIG.keepaKey) return;
+    if (budgetRemaining() <= 0) return;
+
+    const hot = (buyList || []).slice(0, 30)
+      .map(x => x.identifier)
+      .filter((v, i, a) => v && a.indexOf(v) === i)
+      .filter(id => !cacheGet(id))
+      .slice(0, 12);
+
+    for (const id of hot) {
+      if (!CONFIG.warmupEnabled) break;
+      const est = estimateTokens({stats:true, history:false});
+      if (getTokensToday() + est > (CONFIG.dailyBudget || 0)) break;
+      try { await queryKeepa(id, id); } catch(e) {}
+    }
+  }, 2500);
 }
 
 /* ==================== HISTORY + EXPORT ==================== */
@@ -678,6 +936,7 @@ function addToHistory(identifier, keepaData, pricing, scored){
     buyList = buyList.slice(0, 2500);
     localStorage.setItem("buyList", JSON.stringify(buyList));
   }
+  try { scheduleWarmup(); } catch(e) {}
 }
 
 function renderHistory(){
