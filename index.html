@@ -2,23 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ScoutPro AI v3.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<title>ScoutPro AI v3.2</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 :root {
-  --bg: #0a0e1a;
-  --panel: #141b2d;
-  --card: #1a2332;
-  --border: rgba(255,255,255,.08);
-  --text: #ffffff;
-  --muted: #8b92ab;
+  /* Dark Slate Theme */
+  --bg: #0f172a;
+  --bg-elevated: #1e293b;
+  --panel: #1e293b;
+  --card: #2d3748;
+  --border: rgba(148, 163, 184, 0.1);
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-dim: rgba(59, 130, 246, 0.1);
+  
+  /* Semantic Colors */
   --green: #10b981;
+  --green-dim: rgba(16, 185, 129, 0.15);
   --yellow: #fbbf24;
   --red: #ef4444;
-  --blue: #3b82f6;
+  --red-dim: rgba(239, 68, 68, 0.15);
+  --purple: #8b5cf6;
+  
+  /* Spacing */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * { 
@@ -28,28 +41,32 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
 .app { 
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
-  padding-bottom: 140px;
+  padding-bottom: calc(120px + var(--safe-area-bottom));
+  padding-top: var(--safe-area-top);
 }
 
-/* Header */
+/* Glassmorphism Header */
 header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--bg);
-  padding: 12px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: max(12px, var(--safe-area-top)) 12px 12px 12px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -61,9 +78,13 @@ header {
 }
 
 .brand-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .brand-badge {
@@ -71,13 +92,13 @@ header {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  background: rgba(59, 130, 246, 0.1);
+  background: var(--accent-dim);
   border: 1px solid rgba(59, 130, 246, 0.3);
   border-radius: 999px;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--blue);
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -85,7 +106,7 @@ header {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: var(--blue);
+  background: var(--accent);
   animation: pulse 2s infinite;
 }
 
@@ -103,6 +124,7 @@ header {
 
 input[type="text"] {
   min-width: 0;
+  min-height: 44px; /* Touch target */
   padding: 14px 16px;
   border-radius: 12px;
   background: var(--panel);
@@ -111,29 +133,32 @@ input[type="text"] {
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-size: 15px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 input[type="text"]:focus {
-  border-color: var(--blue);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 input[type="text"]::placeholder {
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 button {
+  min-height: 44px; /* Touch target */
   padding: 14px 20px;
   border: none;
   border-radius: 12px;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: transform 0.1s, opacity 0.2s;
+  transition: all 0.2s ease;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 button:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 button:disabled {
@@ -146,36 +171,38 @@ button:disabled {
   padding: 10px 16px;
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
   background: var(--panel);
   margin: 12px 12px 0;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  pointer-events: none; /* FIX: don't block taps */
+  pointer-events: none;
 }
 
 .status-label {
-  color: var(--blue);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* Duplicate Warning */
 #dupeWarning {
   padding: 10px 16px;
   margin: 12px;
-  background: rgba(251, 191, 36, 0.1);
+  background: rgba(251, 191, 36, 0.15);
   border: 1px solid var(--yellow);
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--yellow);
   font-size: 13px;
   display: none;
+  font-weight: 600;
 }
 
 /* Processing State */
 .processing {
   margin: 12px;
-  padding: 24px;
+  padding: 32px 24px;
   background: var(--panel);
   border-radius: 16px;
   border: 1px solid var(--border);
@@ -188,7 +215,7 @@ button:disabled {
   height: 40px;
   margin: 0 auto 16px;
   border: 3px solid var(--border);
-  border-top-color: var(--blue);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -199,39 +226,42 @@ button:disabled {
 
 .processing-text {
   font-size: 14px;
-  color: var(--muted);
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 /* Cards */
 .card {
   margin: 12px;
   background: var(--panel);
-  border-radius: 16px;
+  border-radius: 20px;
   border: 1px solid var(--border);
   overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
 
-/* Decision Banner */
+/* Decision Banner with Gradient Text */
 .banner {
-  padding: 24px 20px;
+  padding: 28px 20px;
   text-align: center;
   position: relative;
+  background: var(--panel);
 }
 
 .banner.buy { 
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), transparent);
-  border-bottom: 2px solid rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, var(--green-dim), transparent);
+  border-bottom: 2px solid rgba(16, 185, 129, 0.4);
 }
 
 .banner.pass { 
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), transparent);
-  border-bottom: 2px solid rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, var(--red-dim), transparent);
+  border-bottom: 2px solid rgba(239, 68, 68, 0.4);
 }
 
 .banner.gem {
   background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(16, 185, 129, 0.1));
   border-bottom: 2px solid rgba(251, 191, 36, 0.5);
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
 }
 
 .gem-badge {
@@ -297,23 +327,40 @@ button:disabled {
 }
 
 .decision {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   margin-bottom: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.banner.buy .decision {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.banner.pass .decision {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .reason {
   font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 20px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .stat {
@@ -321,15 +368,16 @@ button:disabled {
 }
 
 .stat-label {
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted);
-  margin-bottom: 4px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   font-family: 'JetBrains Mono', 'Courier New', monospace;
 }
@@ -340,8 +388,9 @@ button:disabled {
 
 .explanation {
   font-size: 13px;
-  line-height: 1.6;
-  color: var(--muted);
+  line-height: 1.7;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 /* Sections */
@@ -355,55 +404,95 @@ button:disabled {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted);
+  color: var(--text-muted);
   margin-bottom: 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 /* Sliders */
 .slider-group {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .slider-label {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .slider-value {
   font-weight: 700;
-  color: var(--blue);
+  color: var(--accent);
   font-family: 'JetBrains Mono', 'Courier New', monospace;
 }
 
 input[type="range"] {
   width: 100%;
-  height: 6px;
-  border-radius: 3px;
+  height: 8px;
+  border-radius: 4px;
   background: var(--card);
   outline: none;
   -webkit-appearance: none;
+  position: relative;
 }
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--blue);
+  background: linear-gradient(135deg, #60a5fa, var(--accent));
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.05);
 }
 
 input[type="range"]::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--blue);
+  background: linear-gradient(135deg, #60a5fa, var(--accent));
   cursor: pointer;
   border: none;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+}
+
+input[type="range"]::-moz-range-thumb:active {
+  transform: scale(1.05);
+}
+
+/* Track progress fill */
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--card);
+}
+
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--card);
 }
 
 /* Buttons */
@@ -445,12 +534,13 @@ input[type="range"]::-moz-range-thumb {
 
 .settings-input:focus {
   outline: none;
-  border-color: var(--blue);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 .settings-hint {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-muted);
   margin-top: 6px;
 }
 
@@ -493,20 +583,23 @@ input[type="range"]::-moz-range-thumb {
 
 .history-meta {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-muted);
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   line-height: 1.5;
 }
 
-/* Action Buttons */
+/* Action Buttons with Glassmorphism */
 .actions {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--bg);
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
   padding: 16px;
+  padding-bottom: calc(16px + var(--safe-area-bottom));
   display: flex;
   gap: 12px;
   max-width: 480px;
@@ -519,27 +612,63 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid var(--border);
   flex-shrink: 0;
   width: 50px;
+  transition: all 0.2s ease;
+}
+
+.btn-settings:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
 }
 
 .btn-download {
   flex: 1;
-  background: var(--green);
-  color: var(--bg);
+  background: linear-gradient(135deg, #34d399, var(--green));
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-download:hover {
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
 }
 
 .btn-clear {
-  background: var(--red);
+  background: linear-gradient(135deg, #f87171, var(--red));
   color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-clear:hover {
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
 }
 
 .btn-history {
-  background: var(--blue);
+  background: linear-gradient(135deg, #60a5fa, var(--accent));
   color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-history:hover {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
 /* Utility */
 .hidden {
   display: none !important;
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes flash {
@@ -1095,7 +1224,21 @@ async function queryKeepa(identifier, rawInput) {
 
 /* ==================== PARSE KEEPA PRODUCT ==================== */
 function parseKeepaProduct(product) {
-  console.log('Raw Keepa product data:', product);
+  console.log('==================== KEEPA RAW DATA ====================');
+  console.log('Full product object:', product);
+  console.log('Title:', product.title);
+  console.log('ASIN:', product.asin);
+  console.log('CSV arrays available:', Object.keys(product.csv || {}));
+  console.log('Stats object:', product.stats);
+  
+  // Log raw price arrays
+  if (product.csv) {
+    console.log('csv[0] (Amazon):', product.csv[0]);
+    console.log('csv[1] (New):', product.csv[1]);
+    console.log('csv[2] (Used):', product.csv[2]);
+    console.log('csv[3] (Sales Rank):', product.csv[3]);
+    console.log('csv[18] (Buy Box):', product.csv[18]);
+  }
   
   // Keepa uses -1 to indicate no data
   const getPrice = (val) => (val === -1 || val === null || val === undefined) ? 0 : val / 100;
@@ -1110,6 +1253,11 @@ function parseKeepaProduct(product) {
   const currentPriceAmazon = getPrice(product.csv?.[0]?.[product.csv[0]?.length - 1]); // Last Amazon price
   const currentPriceNew = getPrice(product.csv?.[1]?.[product.csv[1]?.length - 1]); // Last New price
   const currentPriceBuyBox = getPrice(product.csv?.[18]?.[product.csv[18]?.length - 1]); // Last Buy Box price
+  
+  console.log('Extracted last values (before /100):');
+  console.log('Amazon last:', product.csv?.[0]?.[product.csv[0]?.length - 1]);
+  console.log('New last:', product.csv?.[1]?.[product.csv[1]?.length - 1]);
+  console.log('Buy Box last:', product.csv?.[18]?.[product.csv[18]?.length - 1]);
   
   // Use Buy Box price as our competitive price, fall back to New price
   const currentPriceFBA = currentPriceBuyBox > 0 ? currentPriceBuyBox : currentPriceNew;
@@ -1129,12 +1277,11 @@ function parseKeepaProduct(product) {
   const salesRankDrops30 = getCount(product.stats?.salesRankDrops30) || 0;
   const salesRankDrops90 = getCount(product.stats?.salesRankDrops90) || 0;
   
-  console.log('Parsed prices:', {
-    amazon: currentPriceAmazon,
-    fba: currentPriceFBA,
-    fbm: currentPriceFBM,
-    salesRank: salesRank
-  });
+  console.log('Parsed prices (after /100):');
+  console.log('Amazon:', currentPriceAmazon);
+  console.log('FBA (Buy Box or New):', currentPriceFBA);
+  console.log('FBM (New):', currentPriceFBM);
+  console.log('Sales Rank:', salesRank);
   
   // Determine Buy Box winner
   let buyBoxWinner = "NONE";
@@ -1145,6 +1292,8 @@ function parseKeepaProduct(product) {
   } else if (currentPriceFBM > 0) {
     buyBoxWinner = "FBM";
   }
+  
+  console.log('Buy Box Winner:', buyBoxWinner);
   
   // Price volatility (simplified - would need historical data for accurate calc)
   const priceVolatility = "STABLE"; // Placeholder
@@ -1166,7 +1315,9 @@ function parseKeepaProduct(product) {
     publicationDate: product.releaseDate ? new Date(product.releaseDate * 60000) : null // Keepa time is in minutes since epoch
   };
   
-  console.log('Final parsed data:', parsedData);
+  console.log('==================== FINAL PARSED DATA ====================');
+  console.log(parsedData);
+  console.log('==========================================================');
   return parsedData;
 }
 
@@ -1203,43 +1354,63 @@ async function analyzeWithGemini(keepaData) {
   }
   
   try {
-    const prompt = `You are an expert Amazon FBA book reseller. Analyze this product and make a BUY/PASS decision.
+    const prompt = `You are an expert Amazon FBA book reseller. Your business model: buy used books cheap, ship them to Amazon FBA warehouses, Amazon handles storage/shipping/customer service, you collect profit when they sell.
+
+CRITICAL CONTEXT - FBA BUSINESS MODEL:
+- You do NOT ship to customers (Amazon does via Prime)
+- You ship books to Amazon warehouse for $0.75/book (already factored into costs)
+- Amazon charges: 15% commission + ~$5 fixed fee per sale
+- Books must be priced high enough to cover: buy cost ($${BUY_COST}) + $0.75 shipping to Amazon + FBA fees + minimum $${PROFIT_FLOOR} profit
+- You compete against other FBA sellers, FBM sellers, and sometimes Amazon itself
+- The Buy Box (who gets the sale) goes to whoever has best price + Prime eligibility
 
 PRODUCT DATA:
 - Title: ${keepaData.title}
 - ASIN: ${keepaData.asin}
-- Sales Rank: ${keepaData.salesRank.toLocaleString()}
-- Rank Drops (30d): ${keepaData.salesRankDrops30}
+- Sales Rank: ${keepaData.salesRank.toLocaleString()} (lower = faster sales)
+- Rank Drops (30d): ${keepaData.salesRankDrops30} (each drop = a sale)
 - Rank Drops (90d): ${keepaData.salesRankDrops90}
-- Current FBA Price: $${keepaData.currentPriceFBA}
-- Current FBM Price: $${keepaData.currentPriceFBM}
-- Amazon Price: ${keepaData.currentPriceAmazon > 0 ? '$' + keepaData.currentPriceAmazon : 'Not selling'}
+- Current FBA Price: $${keepaData.currentPriceFBA} (what FBA sellers charge)
+- Current FBM Price: $${keepaData.currentPriceFBM} (merchant fulfilled sellers)
+- Amazon Price: ${keepaData.currentPriceAmazon > 0 ? '$' + keepaData.currentPriceAmazon : 'Amazon not selling this'}
 - Buy Box Winner: ${keepaData.buyBoxWinner}
-- FBA Sellers: ${keepaData.offerCountFBA}
+- FBA Sellers: ${keepaData.offerCountFBA} (your competition)
 - FBM Sellers: ${keepaData.offerCountFBM}
-- Weight: ${keepaData.weight}lb
+- Weight: ${keepaData.weight}lb (affects FBA storage fees)
 
 MY CONSTRAINTS:
-- Buy Cost: $${BUY_COST}
-- Minimum Profit Target: $${PROFIT_FLOOR}
+- Buy Cost: $${BUY_COST} (what I pay for the book)
+- Shipping to Amazon: $0.75 (fixed cost to send to FBA warehouse)
+- Minimum Profit Target: $${PROFIT_FLOOR} (won't buy for less)
 - FBA Fees: ~15% of selling price + $5 fixed
-- Shipping to Amazon: $0.75
 
-DECISION RULES:
-1. If Amazon controls Buy Box: Can only compete if we can undercut Amazon by 5% AND still hit profit target
-2. If FBA seller has Buy Box: We can undercut by 3%
-3. If FBM seller has Buy Box: We can undercut by 2%
-4. Sales Rank < 100k = EXCELLENT, 100k-300k = GOOD, 300k-500k = OK, >500k = RISKY
-5. More rank drops = more sales velocity = better
-6. Must account for weight (heavier = higher FBA fees)
+PRICING STRATEGY:
+- If Amazon has Buy Box: Must undercut by 5% AND still hit profit target (hard!)
+- If FBA seller has Buy Box: Can undercut by 3% and win it
+- If FBM seller has Buy Box: Can undercut by 2% (Prime advantage)
+- Never price below $8 (FBA fees make it unprofitable)
+
+SALES VELOCITY INDICATORS:
+- Rank < 100k = EXCELLENT (sells fast)
+- Rank 100k-300k = GOOD (steady sales)
+- Rank 300k-500k = OK (slower)
+- Rank > 500k = RISKY (might sit in warehouse for months)
+- More rank drops = more actual sales = better
+
+YOUR TASK:
+Analyze this book as an FBA opportunity. Consider:
+1. Can we win the Buy Box at a profitable price?
+2. Will it sell fast enough to be worth the capital/storage?
+3. What are the FBA-specific risks? (price competition, storage fees, weight)
+4. Any market dynamics the rule-based engine might miss?
 
 OUTPUT FORMAT (JSON only, no markdown):
 {
   "verdict": "ACCEPT" or "REJECT",
-  "targetPrice": <number>,
-  "profit": <number>,
-  "roi": <number>,
-  "reasoning": "<2-3 sentence explanation with ✓ or ✗ bullets>"
+  "targetPrice": <price in dollars as number>,
+  "profit": <profit in dollars as number>,
+  "roi": <roi percentage as integer>,
+  "reasoning": "<2-3 concise sentences with ✓ or ✗ bullets explaining the FBA opportunity>"
 }`;
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
@@ -1666,8 +1837,8 @@ function displayResult(decision, keepaData) {
   }
   
   document.getElementById("resultCard").classList.remove("hidden");
-  document.getElementById("resultCard").classList.add("flash");
-  setTimeout(() => document.getElementById("resultCard").classList.remove("flash"), 300);
+  document.getElementById("resultCard").classList.add("slide-up");
+  setTimeout(() => document.getElementById("resultCard").classList.remove("slide-up"), 400);
 }
 
 /* ==================== REANALYZE ==================== */
