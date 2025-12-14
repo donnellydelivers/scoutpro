@@ -123,10 +123,15 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
 .cond-btn.active { background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.4); }
 
 .slider-container { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 16px 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+.slider-container.collapsed { padding: 0; }
+.slider-container.collapsed .slider-content { display: none; }
+.adjuster-summary { padding: 12px 16px; cursor: pointer; font-size: 12px; color: var(--muted); text-align: center; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s; }
+.adjuster-summary:hover { color: var(--blue); }
+.slider-content { padding-top: 8px; }
 .slider-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .slider-row:last-child { margin-bottom: 0; }
-.slider-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.slider-val { color: var(--blue); font-family: 'JetBrains Mono', monospace; }
+.slider-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Inter', sans-serif; }
+.slider-val { color: var(--blue); font-family: 'Inter', sans-serif; font-weight: 700; }
 input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--blue); cursor: pointer; margin-top: -6px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
@@ -134,7 +139,7 @@ input[type=range]::-webkit-slider-thumb {
 input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
 
 .profit-display { margin-bottom: 12px; }
-.profit-val { font-size: 36px; font-weight: 600; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
+.profit-val { font-size: 36px; font-weight: 600; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; color: #ffffff; }
 
 .item-title { margin: 8px 0 12px 0; font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 44px; }
 
@@ -215,8 +220,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 
 <div id="splash-screen">
     <div class="splash-bg">
-        <img src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=1000&auto=format&fit=crop" alt="Background">
-        <div style="position:absolute; inset:0; bg:black; opacity:0.6;"></div>
+        <div style="position:absolute; inset:0; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);"></div>
     </div>
     <div class="splash-content">
         <h1 class="big-title">
@@ -296,14 +300,19 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           <div id="btnCondNew" class="cond-btn" onclick="setCondition('NEW')">New</div>
         </div>
 
-        <div class="slider-container">
-          <div class="slider-row">
-            <div class="slider-header"><span>Buy Cost</span><span class="slider-val">$<span id="costValDisp">1.00</span></span></div>
-            <input type="range" min="0" max="20" step="0.25" id="sliderCost" value="1.00" />
+        <div class="slider-container collapsed" id="priceAdjuster">
+          <div class="adjuster-summary" onclick="togglePriceAdjuster()">
+            Adjust Price & Buy Cost <span id="adjusterIcon">▶</span>
           </div>
-          <div class="slider-row">
-            <div class="slider-header"><span>Profit Floor</span><span class="slider-val">$<span id="floorValDisp">5.00</span></span></div>
-            <input type="range" min="1" max="20" step="1" id="sliderFloor" value="5" />
+          <div class="slider-content">
+            <div class="slider-row">
+              <div class="slider-header"><span>Buy Cost</span><span class="slider-val">$<span id="costValDisp">1.00</span></span></div>
+              <input type="range" min="0" max="20" step="0.25" id="sliderCost" value="1.00" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-header"><span>Profit Floor</span><span class="slider-val">$<span id="floorValDisp">5.00</span></span></div>
+              <input type="range" min="1" max="20" step="1" id="sliderFloor" value="5" />
+            </div>
           </div>
         </div>
 
@@ -472,7 +481,6 @@ const floorDisp = document.getElementById('floorValDisp');
 const geminiReasoningHeader = document.getElementById('geminiReasoningHeader');
 
 window.addEventListener('load', () => {
-    setTimeout(() => { document.getElementById('splash-screen').classList.add('splash-hidden'); }, 2500);
     updateTokenUI();
     resetSliders();
     updateConditionUI();
@@ -542,21 +550,48 @@ async function submitSearch() {
     const val = input.value.trim();
     if(!val) return;
 
-    // --- ID CHECK FIX ---
-    const clean = val.replace(/[-\s]/g, '').toUpperCase();
+    // --- ENHANCED ID CHECK ---
+    // Check if original has spaces - if so, likely a title unless it's a formatted ISBN
+    const hasSpaces = /\s/.test(val);
     
-    // Check for 10-char alphanumeric ASINs OR 10/13-char numeric/ISBN IDs.
-    const isISBN = /^[0-9]{9,13}[X]?$/.test(clean); 
-    const isASIN = !isISBN && /^[A-Z0-9]{10}$/.test(clean) && /[A-Z]/.test(clean); 
+    // Remove hyphens and spaces for validation
+    const cleaned = val.replace(/[-\s]/g, '');
+    const upper = cleaned.toUpperCase();
     
-    if(isASIN || isISBN) {
-        closeTitlePicker(); 
-        addToQueue(clean);
-        input.value = ''; // CLEAR INPUT
-    } else {
-        // Fallback: Treat as Title, use Keepa Search API
+    // ISBN-13: Must start with 978 or 979
+    const isISBN13 = /^97[89]\d{10}$/.test(cleaned);
+    
+    // Check if it's 10-digit all-numeric (ambiguous - could be ISBN-10 or ASIN)
+    // We prioritize ASIN because that's what Keepa search results return
+    const is10DigitNumeric = /^\d{10}$/.test(cleaned);
+    
+    // ISBN-10: 9 digits + X (the only unambiguous ISBN-10 format)
+    const isISBN10WithX = /^\d{9}X$/i.test(cleaned);
+    
+    // Only treat as ISBN if it's definitely ISBN-13 or ISBN-10 with X
+    const isISBN = isISBN13 || isISBN10WithX;
+    
+    // ASIN: 10 alphanumeric chars (including 10-digit all-numeric old ASINs)
+    const isASIN = /^[A-Z0-9]{10}$/.test(upper) && !isISBN;
+    
+    // SAFETY: If it had spaces and isn't a valid ISBN/ASIN, treat as title
+    const shouldSearchByTitle = hasSpaces && !isISBN && !isASIN;
+    
+    console.log('submitSearch:', { val, cleaned, upper, hasSpaces, isISBN13, isISBN10WithX, is10DigitNumeric, isISBN, isASIN, shouldSearchByTitle });
+    
+    if(shouldSearchByTitle) {
+        console.log('Has spaces and not valid ID, searching as title:', val);
+        input.value = ''; 
         await searchByTitle(val);
-        input.value = ''; // CLEAR INPUT
+    } else if(isASIN || isISBN) {
+        console.log('Detected as ID, adding to queue:', upper);
+        closeTitlePicker(); 
+        addToQueue(upper);
+        input.value = '';
+    } else {
+        console.log('Detected as title, searching:', val);
+        input.value = ''; 
+        await searchByTitle(val);
     }
 }
 
@@ -584,28 +619,26 @@ function showTitlePickerLoading(query) {
 
 // Function to handle the copying of the ISBN/ASIN
 function copyIdAndFocus(id, title) {
+    console.log('copyIdAndFocus called with:', { id, title });
     const inputField = document.getElementById('scanInput');
     
+    // Copy to clipboard
     if (navigator.clipboard) {
-        navigator.clipboard.writeText(id).then(() => {
-            // Updated alert to be less directive and more explanatory
-            alert(`Copied ID "${id}" for "${title.substring(0, 30)}..." to clipboard.\n\nPlease hit the Search button now to fetch product data.`);
-            inputField.value = id; // Also populate the field for convenience
-            inputField.focus();
-            closeTitlePicker();
-        }).catch(err => {
+        navigator.clipboard.writeText(id).catch(err => {
             console.error('Could not copy text: ', err);
-            alert(`Could not copy ID automatically. ID is: ${id}. Please paste it into the search box and hit Search.`);
-            inputField.value = id;
-            inputField.focus();
-            closeTitlePicker();
         });
-    } else {
-        alert(`ID is: ${id}. Please copy manually, paste it into the search box, and hit Search.`);
-        inputField.value = id;
-        inputField.focus();
-        closeTitlePicker();
     }
+    
+    // Close the title picker
+    closeTitlePicker();
+    
+    // Put the ID in the search field
+    inputField.value = id;
+    console.log('Input field set to:', inputField.value);
+    
+    // Automatically trigger the search
+    console.log('Calling submitSearch...');
+    submitSearch();
 }
 
 
@@ -663,9 +696,9 @@ function renderTitlePicker(query, results) {
                 <span class="tag" style="background:rgba(96,165,250,0.15);color:var(--blue);border:1px solid rgba(96,165,250,0.25);">${idLabel}: ${safeISBN}</span>
               </div>
             </div>
-            <button class="ext-link" style="align-self:flex-start; margin-top:5px; padding:8px 10px; font-size:11px; font-weight:700;" 
-                    onclick="copyIdAndFocus('${safeISBN}', '${safeTitle}')" title="Copy ID">
-              Copy ID <i class="fas fa-copy"></i>
+            <button class="ext-link" style="align-self:flex-start; margin-top:5px; padding:8px 12px; font-size:11px; font-weight:700;" 
+                    onclick="copyIdAndFocus('${safeISBN}', '${safeTitle}')" title="Run Analysis">
+              Run Item <i class="fas fa-play"></i>
             </button>
           </div>
         `;
@@ -704,6 +737,8 @@ function escapeHtml(s) {
 }
 
 async function searchByTitle(title) {
+    console.log('searchByTitle called with:', title);
+    
     if(!CONFIG.keepaKey) {
         alert("Keepa Error: API Key is missing. Please enter your key in Settings.");
         return;
@@ -714,34 +749,72 @@ async function searchByTitle(title) {
         showTitlePickerLoading(title);
 
         const url = `https://api.keepa.com/search?key=${CONFIG.keepaKey}&domain=1&type=product&term=${encodeURIComponent(title)}`;
+        console.log('searchByTitle: Fetching from Keepa...', { useProxy: CONFIG.useProxy });
         
-        let data = null;
         const fetchKeepaSearch = async (u) => {
             const controller = new AbortController();
-            const t = setTimeout(() => controller.abort(), 9000);
+            const timeout = setTimeout(() => controller.abort(), 9000);
             try {
-                const finalUrl = CONFIG.useProxy ? `https://corsproxy.io/?${encodeURIComponent(u)}` : u;
+                let finalUrl = u;
                 
+                // Try with proxy if enabled
+                if(CONFIG.useProxy) {
+                    try {
+                        finalUrl = `https://corsproxy.io/?${encodeURIComponent(u)}`;
+                        console.log('Trying primary proxy...');
+                        const res = await fetch(finalUrl, { signal: controller.signal });
+                        if(res.ok) {
+                            const json = await res.json();
+                            if(!json.error) {
+                                console.log('Primary proxy success, got', json.products?.length, 'results');
+                                return json;
+                            }
+                        }
+                        // If proxy fails, try backup
+                        console.log("Primary proxy failed for search, trying backup...");
+                        finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`;
+                        const res2 = await fetch(finalUrl, { signal: controller.signal });
+                        if(res2.ok) {
+                            const json = await res2.json();
+                            if(!json.error) {
+                                console.log('Backup proxy success, got', json.products?.length, 'results');
+                                return json;
+                            }
+                        }
+                    } catch(proxyErr) {
+                        console.log("Proxies failed, trying direct...", proxyErr);
+                    }
+                    // Fall through to direct if proxies fail
+                    finalUrl = u;
+                }
+                
+                // Direct fetch (or fallback from proxy failure)
+                console.log('Trying direct fetch...');
                 const res = await fetch(finalUrl, { signal: controller.signal });
                 if(!res.ok) throw new Error(`HTTP ${res.status}`);
                 const json = await res.json();
                 
                 if (json.error) throw new Error(json.error.message);
+                console.log('Direct fetch success, got', json.products?.length, 'results');
                 return json;
                 
             } finally {
-                clearTimeout(t);
+                clearTimeout(timeout);
             }
         };
 
-        data = await fetchKeepaSearch(url);
+        const data = await fetchKeepaSearch(url);
         
         if(!data.products || data.products.length === 0) {
+            console.log('No products found');
             closeTitlePicker();
+            document.getElementById('processing').classList.add('hidden');
             alert(`No products found for: "${title}" on Keepa.`);
             return;
         }
 
+        console.log('Processing', data.products.length, 'products...');
+        
         // --- Adapt Keepa results for Title Picker UI ---
         let results = data.products.map(p => {
             const authors = (p.manufacturer || p.brand || '').split(',').map(a => a.trim()).join(', ');
@@ -749,6 +822,9 @@ async function searchByTitle(title) {
             const pubDate = p.publicationDate || '';
             const thumbnail = p.images?.[0]?.url || null;
 
+            if(!id) {
+                console.warn('Product missing ASIN:', p);
+            }
 
             return {
                 title: p.title || 'Unknown',
@@ -760,7 +836,7 @@ async function searchByTitle(title) {
                 pref: p.productType === 'BOOK' ? 5 : 1, 
                 thumbnail: thumbnail
             };
-        });
+        }).filter(r => r.isbn); // Filter out any without IDs
         
         const parseYear = (d) => {
             const m = String(d || '').match(/^(\d{4})/);
@@ -772,11 +848,13 @@ async function searchByTitle(title) {
             return parseYear(b.published) - parseYear(a.published);
         });
 
+        console.log('Rendering title picker with', results.length, 'results');
         renderTitlePicker(title, results);
 
     } catch(e) {
+        console.error('searchByTitle error:', e);
         closeTitlePicker();
-        alert(`Keepa Search Error: ${e.message}. \n\nCheck API key and Proxy setting.`);
+        alert(`Keepa Search Error: ${e.message}. \n\nTip: Check your API key and try toggling the Proxy setting.`);
     } finally {
         document.getElementById('processing').classList.add('hidden');
     }
@@ -790,12 +868,17 @@ function toggleFocusLock() {
 }
 
 function addToQueue(query) {
+    console.log('addToQueue:', query, 'Queue length:', scanQueue.length, 'isProcessing:', isProcessing);
     scanQueue.push(query);
     processQueue();
 }
 
 async function processQueue() {
-    if(isProcessing || scanQueue.length === 0) return;
+    console.log('processQueue called. isProcessing:', isProcessing, 'Queue length:', scanQueue.length);
+    if(isProcessing || scanQueue.length === 0) {
+        console.log('processQueue exiting early:', { isProcessing, queueEmpty: scanQueue.length === 0 });
+        return;
+    }
     
     if(tokens <= 0) {
         setTimeout(processQueue, 3000);
@@ -814,26 +897,60 @@ async function processQueue() {
             document.getElementById('processing').classList.add('hidden');
             alert("Scan Timed Out (Network too slow)");
         }
-    }, 10000);
+    }, 15000); // Increased timeout to 15s to allow for retries
 
-    try {
-        if(tokens > 0) tokens--; 
-        updateTokenUI();
-        
-        const data = await fetchKeepa(query);
-        clearTimeout(safety);
-        lastData = data;
-        const result = analyze(data);
-        render(result, data);
-        addToHistory(result, data);
-    } catch(e) {
-        clearTimeout(safety);
-        alert("Error: " + e.message + ". \n\nTip: If you're seeing this for a known good ISBN/ASIN, your Keepa API Key might be invalid or out of tokens."); 
-    } finally {
-        isProcessing = false;
-        document.getElementById('processing').classList.add('hidden');
-        if(scanQueue.length > 0) setTimeout(processQueue, 2500); 
+    let attempts = 0;
+    const maxAttempts = 2;
+    const is10DigitNumeric = /^\d{10}$/.test(query.replace(/-/g,''));
+    
+    while(attempts < maxAttempts) {
+        try {
+            if(tokens > 0 && attempts === 0) tokens--; // Only decrement on first attempt
+            updateTokenUI();
+            
+            // On second attempt for 10-digit numeric, try as ISBN instead of ASIN
+            const retryAsISBN = (attempts === 1 && is10DigitNumeric);
+            const data = await fetchKeepa(query, retryAsISBN);
+            
+            clearTimeout(safety);
+            lastData = data;
+            const result = analyze(data);
+            render(result, data);
+            addToHistory(result, data);
+            break; // Success, exit retry loop
+            
+        } catch(e) {
+            attempts++;
+            console.log(`Attempt ${attempts} failed:`, e.message);
+            
+            // For 10-digit numeric codes, if first attempt (as ASIN) fails with "Product Not Found", try as ISBN
+            if(attempts === 1 && is10DigitNumeric && e.message.includes("Product Not Found")) {
+                console.log('10-digit numeric failed as ASIN, will retry as ISBN...');
+                continue; // Retry immediately
+            }
+            
+            if(attempts >= maxAttempts) {
+                clearTimeout(safety);
+                // More helpful error message based on error type
+                let tipMsg = "Tip: Check your Keepa API Key and try toggling the Proxy setting.";
+                if(e.message.includes("CORS")) {
+                    tipMsg = "Tip: Try enabling 'Use Proxy Server' in Settings.";
+                } else if(e.message.includes("Invalid product code") || e.message.includes("Product Not Found")) {
+                    tipMsg = "Tip: This ISBN/ASIN may not exist in Amazon's catalog.";
+                } else if(e.message.includes("HTTP 429")) {
+                    tipMsg = "Tip: You may have exceeded Keepa's rate limit. Wait a moment and try again.";
+                }
+                alert(`Error: ${e.message}\n\n${tipMsg}`);
+            } else {
+                // Wait briefly before retry
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
     }
+    
+    isProcessing = false;
+    document.getElementById('processing').classList.add('hidden');
+    if(scanQueue.length > 0) setTimeout(processQueue, 2500);
 }
 
 function clearScan() {
@@ -846,17 +963,31 @@ function clearScan() {
 }
 
 /* ================= KEEPA API ================= */
-async function fetchKeepa(query) {
+async function fetchKeepa(query, retryAsISBN = false) {
     if(!CONFIG.keepaKey) throw new Error("No API Key");
     
     const clean = query.replace(/-/g,'');
     const days = 180; 
     
-    // Determine if this is an ASIN or ISBN to use the correct parameter
-    const isISBN = /^[0-9]{9,13}[X]?$/i.test(clean);
+    // ISBN-13: Must start with 978 or 979
+    const isISBN13 = /^97[89]\d{10}$/.test(clean);
+    
+    // Check if it's 10-digit all-numeric (ambiguous - could be ISBN-10 or ASIN)
+    const is10DigitNumeric = /^\d{10}$/.test(clean);
+    
+    // ISBN-10: 9 digits + X (the only unambiguous ISBN-10 format)
+    const isISBN10WithX = /^\d{9}X$/i.test(clean);
+    
+    // Only treat as ISBN if it's definitely ISBN-13 or ISBN-10 with X
+    // OR if we're retrying a 10-digit numeric as ISBN
+    const isISBN = isISBN13 || isISBN10WithX || (retryAsISBN && is10DigitNumeric);
+    
+    // Everything else is ASIN (including 10-digit all-numeric on first try)
     const paramName = isISBN ? 'code' : 'asin';
     
     let url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=1&${paramName}=${clean}&stats=${days}&history=0`;
+    
+    console.log('fetchKeepa:', { query, clean, isISBN13, isISBN10WithX, is10DigitNumeric, isISBN, paramName, retryAsISBN, url: url.replace(CONFIG.keepaKey, 'KEY_HIDDEN') });
 
     // PROXY FAILOVER
     if(CONFIG.useProxy) {
@@ -908,9 +1039,13 @@ async function fetchKeepa(query) {
 }
 
 function parseKeepaJson(json, isID) {
+    console.log('parseKeepaJson called with:', json);
     if(json.error) throw new Error(json.error.message);
     let product;
-    if(!json.products || !json.products.length) throw new Error("Product Not Found");
+    if(!json.products || !json.products.length) {
+        console.error('Keepa returned no products. Full response:', json);
+        throw new Error("Product Not Found - Keepa returned no products for this ID");
+    }
     product = json.products[0];
     
     return parseProduct(product);
@@ -986,41 +1121,62 @@ function analyze(data) {
 
     const allTags = [];
 
-    if(isSleeper) { isGem = true; allTags.push({text: "💎 Patience for Big Payout", type: "gem"}); }
-    if(isFbaVoid) { isGem = true; allTags.push({text: "💎 Zero FBA Offers", type: "gem"}); }
-    if(isDip)     { isGem = true; allTags.push({text: "💎 Buy The Dip", type: "gem"}); }
-    if(isTextbook){ isGem = true; allTags.push({text: "💎 Sell Cheaper Used Textbook", type: "gem"}); }
-    if(isRare)    { isGem = true; allTags.push({text: "💎 Low Comp Rewards", type: "gem"}); }
-    if(isSprinter){ isGem = true; allTags.push({text: "💎 Picking Up Pace", type: "gem"}); }
-    if(isPhantom) { isGem = true; allTags.push({text: "💎 Crowded But Fine", type: "gem"}); }
-    if(isFbaPrem) { isGem = true; allTags.push({text: "💎 FBA Premium", type: "gem"}); }
+    if(isSleeper) { allTags.push({text: "💎 Patience for Big Payout", type: "gem"}); }
+    if(isFbaVoid) { allTags.push({text: "💎 Zero FBA Offers", type: "gem"}); }
+    if(isDip)     { allTags.push({text: "💎 Buy The Dip", type: "gem"}); }
+    if(isTextbook){ allTags.push({text: "💎 Sell Cheaper Used Textbook", type: "gem"}); }
+    if(isRare)    { allTags.push({text: "💎 Low Comp Rewards", type: "gem"}); }
+    if(isSprinter){ allTags.push({text: "💎 Picking Up Pace", type: "gem"}); }
+    if(isPhantom) { allTags.push({text: "💎 Crowded But Fine", type: "gem"}); }
+    if(isFbaPrem) { allTags.push({text: "💎 FBA Premium", type: "gem"}); }
 
-    if(isGem) {
-        verdict = 'BUY';
-        score = 95;
-    } else {
-        if(profit < CONFIG.profitFloor) {
-            verdict = 'REJECT';
-            score = Math.round(Math.max(0, 40 - (CONFIG.profitFloor - profit)));
-        } else if (data.drops > 0) {
-            verdict = 'BUY';
-            score = 80 + Math.min(19, data.drops);
+    // CRITICAL: Profit floor check ALWAYS comes first - no exceptions!
+    if(profit < CONFIG.profitFloor) {
+        verdict = 'REJECT';
+        score = Math.round(Math.max(0, 40 - (CONFIG.profitFloor - profit)));
+        isGem = false; // Cannot be a gem with low profit
+    } else if(isSleeper || isFbaVoid || isDip || isTextbook || isRare || isSprinter || isPhantom || isFbaPrem) {
+        // Calculate what the score would be WITHOUT gem bonus
+        let baseScore = 50;
+        if (data.drops > 0) {
+            baseScore = 80 + Math.min(19, data.drops);
+        } else if (data.drops180 > 0 && market > 20) {
+            baseScore = 55;
+        } else if (data.drops180 > 0) {
+            baseScore = 30;
         } else {
-            // RESURRECTION LOGIC
-            if(data.drops180 > 0) {
-                allTags.push({text: "Has 180d Sales", type: "good"}); 
-                if(market > 20) {
-                    score = 55; // Base 20 + 35
-                    allTags.push({text: "Recent Lull", type: "warn"});
-                } else {
-                    score = 30; // Base 20 + 10
-                    allTags.push({text: "Slow & Cheap", type: "bad"});
-                }
-                verdict = (score >= 50) ? 'MAYBE' : 'REJECT';
+            baseScore = 20;
+        }
+        
+        // Only show gem diamond if base score >= 75
+        if (baseScore >= 75) {
+            isGem = true;
+            verdict = 'BUY';
+            score = 95;
+        } else {
+            // Has gem signal but weak underlying metrics - no diamond
+            isGem = false;
+            verdict = (baseScore >= 50) ? 'MAYBE' : 'REJECT';
+            score = baseScore;
+        }
+    } else if (data.drops > 0) {
+        verdict = 'BUY';
+        score = 80 + Math.min(19, data.drops);
+    } else {
+        // RESURRECTION LOGIC
+        if(data.drops180 > 0) {
+            allTags.push({text: "Has 180d Sales", type: "good"}); 
+            if(market > 20) {
+                score = 55; // Base 20 + 35
+                allTags.push({text: "Recent Lull", type: "warn"});
             } else {
-                verdict = 'REJECT';
-                score = 20; 
+                score = 30; // Base 20 + 10
+                allTags.push({text: "Slow & Cheap", type: "bad"});
             }
+            verdict = (score >= 50) ? 'MAYBE' : 'REJECT';
+        } else {
+            verdict = 'REJECT';
+            score = 20; 
         }
     }
 
@@ -1075,7 +1231,7 @@ function render(res, data) {
     const pEl = document.getElementById('profit');
     if(pEl) {
         pEl.innerText = `$${res.profit.toFixed(2)}`;
-        pEl.style.color = res.profit >= CONFIG.profitFloor ? 'var(--green)' : 'var(--red)';
+        // Profit always stays white (no color indicator)
     }
 
     setText('itemTitle', data.title);
@@ -1209,7 +1365,8 @@ async function toggleAI() {
     
     const profit = parseFloat(document.getElementById('profit').innerText.replace('$',''));
     const floor = CONFIG.profitFloor;
-    const systemInstruct = `CRITICAL: If Profit ($${profit}) is less than ${floor}, start response with "VERDICT: PASS". Otherwise start with "VERDICT: BUY" or "VERDICT: PASS".`;
+    const systemInstruct = `ABSOLUTE RULE: If profit ($${profit.toFixed(2)}) is below the profit floor ($${floor}), you MUST respond with "VERDICT: PASS" - NO EXCEPTIONS. Any book below the profit floor is an automatic REJECT, regardless of rank, sales, or any other metrics. Only if profit >= $${floor} can you consider "VERDICT: BUY". Hidden gems must have profit above floor AND excellent metrics.`;
+
 
     // FINAL MODEL IDENTIFIER (Gemini 2.5 is the current stable generation)
     const model = 'gemini-2.5-flash';
@@ -1359,6 +1516,41 @@ function setCondition(c) {
         render(result, lastData);
     }
 }
+
+/* ================= TOGGLE PRICE ADJUSTER ================= */
+function togglePriceAdjuster() {
+    const adjuster = document.getElementById('priceAdjuster');
+    const icon = document.getElementById('adjusterIcon');
+    
+    if(adjuster.classList.contains('collapsed')) {
+        adjuster.classList.remove('collapsed');
+        icon.innerText = '▼';
+    } else {
+        adjuster.classList.add('collapsed');
+        icon.innerText = '▶';
+    }
+}
 </script>
+
+<script>
+// SPLASH SCREEN - Must be at end of body to ensure DOM exists
+(function() {
+    const splash = document.getElementById('splash-screen');
+    if(!splash) return;
+    
+    // Hide splash after 1.5 seconds
+    setTimeout(() => {
+        splash.classList.add('splash-hidden');
+    }, 1500);
+    
+    // Emergency failsafe - force hide after 3 seconds
+    setTimeout(() => {
+        if(!splash.classList.contains('splash-hidden')) {
+            splash.style.display = 'none';
+        }
+    }, 3000);
+})();
+</script>
+
 </body>
 </html>
