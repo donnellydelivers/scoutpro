@@ -7,333 +7,205 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <style>
+/* --- THEME & RESET --- */
 :root {
-  --bg: #050505;
-  --panel: #121212;
-  --card: #1e1e1e;
-  --border: #2a2a2a;
-  --text: #ffffff;
-  --muted: #888;
-  --green: #34d399; 
-  --red: #f87171;
-  --yellow: #fbbf24;
-  --blue: #60a5fa;
-  --purple: #a78bfa;
+  --bg: #050505; --panel: #121212; --card: #1e1e1e; --border: #2a2a2a;
+  --text: #ffffff; --muted: #888; --green: #34d399; --red: #f87171;
+  --yellow: #fbbf24; --blue: #60a5fa; --purple: #a78bfa; --diamond: #22d3ee;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  padding-bottom: 140px;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-}
-
-.app { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 120px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+.app { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
 
 /* --- SPLASH SCREEN --- */
 #splash-screen {
-    position: fixed; inset: 0; z-index: 9999;
-    background-color: #000;
+    position: fixed; inset: 0; z-index: 9999; background-color: #000;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     transition: opacity 0.8s ease-out, visibility 0.8s;
 }
 .splash-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-
-.splash-bg {
-    position: absolute; inset: 0; z-index: 0;
-}
-.splash-bg img {
-    width: 100%; height: 100%; object-fit: cover; opacity: 0.4; filter: blur(2px);
-}
-
+.splash-bg { position: absolute; inset: 0; z-index: 0; }
+.splash-bg img { width: 100%; height: 100%; object-fit: cover; opacity: 0.4; filter: blur(2px); }
 .splash-content { position: relative; z-index: 10; text-align: center; width: 100%; padding: 0 20px; }
 .big-title {
-    font-family: 'Inter', sans-serif; font-weight: 900; 
-    text-transform: uppercase; line-height: 0.9; letter-spacing: -0.05em;
-    display: flex; flex-direction: column; gap: 0;
+    font-family: 'Inter', sans-serif; font-weight: 900; text-transform: uppercase;
+    line-height: 0.9; letter-spacing: -0.05em; display: flex; flex-direction: column; gap: 0;
     text-shadow: 0 4px 20px rgba(0,0,0,1);
 }
 .big-title span { font-size: 3.5rem; }
 @media(min-width: 400px) { .big-title span { font-size: 4.5rem; } }
 
-/* --- HEADER & SEARCH --- */
-header {
-  padding: 16px;
-  background: transparent;
-  margin-top: 60px;
-  margin-bottom: 20px;
+/* --- HEADER --- */
+header { padding: 12px 16px; background: var(--bg); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--border); }
+.status-row { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 10px; }
+.status-badge {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 99px;
+    display: flex; align-items: center; gap: 6px; border: 1px solid transparent; transition: all 0.2s;
 }
-
-.search-wrapper { position: relative; }
-
-.brand-badges {
-  display: flex; gap: 6px; margin-bottom: 8px; justify-content: flex-end;
-}
-.badge {
-  display: flex; align-items: center; gap: 4px;
-  padding: 4px 10px; background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 99px;
-  font-size: 10px; font-weight: 700; color: var(--muted);
-  transition: all 0.3s;
-}
-.badge.active { background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3); color: var(--blue); }
-.badge.active-gem { background: rgba(167, 139, 250, 0.15); border-color: rgba(167, 139, 250, 0.3); color: var(--purple); }
-
+.status-badge.live { color: var(--green); border-color: rgba(52, 211, 153, 0.2); background: rgba(52, 211, 153, 0.1); }
+.status-badge.dead { color: var(--red); border-color: rgba(248, 113, 113, 0.2); background: rgba(248, 113, 113, 0.1); }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-.search-container { position: relative; }
-.search-icon {
-    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-    color: var(--muted); font-size: 18px;
-}
+.search-container { position: relative; display: flex; gap: 8px; }
+.input-wrapper { position: relative; flex: 1; }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; }
 input[type="text"] {
-  width: 100%; padding: 18px 16px 18px 48px; border-radius: 16px;
-  background: #111; border: 1px solid #333;
-  color: white; font-family: 'Inter', sans-serif;
-  font-size: 18px; outline: none; transition: all 0.2s;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  width: 100%; padding: 14px 14px 14px 42px; border-radius: 12px; background: #111; border: 1px solid #333;
+  color: white; font-family: 'Inter', sans-serif; font-size: 16px; outline: none; transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
-input[type="text"]:focus {
-  border-color: var(--blue);
-  background: #161616;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+input[type="text"]:focus { border-color: var(--blue); background: #161616; }
+.icon-btn {
+    width: 48px; border-radius: 12px; border: 1px solid #333; background: #111;
+    color: var(--muted); font-size: 18px; cursor: pointer; display: grid; place-items: center; transition: all 0.2s;
+}
+.icon-btn.active { color: var(--green); border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.1); }
+
+/* --- CAMERA --- */
+#camera-overlay { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; }
+#reader { width: 100%; height: 100%; flex: 1; position: relative; }
+#close-camera {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    background: var(--red); color: white; border: none; padding: 12px 32px;
+    border-radius: 99px; font-weight: bold; font-size: 16px; z-index: 10000; cursor: pointer;
 }
 
-#statusText {
-  padding: 8px; color: var(--muted); font-size: 13px; 
-  text-align: center; min-height: 36px;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* Main Card */
+/* --- CARD --- */
 .card {
-  margin: 0 16px; background: var(--panel);
-  border-radius: 20px; border: 1px solid var(--border);
-  overflow: hidden; position: relative;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  animation: slideUp 0.4s ease-out;
+  margin: 16px; background: var(--panel); border-radius: 20px; border: 1px solid var(--border);
+  overflow: hidden; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out;
 }
-@keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 
-.banner { padding: 32px 24px; text-align: center; position: relative; }
+.banner { padding: 24px 20px; text-align: center; position: relative; }
 .banner.buy { background: radial-gradient(circle at top, rgba(16,185,129,0.12), transparent 70%); }
+.banner.gem { background: radial-gradient(circle at top, rgba(34, 211, 238, 0.2), transparent 70%); } 
 .banner.reject { background: radial-gradient(circle at top, rgba(239,68,68,0.12), transparent 70%); }
 .banner.maybe { background: radial-gradient(circle at top, rgba(251,191,36,0.12), transparent 70%); }
-.banner.error { background: radial-gradient(circle at top, rgba(255,255,255,0.05), transparent 70%); }
+
+.score-container { position: relative; width: 100px; height: 100px; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; }
+.score-svg { position: absolute; top:0; left:0; width:100%; height:100%; transform: rotate(-90deg); }
+.score-circle-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 8; }
+.score-circle-fg { fill: none; stroke: currentColor; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s; stroke-dasharray: 283; stroke-dashoffset: 283; }
+.score-num { font-size: 38px; font-weight: 800; color: #fff; letter-spacing: -0.04em; z-index: 2; }
 
 .gem-icon {
-  position: absolute; top: 16px; right: 16px; font-size: 20px;
-  animation: float 3s ease-in-out infinite;
+    position: absolute; top: -15px; right: -15px; font-size: 28px; 
+    filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.8)); animation: float 3s ease-in-out infinite; display: none; 
 }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-
-/* Score */
-.score-container {
-  position: relative; width: 120px; height: 120px; margin: 0 auto 16px auto;
-  display: flex; align-items: center; justify-content: center; flex-direction: column;
-}
-.score-svg {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg);
-}
-.score-circle-bg {
-  fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 8;
-}
-.score-circle-fg {
-  fill: none; stroke: currentColor; stroke-width: 8; stroke-linecap: round;
-  stroke-dasharray: 283; stroke-dashoffset: 283;
-  transition: stroke-dashoffset 1s ease-out, stroke 0.3s;
-}
-.score-num { 
-  font-size: 48px; font-weight: 800; line-height: 1; letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums; z-index: 2;
-}
+.gem-icon.visible { display: block; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 .decision-label {
-  font-size: 13px; font-weight: 800; letter-spacing: 0.05em;
-  text-transform: uppercase; color: #000; background: #fff;
-  display: inline-block; padding: 6px 14px; border-radius: 99px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-top: 8px;
+  font-size: 13px; font-weight: 800; text-transform: uppercase; color: #000; background: #fff;
+  padding: 6px 14px; border-radius: 99px; display: inline-block; margin-top: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
+
+#geminiQuickBadge {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 14px; border-radius: 99px;
+    background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3);
+    color: var(--purple); font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.05em;
+}
+#geminiQuickBadge:active { transform: scale(0.95); }
+.gemini-style-good { background: rgba(52, 211, 153, 0.15); border-color: var(--green); color: var(--green); }
+.gemini-style-neutral { background: rgba(167, 139, 250, 0.1); border-color: var(--purple); color: var(--purple); } /* NEUTRAL (PASS) */
+.gemini-style-bad { background: rgba(248, 113, 113, 0.15); border-color: var(--red); color: var(--red); }
 
 .condition-toggle {
-  display: flex; background: rgba(0,0,0,0.3); 
-  border-radius: 99px; padding: 4px; margin: 24px auto 16px auto;
+  display: flex; background: rgba(0,0,0,0.3); border-radius: 99px; padding: 4px; margin: 20px auto 16px auto;
   width: fit-content; border: 1px solid var(--border);
 }
-.cond-btn {
-  padding: 6px 16px; border-radius: 99px; font-size: 12px; font-weight: 700;
-  color: var(--muted); cursor: pointer; transition: all 0.2s;
-  text-transform: uppercase; letter-spacing: 0.05em;
-}
-.cond-btn.active {
-  background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.4);
-}
+.cond-btn { padding: 6px 16px; border-radius: 99px; font-size: 12px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.cond-btn.active { background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.4); }
 
-.slider-container {
-  background: rgba(0,0,0,0.2); border-radius: 12px;
-  padding: 16px 12px; margin-bottom: 20px;
-  border: 1px solid rgba(255,255,255,0.05);
-}
+.slider-container { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 16px 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
 .slider-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .slider-row:last-child { margin-bottom: 0; }
-.slider-header {
-  display: flex; justify-content: space-between; 
-  font-size: 11px; font-weight: 600; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 0.05em;
-}
+.slider-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .slider-val { color: var(--blue); font-family: 'JetBrains Mono', monospace; }
 input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
 input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
-  background: var(--blue); cursor: pointer; margin-top: -6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--blue); cursor: pointer; margin-top: -6px; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
-input[type=range]::-webkit-slider-runnable-track {
-  width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px;
-}
+input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #333; border-radius: 2px; }
 
 .profit-display { margin-bottom: 12px; }
-.profit-label {
-  font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 4px; display: block;
-}
-.profit-val { font-size: 32px; font-weight: 600; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em;}
+.profit-val { font-size: 36px; font-weight: 600; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.02em; }
 
-.item-title {
-  margin: 12px 0 8px 0; font-size: 15px; font-weight: 400;
-  color: rgba(255,255,255,0.7); line-height: 1.5;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.link-row {
-  display: flex; justify-content: center; gap: 12px; margin-bottom: 24px;
-}
+.item-title { margin: 8px 0 12px 0; font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 44px; }
+
+.link-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
 .ext-link {
   font-size: 11px; font-weight: 700; color: var(--muted); text-decoration: none;
-  background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 8px;
-  transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;
+  background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 8px; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;
 }
 .ext-link:hover { color: #fff; border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); }
 
-.keepa-embed {
-  margin-top: 12px;
-  background: #fff;
-  padding: 8px;
-  border-radius: 8px;
-  overflow: hidden;
+.ai-box {
+  margin-bottom: 16px; padding: 12px; border-radius: 8px; background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3);
+  font-size: 13px; line-height: 1.5; color: #fff; text-align: left; cursor: pointer; transition: background 0.2s; position: relative;
 }
-.keepa-embed img { width: 100%; height: auto; display: block; }
-.graph-legend {
-  display: flex; justify-content: center; gap: 12px; margin-top: 8px;
-  font-size: 10px; font-weight: 600; color: #333;
-}
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-
-.details-panel {
-  background: rgba(255,255,255,0.03);
-  border-top: 1px solid var(--border);
-}
-.details-summary {
-  width: 100%; padding: 16px; cursor: pointer;
-  font-weight: 600; color: rgba(255,255,255,0.9);
-  font-size: 14px; text-align: center; list-style: none;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-}
-.details-summary::-webkit-details-marker { display: none; }
-.details-summary::after { content: '›'; transform: rotate(90deg); font-size: 18px; color: var(--muted); }
-.details-panel[open] .details-summary::after { transform: rotate(-90deg); }
+.details-panel { background: rgba(255,255,255,0.03); border-top: 1px solid var(--border); }
+.details-summary { padding: 16px; cursor: pointer; font-size: 13px; color: var(--muted); text-align: center; font-weight: 600; }
 .details-body { padding: 0 20px 20px; text-align: left; }
 
-.ai-box {
-  margin-bottom: 16px; padding: 12px; border-radius: 8px;
-  background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3);
-  font-size: 13px; line-height: 1.5; color: #fff; text-align: left;
-  cursor: pointer; transition: background 0.2s; position: relative;
-}
-.ai-box:active { background: rgba(167, 139, 250, 0.15); transform: scale(0.99); }
-.ai-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.ai-title { font-weight: 700; color: var(--purple); text-transform:uppercase; font-size:11px; letter-spacing:0.05em;}
-.ai-icon { font-size: 10px; color: var(--purple); transition: transform 0.2s; }
-.ai-details {
-  margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(167, 139, 250, 0.2);
-  font-size: 12px; color: rgba(255,255,255,0.85); line-height: 1.5;
-}
-.ai-box.expanded .ai-icon { transform: rotate(180deg); }
-
 .insight-grid { display: grid; gap: 12px; margin-bottom: 16px; }
-.insight-box {
-  background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.05); text-align: left;
-}
-.insight-title { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.insight-box { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: left; }
+.insight-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
 .insight-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.tag {
-  font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 4px;
-  background: rgba(255,255,255,0.1); color: #fff;
-}
+.tag { font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.1); color: #fff; }
 .tag.good { background: rgba(16,185,129,0.2); color: var(--green); }
 .tag.bad { background: rgba(239,68,68,0.2); color: var(--red); }
 .tag.warn { background: rgba(251,191,36,0.2); color: var(--yellow); }
+.tag.gem { background: rgba(34, 211, 238, 0.15); color: var(--diamond); border: 1px solid rgba(34, 211, 238, 0.3); box-shadow: 0 0 5px rgba(34,211,238,0.2); }
 
-.metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-.metric { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; text-align: center; }
-.metric-lbl { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;}
-.metric-val { font-size: 13px; font-weight: 600; color: #fff; }
+.metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; margin-top: 12px; }
+.metric { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; text-align: center; }
+.metric-lbl { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.metric-val { font-size: 13px; font-weight: 700; color: #fff; }
 
-.reason-bullets { margin-left: 16px; color: rgba(255,255,255,0.7); font-size: 13px; line-height: 1.5; }
-.reason-bullets li { margin-bottom: 8px; padding-left: 4px; }
+.keepa-embed img { max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 8px; }
 
-/* Settings */
+/* TOGGLES (Restored) */
+.toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.toggle-switch {
+  width: 44px; height: 24px; background: #333; border-radius: 99px; position: relative; cursor: pointer; transition: background 0.2s;
+}
+.toggle-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.2s;
+}
+.toggle-switch.active { background: var(--green); }
+.toggle-switch.active::after { transform: translateX(20px); }
+
+/* --- PAGES --- */
 #settingsPage, #historyPage {
-  position: fixed; top: 0; bottom: 0;
-  left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: 480px; 
+  position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px;
   background: var(--bg); z-index: 3000; padding: 24px;
-  display: flex; flex-direction: column;
-  border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
 }
 .settings-header { font-size: 20px; font-weight: 800; margin-bottom: 24px; text-align: center; }
 .settings-content { flex: 1; overflow-y: auto; }
 .settings-group { margin-bottom: 24px; }
 .label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--muted); text-transform: uppercase; }
-.settings-input { 
-  width: 100%; padding: 14px; background: var(--panel); 
-  border: 1px solid var(--border); color: white; border-radius: 12px; 
-  font-family: 'JetBrains Mono', monospace;
-}
-.settings-input:focus { border-color: var(--blue); outline: none; }
-
+.settings-input { width: 100%; padding: 14px; background: var(--panel); border: 1px solid var(--border); color: white; border-radius: 12px; font-family: 'JetBrains Mono', monospace; }
 .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: auto; }
 .btn-main { width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; }
 .btn-save { background: var(--green); color: #000; }
 .btn-back { background: var(--panel); color: #fff; border: 1px solid var(--border); }
 
-.toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.toggle-switch {
-  position: relative; width: 44px; height: 24px; background: #333; border-radius: 12px; cursor: pointer;
-}
-.toggle-switch.active { background: var(--green); }
-.toggle-switch::after {
-  content: ''; position: absolute; left: 2px; top: 2px; width: 20px; height: 20px;
-  background: white; border-radius: 50%; transition: left 0.2s;
-}
-.toggle-switch.active::after { left: 22px; }
-
 .actions {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(5,5,5,0.9); backdrop-filter: blur(10px);
-  padding: 16px; border-top: 1px solid var(--border);
-  display: flex; gap: 12px; z-index: 100; max-width: 480px; margin: 0 auto;
+  position: fixed; bottom: 0; left: 0; right: 0; background: rgba(5,5,5,0.95); backdrop-filter: blur(10px);
+  padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 12px; z-index: 100; max-width: 480px; margin: 0 auto;
 }
-.act-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 14px; transition: transform 0.1s; }
+.act-btn { flex: 1; padding: 14px; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.1s; }
 .act-btn:active { transform: scale(0.96); }
 .btn-set { flex: 0 0 50px; background: var(--panel); color: #fff; border: 1px solid var(--border); display: grid; place-items: center; font-size: 20px; }
 .btn-hist { background: var(--blue); color: #fff; }
-.btn-dl { background: var(--green); color: #fff; } 
+.btn-dl { background: var(--green); color: #fff; }
 .btn-clr { background: var(--red); color: #fff; }
 
 .hidden { display: none !important; }
@@ -358,44 +230,49 @@ input[type=range]::-webkit-slider-runnable-track {
 </div>
 
 <div class="app">
-
   <div id="mainView">
     <header>
-      <div class="search-wrapper">
-        <div class="brand-badges">
-            <div class="badge" id="keepaBadge"><div class="status-dot"></div>KEEPA</div>
-            <div class="badge" id="geminiBadge"><div class="status-dot"></div>GEMINI</div>
+      <div class="status-row">
+        <div id="badgeKeepa" class="status-badge dead"><div class="status-dot"></div> Keepa</div>
+        <div id="badgeGemini" class="status-badge dead"><div class="status-dot"></div> Gemini</div>
+      </div>
+
+      <div class="search-container">
+        <div class="input-wrapper">
+            <i class="fas fa-search search-icon"></i> 
+            <input id="scanInput" type="text" placeholder="Type ISBN or Title, then search..." autocomplete="off" onkeyup="if(event.key === 'Enter') submitSearch()" />
         </div>
-        
-        <div class="search-container">
-            <i class="fas fa-barcode search-icon"></i>
-            <input id="scanInput" type="text" placeholder="Scan ISBN..." autocomplete="off" />
-        </div>
+        <button id="btnSearch" class="icon-btn" onclick="submitSearch()" title="Search"><i class="fas fa-search"></i></button>
+        <button id="btnLock" class="icon-btn" onclick="toggleFocusLock()" title="Focus Lock"><i class="fas fa-lock"></i></button>
       </div>
     </header>
 
-    <div id="statusText">Ready to scan</div>
+    <div id="processing" class="hidden" style="text-align:center; padding:60px;">
+      <i class="fas fa-circle-notch fa-spin" style="font-size:32px; color:var(--blue);"></i>
+    </div>
 
-    <div id="processing" class="hidden" style="text-align:center; padding:40px;">
-      <div class="spinner" style="border:3px solid var(--border); border-top-color:var(--blue); border-radius:50%; width:30px; height:30px; margin:0 auto 16px; animation:spin 1s linear infinite;"></div>
-      <div style="color:var(--muted); font-size:14px;">Analyzing market structure...</div>
-      <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    <div id="scanToast" class="hidden" style="position:fixed; top:80px; left:50%; transform:translateX(-50%); background:var(--green); color:black; padding:8px 16px; border-radius:99px; font-weight:bold; z-index:200;">
+        Scan Detected!
     </div>
 
     <div class="card hidden" id="resultCard">
       <div id="banner" class="banner buy">
-        
-        <div id="gemBadge" class="gem-icon" style="display:none;">💎</div>
-
         <div class="score-container">
           <svg class="score-svg" viewBox="0 0 100 100">
             <circle class="score-circle-bg" cx="50" cy="50" r="45" fill="none"></circle>
             <circle class="score-circle-fg" id="scoreRing" cx="50" cy="50" r="45" fill="none"></circle>
           </svg>
-          <span id="confidence" class="score-num">—</span>
+          <span id="confidence" class="score-num">--</span>
+          <div id="gemIcon" class="gem-icon">💎</div>
         </div>
         
-        <div id="decision" class="decision-label">BUY</div>
+        <div id="decision" class="decision-label">--</div>
+        
+        <div style="text-align:center;">
+            <div id="geminiQuickBadge" onclick="toggleAI()" class="hidden">
+                <i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>
+            </div>
+        </div>
 
         <div class="condition-toggle">
           <div id="btnCondUsed" class="cond-btn active" onclick="setCondition('USED')">Used</div>
@@ -414,14 +291,14 @@ input[type=range]::-webkit-slider-runnable-track {
         </div>
 
         <div class="profit-display">
-          <span class="profit-label">NET PROFIT</span>
-          <span id="profit" class="profit-val">—</span>
+          <div style="font-size:11px; color:var(--muted); font-weight:700; letter-spacing:0.1em; margin-bottom:4px;">NET PROFIT</div>
+          <div id="profit" class="profit-val">--</div>
         </div>
 
-        <div id="itemTitle" class="item-title">—</div>
+        <div id="itemTitle" class="item-title">--</div>
         
         <div class="link-row">
-          <button id="linkAmz" class="ext-link">Open Offers ↗</button>
+          <button id="linkAmz" class="ext-link" onclick="openAmazonOffers()">Open Offers ↗</button>
           <button id="linkKeepa" class="ext-link" onclick="toggleKeepa()">View Graph 📉</button>
         </div>
 
@@ -430,43 +307,61 @@ input[type=range]::-webkit-slider-runnable-track {
         </div>
 
         <details class="details-panel">
-          <summary class="details-summary">Details &amp; Reasoning</summary>
+          <summary class="details-summary">Show Details</summary>
           <div class="details-body">
-            
-            <div id="gemSummary" style="background:rgba(251,191,36,0.1); color:#fbbf24; padding:12px; border-radius:8px; font-size:13px; margin-bottom:16px; border:1px solid rgba(251,191,36,0.2); display:none;"></div>
+             <div id="geminiReasoningHeader" class="hidden" style="text-align: center;">
+                 <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--purple); margin-bottom: 6px;">GEMINI REASONING</div>
+             </div>
+             
+             <div id="aiRecBox" class="ai-box hidden">
+                <div id="aiRecText" style="font-size:12px; color:#ccc; line-height:1.5;"></div>
+             </div>
 
-            <div id="aiRecBox" class="ai-box hidden" onclick="toggleAI()">
-              <div class="ai-header">
-                <span class="ai-title"><i class="fas fa-sparkles"></i> Gemini Insight</span>
-                <span class="ai-icon">▼</span>
+             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:center; margin-bottom:12px; margin-top:12px;">
+                 <div class="metric" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
+                     <div class="metric-lbl">90d AVG RANK</div>
+                     <div class="metric-val" id="rankVal">--</div>
+                 </div>
+                 <div class="metric" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
+                     <div class="metric-lbl">RECOMMENDED PRICE</div>
+                     <div class="metric-val" id="targetVal">--</div>
+                 </div>
+             </div>
+
+             <div class="metrics-grid">
+                 <div class="metric">
+                     <div class="metric-lbl">BUY BOX</div>
+                     <div class="metric-val" id="bbPriceVal">--</div>
+                 </div>
+                 <div class="metric">
+                     <div class="metric-lbl">BUY BOX WINNER</div>
+                     <div class="metric-val" id="bbWinnerVal">--</div>
+                 </div>
+                 <div class="metric">
+                     <div class="metric-lbl">90d AVG BB</div>
+                     <div class="metric-val" id="avgBbVal">--</div>
+                 </div>
+                 <div class="metric">
+                     <div class="metric-lbl">FBA OFFERS</div>
+                     <div class="metric-val" id="fbaOffersVal">--</div>
+                 </div>
+                 <div class="metric" style="grid-column: 1 / -1; background:rgba(52, 211, 153, 0.1); border:1px solid rgba(52, 211, 153, 0.2);">
+                     <div class="metric-lbl" style="color:var(--green);">180d SALES</div>
+                     <div class="metric-val" id="drops180Val">--</div>
+                 </div>
+             </div>
+
+             <div class="insight-grid">
+              <div class="insight-box">
+                <div class="insight-title" style="color:var(--green);">Positive Signals</div>
+                <div class="insight-tags" id="posTags"></div>
               </div>
-              <div id="aiRecText">Tap to analyze...</div>
-              <div id="aiRecDetails" class="ai-details hidden"></div>
+              <div class="insight-box">
+                <div class="insight-title" style="color:var(--red);">Negative Signals</div>
+                <div class="insight-tags" id="negTags"></div>
+              </div>
             </div>
 
-            <div class="insight-grid">
-              <div class="insight-box">
-                <div class="insight-title">Is this safe?</div>
-                <div class="insight-tags" id="qualityTags"></div>
-              </div>
-              <div class="insight-box">
-                <div class="insight-title">Which way is it trending?</div>
-                <div class="insight-tags" id="trendTags"></div>
-              </div>
-              <div class="insight-box">
-                <div class="insight-title">Why buy this?</div>
-                <div class="insight-tags" id="oppTags"></div>
-              </div>
-            </div>
-
-            <div class="metrics-grid">
-              <div class="metric"><div class="metric-lbl">Target Price</div><div class="metric-val" id="targetPrice">—</div></div>
-              <div class="metric"><div class="metric-lbl">Avg Rank</div><div class="metric-val" id="rank">—</div></div>
-              <div class="metric"><div class="metric-lbl">30d Activity</div><div class="metric-val" id="drops30">—</div></div>
-              <div class="metric"><div class="metric-lbl">FBA Offers</div><div class="metric-val" id="fbaCount">—</div></div>
-            </div>
-
-            <ul id="reasonBullets" class="reason-bullets"></ul>
           </div>
         </details>
       </div>
@@ -504,32 +399,31 @@ input[type=range]::-webkit-slider-runnable-track {
 
       <div class="settings-group">
         <span class="label">Default Buy Cost ($)</span>
-        <input type="number" id="defBuyCost" class="settings-input" value="1.00" step="0.25" />
+        <input type="number" id="defCost" class="settings-input" value="1.00" step="0.25" />
       </div>
       <div class="settings-group">
         <span class="label">Default Profit Floor ($)</span>
-        <input type="number" id="defProfitFloor" class="settings-input" value="5.00" step="0.50" />
+        <input type="number" id="defFloor" class="settings-input" value="5.00" step="0.50" />
       </div>
     </div>
     <div class="btn-grid">
-      <button id="closeSettings" class="btn-main btn-back">Cancel</button>
-      <button id="saveSettings" class="btn-main btn-save">Save</button>
+      <button onclick="closeSettings()" class="btn-main btn-back">Cancel</button>
+      <button onclick="saveSettings()" class="btn-main btn-save">Save</button>
     </div>
   </div>
 
   <div id="historyPage" class="hidden">
     <div class="settings-header">Scan History</div>
     <div id="historyList" style="flex:1; overflow-y:auto;"></div>
-    <button id="closeHistory" class="btn-main btn-back" style="margin-top:16px;">Back</button>
+    <button onclick="closeHistory()" class="btn-main btn-back" style="margin-top:16px;">Back</button>
   </div>
 
   <div class="actions">
-    <button id="btnSettings" class="act-btn btn-set">⚙️</button>
-    <button id="btnHist" class="act-btn btn-hist">History</button>
-    <button id="btnDl" class="act-btn btn-dl">CSV</button>
-    <button id="btnClr" class="act-btn btn-clr">Clear</button>
+    <button onclick="showSettings()" class="act-btn btn-set"><i class="fas fa-cog"></i></button>
+    <button onclick="showHistory()" class="act-btn btn-hist">History</button>
+    <button class="act-btn btn-dl">CSV</button>
+    <button onclick="clearScan()" class="act-btn btn-clr">Clear</button>
   </div>
-
 </div>
 
 <script>
@@ -537,92 +431,477 @@ input[type=range]::-webkit-slider-runnable-track {
 let CONFIG = {
   keepaKey: localStorage.getItem('keepaKey') || '',
   geminiKey: localStorage.getItem('geminiKey') || '',
-  defaultProfit: parseFloat(localStorage.getItem('defaultProfit')) || 5.00,
-  defaultCost: parseFloat(localStorage.getItem('defaultCost')) || 1.00,
-  inboundShip: parseFloat(localStorage.getItem('inboundShip')) || 0.30,
-  condition: localStorage.getItem('condition') || 'USED',
+  buyCost: parseFloat(localStorage.getItem('buyCost')) || 1.00,
+  profitFloor: parseFloat(localStorage.getItem('profitFloor')) || 5.00,
+  condition: 'USED',
   useProxy: localStorage.getItem('useProxy') !== 'false', 
   fastScan: localStorage.getItem('fastScan') === 'true' 
 };
 
-// State
-let currentCost = CONFIG.defaultCost;
-let currentFloor = CONFIG.defaultProfit;
-let lastData = null; 
-let scanTimer = null;
+let lastData = null;
+let focusLock = false;
+let scanQueue = [];
 let scanHistory = [];
+let isProcessing = false;
+let tokens = 20; 
+let tokenRefill = setInterval(() => { if(tokens < 20) tokens++; updateTokenUI(); }, 3000); 
 
-/* --- SPLASH LOGIC --- */
-window.addEventListener('load', () => {
-    const splash = document.getElementById('splash-screen');
-    setTimeout(() => {
-        splash.classList.add('splash-hidden');
-    }, 2500);
-});
-
-const scanInput = document.getElementById('scanInput');
+/* ================= INIT ================= */
+const input = document.getElementById('scanInput');
 const costSlider = document.getElementById('sliderCost');
 const floorSlider = document.getElementById('sliderFloor');
 const costDisp = document.getElementById('costValDisp');
 const floorDisp = document.getElementById('floorValDisp');
+const geminiReasoningHeader = document.getElementById('geminiReasoningHeader');
 
-function init() {
-  document.getElementById('keepaKey').value = CONFIG.keepaKey;
-  document.getElementById('geminiKey').value = CONFIG.geminiKey;
-  document.getElementById('defBuyCost').value = CONFIG.defaultCost;
-  document.getElementById('defProfitFloor').value = CONFIG.defaultProfit;
-  
-  if(CONFIG.keepaKey) document.getElementById('keepaBadge').classList.add('active');
-  if(CONFIG.geminiKey) document.getElementById('geminiBadge').classList.add('active-gem');
-  
-  updateToggleUI('toggleProxy', CONFIG.useProxy);
-  updateToggleUI('toggleFastScan', CONFIG.fastScan);
+window.addEventListener('load', () => {
+    setTimeout(() => { document.getElementById('splash-screen').classList.add('splash-hidden'); }, 2500);
+    updateTokenUI();
+    resetSliders();
+    updateConditionUI();
+    updateToggleUI('toggleProxy', CONFIG.useProxy);
+    updateToggleUI('toggleFastScan', CONFIG.fastScan);
+    input.focus();
+    
+    document.addEventListener('click', (e) => {
+        if(focusLock && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+            input.focus();
+        }
+    });
+});
 
-  resetSlidersToDefault();
-  updateConditionUI();
-  scanInput.focus();
+function resetSliders() {
+    costSlider.value = CONFIG.buyCost;
+    floorSlider.value = CONFIG.profitFloor;
+    costDisp.innerText = CONFIG.buyCost.toFixed(2);
+    floorDisp.innerText = CONFIG.profitFloor.toFixed(2);
 }
 
-function resetSlidersToDefault() {
-  currentCost = CONFIG.defaultCost;
-  currentFloor = CONFIG.defaultProfit;
-  costSlider.value = currentCost;
-  floorSlider.value = currentFloor;
-  costDisp.innerText = currentCost.toFixed(2);
-  floorDisp.innerText = currentFloor.toFixed(2);
+function updateTokenUI() {
+    const el = document.getElementById('badgeKeepa');
+    if(CONFIG.keepaKey) {
+        el.className = 'status-badge live';
+        el.innerHTML = `<div class="status-dot"></div> Keepa: ${tokens}`;
+    } else {
+        el.className = 'status-badge dead';
+        el.innerHTML = `<div class="status-dot"></div> Keepa`;
+    }
 }
 
 function updateConditionUI() {
-  if(CONFIG.condition === 'NEW') {
-    document.getElementById('btnCondNew').classList.add('active');
-    document.getElementById('btnCondUsed').classList.remove('active');
-  } else {
-    document.getElementById('btnCondUsed').classList.add('active');
-    document.getElementById('btnCondNew').classList.remove('active');
-  }
+    document.getElementById('badgeGemini').className = CONFIG.geminiKey ? 'status-badge live' : 'status-badge dead';
 }
 
 function updateToggleUI(id, state) {
-  const el = document.getElementById(id);
-  if(state) el.classList.add('active');
-  else el.classList.remove('active');
+    const el = document.getElementById(id);
+    if(el) {
+        if(state) el.classList.add('active'); else el.classList.remove('active');
+    }
 }
 
 function toggleSetting(key) {
-  CONFIG[key] = !CONFIG[key];
-  updateToggleUI(key === 'useProxy' ? 'toggleProxy' : 'toggleFastScan', CONFIG[key]);
+    CONFIG[key] = !CONFIG[key];
+    updateToggleUI(key === 'useProxy' ? 'toggleProxy' : 'toggleFastScan', CONFIG[key]);
 }
 
-init();
-
-function setCondition(mode) {
-  CONFIG.condition = mode;
-  localStorage.setItem('condition', mode);
-  updateConditionUI();
+/* ================= SLIDERS ================= */
+function onSliderChange() {
+  CONFIG.buyCost = parseFloat(costSlider.value);
+  CONFIG.profitFloor = parseFloat(floorSlider.value);
+  costDisp.innerText = CONFIG.buyCost.toFixed(2);
+  floorDisp.innerText = CONFIG.profitFloor.toFixed(2);
   if(lastData) {
     const result = analyze(lastData);
     render(result, lastData);
   }
+}
+costSlider.addEventListener('input', onSliderChange);
+floorSlider.addEventListener('input', onSliderChange);
+
+/* ================= INPUT HANDLING ================= */
+// Removed keydown listener and moved the logic to the simpler onkeyup handler above
+async function submitSearch() {
+    const val = input.value.trim();
+    if(!val) return;
+    input.value = '';
+    
+    // If it's a numeric ISBN, add directly to queue
+    if(/^\d+$/.test(val)) {
+        addToQueue(val);
+    } else {
+        // Otherwise, search by title using Google Books API
+        await searchByTitle(val);
+    }
+}
+
+async function searchByTitle(title) {
+    try {
+        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(title)}&maxResults=1`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if(!data.items || data.items.length === 0) {
+            alert(`No results found for: "${title}"`);
+            return;
+        }
+        
+        const book = data.items[0].volumeInfo;
+        const isbn = book.industryIdentifiers?.find(id => id.type === 'ISBN_13' || id.type === 'ISBN_10')?.identifier;
+        
+        if(!isbn) {
+            alert(`Found "${book.title}" but no ISBN available`);
+            return;
+        }
+        
+        // Show a quick confirmation of what was found
+        console.log(`Found: ${book.title} - ISBN: ${isbn}`);
+        addToQueue(isbn);
+    } catch(e) {
+        alert(`Title search error: ${e.message}`);
+    }
+}
+
+function toggleFocusLock() {
+    focusLock = !focusLock;
+    document.getElementById('btnLock').classList.toggle('active', focusLock);
+    if(focusLock) input.focus();
+}
+
+function addToQueue(query) {
+    scanQueue.push(query);
+    processQueue();
+}
+
+async function processQueue() {
+    if(isProcessing || scanQueue.length === 0) return;
+    
+    if(tokens <= 0) {
+        setTimeout(processQueue, 3000);
+        return;
+    }
+
+    isProcessing = true;
+    const query = scanQueue.shift();
+    
+    document.getElementById('processing').classList.remove('hidden');
+    document.getElementById('resultCard').classList.add('hidden');
+    
+    const safety = setTimeout(() => {
+        if(isProcessing) {
+            isProcessing = false;
+            document.getElementById('processing').classList.add('hidden');
+            alert("Scan Timed Out (Network too slow)");
+        }
+    }, 10000);
+
+    try {
+        if(tokens > 0) tokens--; 
+        updateTokenUI();
+        
+        const data = await fetchKeepa(query);
+        clearTimeout(safety);
+        lastData = data;
+        const result = analyze(data);
+        render(result, data);
+        addToHistory(result, data);
+    } catch(e) {
+        clearTimeout(safety);
+        alert("Error: " + e.message + ". \n\nTip: If you're seeing this for a known good ISBN, your Keepa API Key might be invalid or out of tokens."); 
+    } finally {
+        isProcessing = false;
+        document.getElementById('processing').classList.add('hidden');
+        if(scanQueue.length > 0) setTimeout(processQueue, 2500); 
+    }
+}
+
+function clearScan() {
+    input.value = '';
+    document.getElementById('resultCard').classList.add('hidden');
+    isProcessing = false;
+    scanQueue = [];
+    document.getElementById('processing').classList.add('hidden');
+    input.focus();
+}
+
+/* ================= KEEPA API ================= */
+async function fetchKeepa(query) {
+    if(!CONFIG.keepaKey) throw new Error("No API Key");
+    
+    const clean = query.replace(/-/g,'');
+    const isISBN = /^\d{9,13}[X]?$/.test(clean);
+    const days = 180; 
+    
+    let url = '';
+    if(isISBN) {
+        url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=1&code=${clean}&stats=${days}&history=0`;
+    } else {
+        url = `https://api.keepa.com/search?key=${CONFIG.keepaKey}&domain=1&type=product&term=${encodeURIComponent(query)}`;
+    }
+
+    // PROXY FAILOVER
+    if(CONFIG.useProxy) {
+        try {
+            const proxy1 = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 5000);
+            
+            const res = await fetch(proxy1, { signal: controller.signal });
+            clearTimeout(id);
+            if(res.ok) {
+                const json = await res.json();
+                return parseKeepaJson(json, isISBN);
+            }
+        } catch(e) {
+            console.log("Proxy 1 failed, trying backup...");
+        }
+        
+        const proxy2 = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        const res2 = await fetch(proxy2);
+        if(!res2.ok) throw new Error("Connection Failed (Both proxies down)");
+        const json = await res2.json();
+        return parseKeepaJson(json, isISBN);
+        
+    } else {
+        const res = await fetch(url);
+        const json = await res.json();
+        return parseKeepaJson(json, isISBN);
+    }
+}
+
+function parseKeepaJson(json, isISBN) {
+    if(json.error) throw new Error(json.error.message);
+    let product;
+    if(isISBN) {
+        if(!json.products || !json.products.length) throw new Error("Not Found");
+        product = json.products[0];
+    } else {
+        if(!json.products || !json.products.length) throw new Error("No results");
+        product = json.products[0]; 
+        if(!product.stats) throw new Error("Found. Click to fetch details");
+    }
+    return parseProduct(product);
+}
+
+function parseProduct(p) {
+    const s = p.stats.current;
+    const avg = p.stats.avg90 || [];
+    const toPrice = (v) => (v && v > 0) ? v / 100 : 0;
+    const toVal = (v) => (v == -1 || v == null) ? 0 : v;
+    
+    return {
+        title: p.title || "Unknown",
+        asin: p.asin,
+        rank: toVal(s[3]), 
+        avgRank: toVal(avg[3]), 
+        drops: p.stats.salesRankDrops30 || 0,
+        drops90: p.stats.salesRankDrops90 || 0,
+        drops180: p.stats.salesRankDrops180 || 0, 
+        newPrice: toPrice(s[1]),
+        usedPrice: toPrice(s[2]),
+        fbaPrice: toPrice(s[10]),
+        amzPrice: toPrice(s[0]),
+        buyBoxPrice: toPrice(s[18]),
+        avgNew: toPrice(avg[1]),
+        avgUsed: toPrice(avg[2]),
+        avgBb: toPrice(avg[18]), 
+        weight: p.packageWeight ? p.packageWeight/100 : 1,
+        offers: toVal(s[11]) 
+    };
+}
+
+/* ================= ANALYSIS (ROBUST PRICE FIX) ================= */
+function analyze(data) {
+    let market = 0;
+    const newBuyBox = data.buyBoxPrice || data.amzPrice || data.newPrice || 999999;
+    
+    if(CONFIG.condition === 'NEW') {
+        // ROBUST NEW PRICE LOGIC: Buy Box > Current New > FBA > 90d Average New
+        market = data.buyBoxPrice || data.newPrice || data.fbaPrice || data.avgNew || 0; 
+    } else {
+        // ROBUST USED PRICE LOGIC: Current FBA > Current Used + $4 > 90d Average Used + $4
+        if(data.fbaPrice > 0) {
+            market = data.fbaPrice;
+        } else if (data.usedPrice > 0) {
+            market = data.usedPrice + 4.00; 
+        }
+        if(market === 0 && data.avgUsed > 0) {
+             market = data.avgUsed + 4.00;
+        }
+        
+        // Ceiling Check (used price shouldn't beat new)
+        if(market > newBuyBox) market = newBuyBox * 0.95;
+    }
+    
+    market = Math.max(0, market); // Prevent negative market price
+
+    const fees = 1.80 + (data.weight > 1 ? 3.50 : 2.50) + (market * 0.15);
+    const profit = market - fees - CONFIG.buyCost;
+    
+    let verdict = 'MAYBE';
+    let score = 50;
+    let isGem = false;
+    
+    const isSleeper = (data.drops === 0 && market > 35);
+    const isFbaVoid = (data.offers === 0 && data.avgRank < 600000 && profit > 10);
+    const isDip = (data.usedPrice > 0 && data.avgUsed > 0 && data.usedPrice < (data.avgUsed * 0.4) && profit > 5);
+    const isTextbook = (data.newPrice > 80 && data.usedPrice < 20);
+    const isRare = (data.avgRank !== -1 && data.avgRank < 2000000 && data.offers < 3 && market > 20);
+    const isSprinter = (data.drops > 3 && data.drops > (data.drops90/3 * 1.5)); 
+    const isPhantom = (data.offers > 50 && market > 15);
+    const isFbaPrem = (data.fbaPrice > 0 && data.usedPrice > 0 && data.fbaPrice > (data.usedPrice * 1.4) && Math.abs(data.fbaPrice - data.buyBoxPrice) < 2); 
+
+    const allTags = [];
+
+    if(isSleeper) { isGem = true; allTags.push({text: "💎 Patience for Big Payout", type: "gem"}); }
+    if(isFbaVoid) { isGem = true; allTags.push({text: "💎 Zero FBA Offers", type: "gem"}); }
+    if(isDip)     { isGem = true; allTags.push({text: "💎 Buy The Dip", type: "gem"}); }
+    if(isTextbook){ isGem = true; allTags.push({text: "💎 Sell Cheaper Used Textbook", type: "gem"}); }
+    if(isRare)    { isGem = true; allTags.push({text: "💎 Low Comp Rewards", type: "gem"}); }
+    if(isSprinter){ isGem = true; allTags.push({text: "💎 Picking Up Pace", type: "gem"}); }
+    if(isPhantom) { isGem = true; allTags.push({text: "💎 Crowded But Fine", type: "gem"}); }
+    if(isFbaPrem) { isGem = true; allTags.push({text: "💎 FBA Premium", type: "gem"}); }
+
+    if(isGem) {
+        verdict = 'BUY';
+        score = 95;
+    } else {
+        if(profit < CONFIG.profitFloor) {
+            verdict = 'REJECT';
+            score = Math.round(Math.max(0, 40 - (CONFIG.profitFloor - profit)));
+        } else if (data.drops > 0) {
+            verdict = 'BUY';
+            score = 80 + Math.min(19, data.drops);
+        } else {
+            // RESURRECTION LOGIC
+            if(data.drops180 > 0) {
+                allTags.push({text: "Has 180d Sales", type: "good"}); 
+                if(market > 20) {
+                    score = 55; // Base 20 + 35
+                    allTags.push({text: "Recent Lull", type: "warn"});
+                } else {
+                    score = 30; // Base 20 + 10
+                    allTags.push({text: "Slow & Cheap", type: "bad"});
+                }
+                verdict = (score >= 50) ? 'MAYBE' : 'REJECT';
+            } else {
+                verdict = 'REJECT';
+                score = 20; 
+            }
+        }
+    }
+
+    if(data.drops > 5) allTags.push({text: "Good Velocity", type: "good"});
+    if(data.avgRank !== -1 && data.avgRank < 500000) allTags.push({text: "Solid Rank", type: "good"});
+    if(data.avgRank > 2000000) allTags.push({text: "High Rank", type: "bad"});
+
+    if(profit >= CONFIG.profitFloor && !isGem) allTags.push({text: "Profitable", type: "good"});
+    
+    if(profit < 0) allTags.push({text: "Negative Profit", type: "bad"});
+    else if(profit < CONFIG.profitFloor) allTags.push({text: "Thin Margins", type: "warn"});
+    
+    if(data.drops === 0 && !isSleeper && data.drops180 === 0) allTags.push({text: "0 Sales (180d)", type: "bad"});
+    if(market < 10) allTags.push({text: "Low Value Item", type: "warn"});
+    
+    const posTags = allTags.filter(t => t.type === 'good' || t.type === 'gem');
+    const negTags = allTags.filter(t => t.type === 'bad' || t.type === 'warn');
+    
+    if(posTags.length === 0) posTags.push({text: "None", type: "warn"});
+    if(negTags.length === 0) negTags.push({text: "None", type: "good"});
+
+    return { verdict, profit, score: Math.round(score), market, posTags, negTags, isGem };
+}
+
+/* ================= RENDER (SAFE MODE) ================= */
+function render(res, data) {
+    // FAIL-SAFE HELPER
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if(el) el.innerText = val;
+    };
+
+    const card = document.getElementById('resultCard');
+    const banner = document.getElementById('banner');
+    
+    banner.className = `banner ${res.isGem ? 'gem' : res.verdict.toLowerCase()}`;
+    setText('confidence', res.score);
+    setText('decision', res.verdict);
+    document.getElementById('gemIcon').classList.toggle('visible', res.isGem);
+    
+    const offset = 283 - (283 * res.score / 100);
+    const ring = document.getElementById('scoreRing');
+    if(ring) ring.style.strokeDashoffset = offset;
+    
+    if(ring) {
+        if(res.isGem) ring.style.color = 'var(--diamond)';
+        else if(res.verdict === 'BUY') ring.style.color = 'var(--green)';
+        else if(res.verdict === 'MAYBE') ring.style.color = 'var(--yellow)';
+        else ring.style.color = 'var(--red)';
+    }
+
+    const pEl = document.getElementById('profit');
+    if(pEl) {
+        pEl.innerText = `$${res.profit.toFixed(2)}`;
+        pEl.style.color = res.profit >= CONFIG.profitFloor ? 'var(--green)' : 'var(--red)';
+    }
+
+    setText('itemTitle', data.title);
+    
+    const fmtRank = (r) => {
+        if(r < 1000) return r;
+        if(r < 1000000) return (r/1000).toFixed(0)+'k';
+        return (r/1000000).toFixed(2)+'M';
+    };
+    
+    setText('rankVal', data.avgRank == -1 ? 'N/A' : fmtRank(data.avgRank));
+    setText('targetVal', `${res.market > 0 ? '$' + res.market.toFixed(2) : '--'}`); 
+    
+    setText('bbPriceVal', data.buyBoxPrice > 0 ? `$${data.buyBoxPrice.toFixed(2)}` : 'Suppressed');
+    const bbEl = document.getElementById('bbPriceVal');
+    if(bbEl) bbEl.style.color = data.buyBoxPrice > 0 ? '#fff' : 'var(--red)';
+    
+    let winner = "FBM";
+    let wColor = "var(--yellow)";
+    if(data.buyBoxPrice <= 0) { winner = "NONE"; wColor="var(--red)"; }
+    else if(data.fbaPrice > 0 && Math.abs(data.fbaPrice - data.buyBoxPrice) < 0.05) { winner = "FBA"; wColor="var(--green)"; }
+    
+    setText('bbWinnerVal', winner);
+    const wEl = document.getElementById('bbWinnerVal');
+    if(wEl) wEl.style.color = wColor;
+    
+    setText('avgBbVal', data.avgBb > 0 ? `$${data.avgBb.toFixed(2)}` : '--');
+    setText('fbaOffersVal', data.offers);
+    setText('drops180Val', data.drops180);
+
+    renderTags('posTags', res.posTags);
+    renderTags('negTags', res.negTags);
+
+    const gemBadge = document.getElementById('geminiQuickBadge');
+    const gemBox = document.getElementById('aiRecBox');
+    
+    // CONDITIONAL GEMINI DISPLAY LOGIC
+    if (res.verdict === 'MAYBE') {
+        geminiReasoningHeader.classList.add('hidden'); // Ensure header is hidden until click
+        gemBox.classList.add('hidden'); // Ensure box is hidden until click
+        gemBadge.classList.remove('hidden');
+        gemBadge.className = 'gemini-style-neutral'; 
+        gemBadge.innerHTML = '<i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>';
+    } else {
+        gemBadge.classList.add('hidden');
+        geminiReasoningHeader.classList.add('hidden');
+        gemBox.classList.add('hidden');
+    }
+    
+    setText('aiRecText', "");
+    card.classList.remove('hidden');
+}
+
+function renderTags(id, tags) {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = '';
+    tags.forEach(t => {
+        el.innerHTML += `<span class="tag ${t.type}">${t.text}</span>`;
+    });
 }
 
 function toggleKeepa() {
@@ -631,13 +910,7 @@ function toggleKeepa() {
   if(container.classList.contains('hidden')) {
     if(lastData && lastData.asin) {
       container.innerHTML = `
-        <img src="https://graph.keepa.com/pricehistory.png?asin=${lastData.asin}&domain=1&t=${Date.now()}" alt="Keepa Graph" />
-        <div class="graph-legend">
-          <span><span class="dot" style="background:#ff9900;"></span> Amazon</span>
-          <span><span class="dot" style="background:#8888ff;"></span> New</span>
-          <span><span class="dot" style="background:#000;"></span> Used</span>
-          <span><span class="dot" style="background:#44cc44;"></span> Rank</span>
-        </div>
+        <img src="https://graph.keepa.com/pricehistory.png?asin=${lastData.asin}&domain=1&t=${Date.now()}&width=400" alt="Keepa Graph" />
       `;
       container.classList.remove('hidden');
       btn.innerText = "Close Graph ✖";
@@ -648,429 +921,163 @@ function toggleKeepa() {
   }
 }
 
-/* ================= NAVIGATION ================= */
-const views = {
-  main: document.getElementById('mainView'),
-  settings: document.getElementById('settingsPage'),
-  history: document.getElementById('historyPage')
-};
-
-function showView(viewName) {
-  Object.values(views).forEach(el => el.classList.add('hidden'));
-  if(viewName === 'settings') views.settings.classList.remove('hidden');
-  else if(viewName === 'history') views.history.classList.remove('hidden');
-  else views.main.classList.remove('hidden');
-}
-
-document.getElementById('btnSettings').onclick = () => showView('settings');
-document.getElementById('closeSettings').onclick = () => showView('main');
-document.getElementById('btnHist').onclick = () => showView('history');
-document.getElementById('closeHistory').onclick = () => showView('main');
-
-document.getElementById('saveSettings').onclick = () => {
-  CONFIG.keepaKey = document.getElementById('keepaKey').value.trim();
-  CONFIG.geminiKey = document.getElementById('geminiKey').value.trim();
-  CONFIG.defaultCost = parseFloat(document.getElementById('defBuyCost').value);
-  CONFIG.defaultProfit = parseFloat(document.getElementById('defProfitFloor').value);
-  
-  localStorage.setItem('keepaKey', CONFIG.keepaKey);
-  localStorage.setItem('geminiKey', CONFIG.geminiKey);
-  localStorage.setItem('defaultCost', CONFIG.defaultCost);
-  localStorage.setItem('defaultProfit', CONFIG.defaultProfit);
-  localStorage.setItem('useProxy', CONFIG.useProxy);
-  localStorage.setItem('fastScan', CONFIG.fastScan);
-  
-  document.getElementById('keepaBadge').classList.toggle('active', !!CONFIG.keepaKey);
-  document.getElementById('geminiBadge').classList.toggle('active-gem', !!CONFIG.geminiKey);
-  
-  if(lastData) {
-    const result = analyze(lastData);
-    render(result, lastData);
-  }
-  showView('main');
-};
-
-document.getElementById('btnClr').onclick = () => {
-  scanInput.value = '';
-  document.getElementById('resultCard').classList.add('hidden');
-  document.getElementById('statusText').classList.remove('hidden');
-  scanInput.focus();
-  lastData = null;
-  resetSlidersToDefault();
-};
-
-/* ================= SLIDERS ================= */
-function onSliderChange() {
-  currentCost = parseFloat(costSlider.value);
-  currentFloor = parseFloat(floorSlider.value);
-  costDisp.innerText = currentCost.toFixed(2);
-  floorDisp.innerText = currentFloor.toFixed(2);
-  if(lastData) {
-    const result = analyze(lastData);
-    render(result, lastData);
-  }
-}
-costSlider.addEventListener('input', onSliderChange);
-floorSlider.addEventListener('input', onSliderChange);
-
-/* ================= SCANNER LOGIC ================= */
-scanInput.oninput = () => {
-  clearTimeout(scanTimer);
-  scanTimer = setTimeout(() => {
-    const val = scanInput.value.trim();
-    if(val.length >= 10) handleScan(val);
-  }, 100);
-};
-
-scanInput.onkeydown = (e) => {
-  if(e.key === 'Enter') {
-    e.preventDefault();
-    if(scanInput.value.trim().length > 0) handleScan(scanInput.value);
-  }
-};
-
-async function handleScan(input) {
-  const clean = input.replace(/[^0-9X]/gi, '').trim();
-  scanInput.value = '';
-  if(!clean) return;
-  
-  resetSlidersToDefault();
-  document.getElementById('processing').classList.remove('hidden');
-  document.getElementById('resultCard').classList.add('hidden');
-  document.getElementById('statusText').classList.add('hidden');
-  
-  document.getElementById('aiRecBox').classList.remove('expanded');
-  document.getElementById('aiRecDetails').classList.add('hidden');
-  document.getElementById('keepaGraphContainer').classList.add('hidden');
-  document.getElementById('linkKeepa').innerText = "View Graph 📉";
-
-  // Reset Gemini Text
-  document.getElementById('aiRecText').innerText = "Tap to analyze...";
-  // Set to special flag so we know it's empty
-  document.getElementById('aiRecDetails').dataset.status = "empty"; 
-  document.getElementById('aiRecDetails').innerText = "";
-
-  try {
-    const data = await fetchKeepa(clean);
-    lastData = data;
-    const result = analyze(data);
-    
-    render(result, data);
-    addToHistory(result, data);
-    document.getElementById('processing').classList.add('hidden');
-  } catch(e) {
-    document.getElementById('processing').classList.add('hidden');
-    
-    const banner = document.getElementById('banner');
-    banner.className = 'banner error';
-    const ring = document.getElementById('scoreRing');
-    ring.style.strokeDashoffset = 283; 
-    ring.style.color = 'var(--red)';
-    document.getElementById('confidence').innerText = "!";
-    document.getElementById('decision').innerText = "ERROR";
-    document.getElementById('itemTitle').innerText = "Scan Failed";
-    document.getElementById('profit').innerText = "—";
-    
-    const ul = document.getElementById('reasonBullets');
-    ul.innerHTML = `<li style="color:var(--red); font-weight:700;">${e.message}</li><li>Try disabling proxy in settings if using an extension.</li>`;
-    
-    document.getElementById('resultCard').classList.remove('hidden');
-  }
-}
-
-/* ================= ANALYSIS ================= */
-function analyze(data) {
-  const inboundFee = data.weight * CONFIG.inboundShip;
-  const fbaFees = 1.80 + (data.weight > 1 ? 4.00 : 3.20) + inboundFee; 
-  const referral = (data.priceFBA || 20) * 0.15;
-  const totalFees = fbaFees + referral;
-
-  let market = 0;
-  if(CONFIG.condition === 'NEW') {
-    // 1. Check current prices
-    market = data.priceBuyBox || data.priceAmazon || data.priceFBA || data.priceNew || 0;
-    
-    // 2. Fallback to 90-day Average if current is $0 (Out of Stock)
-    if (market === 0 && data.avgNew90 > 0) {
-        market = data.avgNew90;
+function openAmazonOffers() {
+    if(lastData && lastData.asin) {
+        window.open(`https://www.amazon.com/gp/offer-listing/${lastData.asin}/`, '_blank');
+    } else {
+        alert("No ASIN available to open offers.");
     }
-  } else {
-    // USED Logic
-    if(data.priceFBA > 0) market = data.priceFBA;
-    else if(data.priceBuyBox > 0) market = data.priceBuyBox;
-    else if(data.priceUsed > 0) market = data.priceUsed + 4.00; 
-    else if(data.priceNew > 0) market = data.priceNew * 0.8; 
-    
-    // Fallback for Used
-    if (market === 0 && data.avgUsed90 > 0) {
-        market = data.avgUsed90 + 4.00; // estimated ship
-    }
-  }
-
-  const profit = market - totalFees - currentCost;
-  
-  let baseScore = 0;
-  if(profit > 0) baseScore += Math.min(30, (profit / currentFloor) * 15);
-  
-  const weightedDrops = (data.drops30 * 6 + data.drops90 * 3 + data.drops365) / 10;
-  if(weightedDrops > 30) baseScore += 30;
-  else baseScore += weightedDrops;
-
-  let qualityScore = 0;
-  const qualityTags = [];
-  if(data.rank < 100000 && weightedDrops > 10) { qualityScore += 5; qualityTags.push({text: "Steady Seller", type: "good"}); }
-  if(data.drops30 > 5 && (data.drops30 / (data.drops90/3)) > 0.8) { qualityScore += 5; qualityTags.push({text: "Consistent Demand", type: "good"}); } 
-  else if (data.drops30 === 0 && data.drops90 > 10) { qualityScore -= 5; qualityTags.push({text: "Demand Dropping", type: "bad"}); }
-
-  let oppScore = 0;
-  const oppTags = [];
-  const trendTags = [];
-  const monthlyAvg = data.drops365 / 12;
-  if(monthlyAvg > 0) {
-    const momentum = data.drops30 / monthlyAvg;
-    if(momentum > 1.2) { oppScore += 10; trendTags.push({text: "Heating Up", type: "good"}); } 
-    else if(momentum < 0.8) { trendTags.push({text: "Cooling Down", type: "bad"}); } 
-    else { trendTags.push({text: "Stable", type: "warn"}); }
-  }
-
-  if(data.priceUsed < 10 && data.priceFBA > 25) { oppScore += 5; oppTags.push({text: "Prime Price Gap", type: "good"}); }
-
-  let totalScore = baseScore + qualityScore + oppScore;
-  let verdict = 'REJECT';
-
-  if(profit < 0) {
-    verdict = 'REJECT';
-    totalScore = Math.max(0, 49 - Math.abs(profit));
-  } else if(profit >= currentFloor && weightedDrops > 1) {
-    verdict = 'BUY';
-    totalScore = Math.max(75, Math.min(99, totalScore + 20));
-  } else {
-    verdict = 'MAYBE';
-    totalScore = Math.max(50, Math.min(74, totalScore));
-  }
-
-  let gemReason = null;
-  if(profit > 15 && data.drops30 === 0 && data.drops365 > 4) {
-    gemReason = "Long Tail Gem";
-    verdict = "BUY"; 
-    totalScore = 80;
-    oppTags.push({text: "Long Tail Gem", type: "good"});
-  }
-
-  if(verdict === 'BUY' && oppTags.length === 0) oppTags.push({text: "Strong Fundamentals", type: "good"});
-
-  return { verdict, profit, score: Math.round(totalScore), gemReason, market, qualityTags, trendTags, oppTags };
 }
 
-/* ================= UI INTERACTION ================= */
+
+/* ================= CAMERA (ROBUST) ================= */
+let html5QrCode;
+function startCamera() {
+    document.getElementById('camera-overlay').classList.remove('hidden');
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+            stopCamera();
+            const toast = document.getElementById('scanToast');
+            if(toast) {
+                toast.classList.remove('hidden');
+                setTimeout(() => toast.classList.add('hidden'), 2000);
+            }
+            if(navigator.vibrate) navigator.vibrate(200); 
+            document.getElementById('scanInput').value = decodedText;
+            addToQueue(decodedText);
+        },
+        (errorMessage) => { }
+    ).catch(err => {
+        alert("Camera Error: " + err);
+        stopCamera();
+    });
+}
+
+function stopCamera() {
+    document.getElementById('camera-overlay').classList.add('hidden');
+    if(html5QrCode) {
+        html5QrCode.stop().then(() => html5QrCode.clear());
+    }
+}
+
+/* ================= GEMINI (FINAL MODEL LIST) ================= */
 async function toggleAI() {
-  const box = document.getElementById('aiRecBox');
-  const details = document.getElementById('aiRecDetails');
-  const txt = document.getElementById('aiRecText');
-  
-  const isExpanded = box.classList.contains('expanded');
-  box.classList.toggle('expanded');
-  details.classList.toggle('hidden');
+    if(!lastData) return;
+    
+    const badge = document.getElementById('geminiQuickBadge');
+    const boxText = document.getElementById('aiRecText');
+    const box = document.getElementById('aiRecBox');
+    
+    badge.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> THINKING...';
+    
+    const profit = parseFloat(document.getElementById('profit').innerText.replace('$',''));
+    const floor = CONFIG.profitFloor;
+    const systemInstruct = `CRITICAL: If Profit ($${profit}) is less than ${floor}, start response with "VERDICT: PASS". Otherwise start with "VERDICT: BUY" or "VERDICT: PASS".`;
 
-  // Trigger if opening AND (empty OR implies fallback text)
-  const isFallback = details.innerText.includes("Basic Insight");
-  const isEmpty = details.dataset.status === "empty" || !details.dataset.status;
-  
-  if (!isExpanded && (isEmpty || isFallback)) {
-    if(!CONFIG.geminiKey) {
-        getSecondOpinionLocal();
+    // FINAL MODEL IDENTIFIER (Gemini 2.5 is the current stable generation)
+    const model = 'gemini-2.5-flash';
+    const cleanKey = CONFIG.geminiKey.trim();
+    
+    if (!cleanKey) {
+        alert("Gemini Error: API Key is missing. Please enter your key in Settings.");
+        badge.innerHTML = 'NO KEY';
         return;
     }
-    
-    // UI Loading State
-    txt.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Asking Gemini...';
-    
-    // SMART RETRY LOGIC
-    // We try models in order of likelihood to succeed
-    const models = [
-        'gemini-1.5-flash', 
-        'gemini-1.5-flash-001',
-        'gemini-1.5-pro',
-        'gemini-pro'
-    ];
-    
-    const p = lastData;
-    const prompt = `Act as an expert Amazon book flipper. 
-    Book: "${p.title}"
-    Sales Rank: ${p.rank}
-    30-Day Sales: ${p.drops30}
-    New Price: $${p.priceNew}
-    Used Price: $${p.priceUsed}
-    Amazon Price: $${p.priceAmazon}
-    Avg 90 Days New: $${p.avgNew90}
-    
-    Is this a good buy for resale? Give a one sentence bold verdict, then a short explanation.`;
 
-    let success = false;
-    let finalError = "";
-
-    for (const model of models) {
-        try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${CONFIG.geminiKey}`;
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-            const json = await response.json();
-            
-            if (json.error) throw new Error(json.error.message);
-            
-            if (json.candidates && json.candidates[0].content) {
-                const md = json.candidates[0].content.parts[0].text;
-                const formatted = md.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--purple)">$1</strong>');
-                txt.innerHTML = "Gemini Analysis Complete";
-                details.innerHTML = formatted;
-                details.dataset.status = "filled"; 
-                success = true;
-                break; // Stop looping if successful
-            }
-        } catch(e) {
-            console.warn(`Model ${model} failed:`, e);
-            finalError = e.message;
+    try {
+        let url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`;
+        
+        if(CONFIG.useProxy) {
+            url = 'https://corsproxy.io/?' + encodeURIComponent(url);
         }
+
+        const response = await fetch(url, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: 
+                `${systemInstruct} Book: ${lastData.title}. Rank: ${lastData.avgRank}. Profit: ${profit}. 30d Sales: ${lastData.drops}. Give verdict then 1 sentence reason.` 
+            }] }] })
+        });
+        const json = await response.json();
+        
+        if(json.error) throw new Error(json.error.message);
+
+        if(json.candidates && json.candidates[0] && json.candidates[0].content) {
+            const text = json.candidates[0].content.parts[0].text;
+            
+            let verdict = "GEMINI: ???";
+            let style = "gemini-style-neutral"; 
+            
+            if(text.includes("VERDICT: BUY")) { 
+                verdict = "GEMINI: BUY"; style = "gemini-style-good"; 
+            } else if(text.includes("VERDICT: REJECT")) {
+                 verdict = "GEMINI: PASS"; style = "gemini-style-bad"; 
+            } else if(text.includes("VERDICT: PASS")) {
+                verdict = "GEMINI: PASS"; 
+                // Style remains neutral/purple
+            }
+            
+            // Clear all previous styles before applying the new one
+            badge.classList.remove('gemini-style-good', 'gemini-style-neutral', 'gemini-style-bad'); 
+            badge.classList.add(style);
+            badge.innerHTML = `<span>${verdict}</span>`;
+            
+            // SHOW HEADER and BOX
+            geminiReasoningHeader.classList.remove('hidden');
+            box.classList.remove('hidden');
+            
+            // CLEANUP: Remove VERDICT: prefix and leading punctuation/spaces
+            const reason = text.replace(/VERDICT: (BUY|PASS|REJECT)/, "").trim().replace(/^[\.\s]+/, "");
+            if(boxText) boxText.innerText = reason;
+            
+        }
+    } catch(e) { 
+        console.error(e); 
+        badge.innerHTML = "AI ERROR";
+        alert(`Gemini Fatal Error: ${e.message}\n\nTip: Please verify your API key and check the 'Use Proxy Server' setting. If this persists, the model may be temporarily unavailable.`);
     }
-
-    if (!success) {
-        txt.innerText = "Error: Check Console/Key";
-        details.innerHTML = `<span style="color:var(--red)">API Error: ${finalError}. Tried 4 different models. Check your API key permissions.</span>`;
-    }
-  }
 }
 
-function getSecondOpinionLocal() {
-  const txt = document.getElementById('aiRecText');
-  const det = document.getElementById('aiRecDetails');
-  const res = analyze(lastData);
-  let rec = "PASS";
-  let why = "Risk profile too high.";
-  if(res.profit > 0 && lastData.drops30 > 5) { rec = "BUY"; why = `Profit ($${res.profit.toFixed(2)}) is low, but high velocity.`; }
-  
-  txt.innerHTML = `Basic Insight (Add Key for AI)`;
-  det.innerHTML = `<strong style="color:${rec==='BUY'?'var(--green)':'var(--red)'}">${rec}</strong>: ${why}`;
+/* ================= SETTINGS ================= */
+function showSettings() {
+    document.getElementById('settingsPage').classList.remove('hidden');
+    document.getElementById('keepaKey').value = CONFIG.keepaKey;
+    document.getElementById('geminiKey').value = CONFIG.geminiKey;
+    document.getElementById('defCost').value = CONFIG.buyCost;
+    document.getElementById('defFloor').value = CONFIG.profitFloor;
 }
 
-function render(res, data) {
-  const banner = document.getElementById('banner');
-  banner.className = `banner ${res.verdict.toLowerCase()}`;
-  document.getElementById('decision').innerText = res.verdict;
-  document.getElementById('confidence').innerText = res.score;
-  
-  const ring = document.getElementById('scoreRing');
-  const offset = 283 - (283 * res.score / 100);
-  ring.style.strokeDashoffset = offset;
-  
-  let color = 'var(--red)';
-  if(res.verdict === 'BUY') color = 'var(--green)';
-  if(res.verdict === 'MAYBE') color = 'var(--yellow)';
-  ring.style.color = color;
-
-  const profitEl = document.getElementById('profit');
-  profitEl.innerText = `$${res.profit.toFixed(2)}`;
-  profitEl.style.color = res.profit > 0 ? 'var(--green)' : 'var(--red)';
-
-  document.getElementById('itemTitle').innerText = data.title;
-  document.getElementById('targetPrice').innerText = `$${res.market.toFixed(2)}`;
-  document.getElementById('rank').innerText = (data.rank/1000).toFixed(0) + 'k';
-  document.getElementById('drops30').innerText = data.drops30;
-  document.getElementById('fbaCount').innerText = data.offerCountFBA;
-
-  document.getElementById('linkAmz').onclick = () => window.open(`https://www.amazon.com/gp/offer-listing/${data.asin}/ref=olp_f_new?ie=UTF8&f_new=true`, '_blank');
-
-  document.getElementById('gemBadge').style.display = res.gemReason ? 'block' : 'none';
-  document.getElementById('aiRecBox').classList.remove('hidden');
-
-  renderTags('qualityTags', res.qualityTags);
-  renderTags('trendTags', res.trendTags);
-  renderTags('oppTags', res.oppTags);
-
-  document.getElementById('resultCard').classList.remove('hidden');
+function closeSettings() {
+    document.getElementById('settingsPage').classList.add('hidden');
 }
 
-function renderTags(id, tags) {
-  const container = document.getElementById(id);
-  container.innerHTML = '';
-  if(!tags.length) { container.innerHTML = '<span style="font-size:11px; color:#555;">No signals</span>'; return; }
-  tags.forEach(t => {
-    const span = document.createElement('span');
-    span.className = `tag ${t.type}`;
-    span.innerText = t.text;
-    container.appendChild(span);
-  });
-}
-
-/* ================= DATA FETCH ================= */
-async function fetchKeepa(code) {
-  if(!CONFIG.keepaKey) return mockKeepa(code);
-  const type = (code.length === 10 || code.startsWith('97')) ? 'code' : 'asin';
-  const days = CONFIG.fastScan ? 90 : 365; 
-  
-  let targetUrl = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=1&${type}=${code}&stats=${days}&history=0`;
-  
-  if(CONFIG.useProxy) {
-    targetUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-  }
-
-  const res = await fetch(targetUrl);
-  if(!res.ok) throw new Error("Keepa Error: " + res.status);
-  const json = await res.json();
-  if(!json.products || !json.products.length) throw new Error('Product not found');
-  return parseProduct(json.products[0]);
-}
-
-function parseProduct(p) {
-  const s = p.stats.current;
-  const avg90 = p.stats.avg90 || [];
-  const toVal = (v) => (v == -1 || v == null) ? 0 : v;
-  const toPrice = (v) => toVal(v) / 100;
-
-  return {
-    title: p.title || "Unknown Title",
-    asin: p.asin,
-    rank: toVal(s[3]) || 999999,
-    drops30: p.stats.salesRankDrops30 || 0,
-    drops90: p.stats.salesRankDrops90 || 0,
-    drops365: p.stats.salesRankDrops365 || 0, 
+function saveSettings() {
+    CONFIG.keepaKey = document.getElementById('keepaKey').value.trim();
+    CONFIG.geminiKey = document.getElementById('geminiKey').value.trim();
+    CONFIG.buyCost = parseFloat(document.getElementById('defCost').value);
+    CONFIG.profitFloor = parseFloat(document.getElementById('defFloor').value);
+    CONFIG.useProxy = document.getElementById('toggleProxy').classList.contains('active');
+    CONFIG.fastScan = document.getElementById('toggleFastScan').classList.contains('active');
     
-    // Current Prices
-    priceAmazon: toPrice(s[0]),
-    priceNew: toPrice(s[1]),
-    priceUsed: toPrice(s[2]),
-    priceFBA: toPrice(s[10]),
-    priceBuyBox: toPrice(s[18]),
+    localStorage.setItem('keepaKey', CONFIG.keepaKey);
+    localStorage.setItem('geminiKey', CONFIG.geminiKey);
+    localStorage.setItem('buyCost', CONFIG.buyCost);
+    localStorage.setItem('profitFloor', CONFIG.profitFloor);
+    localStorage.setItem('useProxy', CONFIG.useProxy);
+    localStorage.setItem('fastScan', CONFIG.fastScan);
     
-    // 90 Day Averages (Indices map to Keepa standard)
-    avgNew90: toPrice(avg90[1]),
-    avgUsed90: toPrice(avg90[2]),
-
-    offerCountFBA: toVal(s[11]),
-    weight: p.packageWeight ? p.packageWeight / 100 : 1.0
-  };
+    updateTokenUI();
+    updateConditionUI();
+    closeSettings();
 }
 
-function mockKeepa(code) {
-  return {
-    title: "Mock Book (Pro Edition): " + code,
-    asin: code,
-    rank: 45000,
-    drops30: 25,
-    drops90: 80,
-    drops365: 320,
-    priceAmazon: 25.00,
-    priceNew: 22.00,
-    priceUsed: 15.00,
-    priceFBA: 24.99,
-    priceBuyBox: 24.99,
-    avgNew90: 21.50,
-    avgUsed90: 14.00,
-    offerCountFBA: 5,
-    weight: 1.2
-  };
+function showHistory() {
+    document.getElementById('historyPage').classList.remove('hidden');
+}
+function closeHistory() {
+    document.getElementById('historyPage').classList.add('hidden');
 }
 
 function addToHistory(res, data) {
@@ -1093,6 +1100,32 @@ function addToHistory(res, data) {
     <div style="font-size:12px; color:var(--muted); margin-top:4px;">${data.title.substring(0,40)}...</div>
   `;
   list.prepend(div);
+}
+
+/* ================= TOGGLE CONDITION FIX ================= */
+function setCondition(c) {
+    // 1. Update State
+    CONFIG.condition = c;
+    
+    // 2. Update UI (Force Toggle)
+    const btnUsed = document.getElementById('btnCondUsed');
+    const btnNew = document.getElementById('btnCondNew');
+    
+    if(btnUsed && btnNew) {
+        if(c === 'USED') {
+            btnUsed.classList.add('active');
+            btnNew.classList.remove('active');
+        } else {
+            btnUsed.classList.remove('active');
+            btnNew.classList.add('active');
+        }
+    }
+    
+    // 3. Re-run Analysis if we have data
+    if(lastData) {
+        const result = analyze(lastData);
+        render(result, lastData);
+    }
 }
 </script>
 </body>
