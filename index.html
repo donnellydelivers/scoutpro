@@ -556,13 +556,13 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 
 .hidden { display: none !important; }
 
-/* --- NEW CSS for History Deletion UI --- */
+/* --- HISTORY & COLLAPSIBLE UI --- */
 .history-item-wrapper {
     position: relative;
-    margin-bottom: 10px; /* Space between items */
+    margin-bottom: 10px; 
     border-radius: 10px;
     overflow: hidden;
-    background: var(--panel); /* Use panel for background to distinguish from body */
+    background: var(--panel);
     border: 1px solid var(--border);
     cursor: pointer;
     transition: all 0.2s;
@@ -576,8 +576,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 .delete-confirm-overlay {
     position: absolute;
     inset: 0;
-    display: none; /* Hidden by default */
-    background: rgba(248, 113, 113, 0.15); /* Light red tint for warning */
+    display: none; 
+    background: rgba(248, 113, 113, 0.15);
     padding: 12px;
     flex-direction: column;
     justify-content: center;
@@ -586,7 +586,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 }
 
 .delete-confirm-overlay.active {
-    display: flex; /* Show when active */
+    display: flex;
 }
 
 .delete-message {
@@ -613,16 +613,77 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 }
 
 .btn-delete-confirm.cancel {
-    background: var(--card); /* Dark background */
+    background: var(--card);
     color: #fff;
     border: 1px solid var(--border);
 }
 
 .btn-delete-confirm.delete {
-    background: var(--red); /* Red danger color */
+    background: var(--red);
     color: #fff;
     border: none;
 }
+
+/* --- NEW COLLAPSIBLE PRICE DETAILS --- */
+#priceDetailsContainer {
+    margin-top: 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    cursor: pointer;
+}
+
+#priceDetailsSummary {
+    padding: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+#priceDetailsSummary:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+#priceDetailsBody {
+    display: none; /* Controlled by JS toggle */
+    padding: 12px 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.2);
+}
+
+#priceDetailsBody.active {
+    display: block;
+}
+
+.price-metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 12px;
+}
+
+.price-metric-label {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.price-metric-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+}
+
+.price-metric-value.fba { color: var(--green); }
+.price-metric-value.fbm { color: var(--yellow); }
+.price-metric-value.amz { color: var(--blue); }
+.price-metric-value.none { color: var(--red); }
 </style>
 </head>
 <body>
@@ -769,6 +830,23 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
               <div class="meter-fill blue" id="priceFill" style="width: 0%;"></div>
             </div>
           </div>
+          
+          <div id="priceDetailsContainer" onclick="togglePriceDetails()">
+            <div id="priceDetailsSummary">
+                <span id="priceDetailsChevron" class="fas fa-chevron-down"></span>
+                <span>Price Details & Buy Box</span>
+            </div>
+            <div id="priceDetailsBody">
+                <div class="price-metric-row">
+                    <span class="price-metric-label">Buy Box Price (<span id="bbCond">--</span>)</span>
+                    <span class="price-metric-value" id="bbPriceVal">--</span>
+                </div>
+                <div class="price-metric-row">
+                    <span class="price-metric-label">Buy Box Owner</span>
+                    <span class="price-metric-value" id="bbWinnerVal">--</span>
+                </div>
+            </div>
+          </div>
           <div class="meter-row">
             <div class="meter-label">Your Profit</div>
             <div class="meter-value" id="profitValue">$0.00</div>
@@ -804,6 +882,10 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           <div class="reasoning-header">
             <span>💡</span>
             <span>Why This Score?</span>
+          </div>
+          <div id="bbSummaryBox" style="background:rgba(96,165,250,0.1); border:1px solid var(--blue); padding:10px; border-radius:6px; margin-bottom:10px;">
+              <div style="font-size:11px; font-weight:700; color:var(--blue); margin-bottom:4px;">BUY BOX STATUS</div>
+              <div id="bbStatusText" style="font-size:12px; line-height:1.4;">--</div>
           </div>
           <div id="reasoningContent"></div>
         </div>
@@ -1654,23 +1736,26 @@ function analyze(data) {
     let market = 0;
     const newBuyBox = data.buyBoxPrice || data.amzPrice || data.newPrice || 999999;
     
+    // --- BUY BOX AWARE MARKET PRICE SELECTION ---
+    let primaryPrice = data.avgBb || data.buyBoxPrice || 0; // Start with the most reliable historical/current BB
+    
     if(CONFIG.condition === 'NEW') {
-        // ROBUST NEW PRICE LOGIC: Buy Box > Current New > FBA > 90d Average New
-        market = data.buyBoxPrice || data.newPrice || data.fbaPrice || data.avgNew || 0; 
+        // For NEW: Stick closely to current or average new/BB price
+        primaryPrice = data.buyBoxPrice || data.newPrice || data.avgNew || 0;
     } else {
-        // ROBUST USED PRICE LOGIC: Current FBA > Current Used + $4 > 90d Average Used + $4
-        if(data.fbaPrice > 0) {
-            market = data.fbaPrice;
-        } else if (data.usedPrice > 0) {
-            market = data.usedPrice + 4.00; 
-        }
-        if(market === 0 && data.avgUsed > 0) {
-             market = data.avgUsed + 4.00;
-        }
+        // For USED: Use FBA or Used price, incorporating average BB.
+        // Use average BB if it's substantial, otherwise fall back to FBA/used.
         
-        // Ceiling Check (used price shouldn't beat new)
-        if(market > newBuyBox) market = newBuyBox * 0.95;
+        // If BB is suppressed (primaryPrice=0), use FBA price or lowest used price + floor.
+        if (primaryPrice < data.fbaPrice) primaryPrice = data.fbaPrice; 
+        if (primaryPrice < data.usedPrice + 4.00) primaryPrice = data.usedPrice + 4.00;
     }
+    
+    // Set market price, ensuring it meets a $10 minimum before considering profit floor
+    market = Math.max(10.00, primaryPrice); 
+    
+    // Ceiling Check (used price shouldn't beat new)
+    if(CONFIG.condition === 'USED' && market > newBuyBox) market = newBuyBox * 0.95;
     
     market = Math.max(0, market); // Prevent negative market price
 
@@ -1727,7 +1812,6 @@ function analyze(data) {
         if (baseScore >= 75) {
             isGem = true;
             verdict = 'BUY';
-            // MODIFIED: Use baseScore instead of 95 for Gem status
             score = baseScore; 
         } else {
             // Has gem signal but weak underlying metrics - no diamond
@@ -1758,6 +1842,18 @@ function analyze(data) {
             score = 20; 
         }
     }
+    
+    // --- BB AWARE TAGS ---
+    const isBBVolatile = (data.avgBb > 0) && (Math.abs(data.buyBoxPrice - data.avgBb) > 1);
+    
+    if (data.buyBoxPrice === 0) {
+        allTags.push({text: "BB Suppressed/Unavailable", type: "bad"});
+    } else if (isBBVolatile && data.buyBoxPrice < data.avgBb) {
+        allTags.push({text: "BB Dip Detected - Price is low", type: "warn"});
+    } else if (data.buyBoxPrice > 0 && data.buyBoxPrice === data.amzPrice) {
+        allTags.push({text: "BB Held by Amazon", type: "bad"});
+    }
+
 
     if(data.drops30 > 5) allTags.push({text: "Good Velocity", type: "good"});
     if(data.avgRank !== -1 && data.avgRank < 500000) allTags.push({text: "Solid Rank", type: "good"});
@@ -1851,6 +1947,58 @@ function render(res, data) {
     // Update slider displays
     updateSliderDisplays();
 
+    // --- Price Details Panel Update ---
+    const isUsedCondition = CONFIG.condition === 'USED';
+    const bbPrice = data.buyBoxPrice;
+    let bbOwner = "NONE";
+    let bbColorClass = "none";
+    
+    if (data.amzPrice > 0 && data.amzPrice === bbPrice) {
+        bbOwner = "AMZ";
+        bbColorClass = "amz";
+    } else if (bbPrice > 0) {
+        // Find the current winner based on proximity to FBA price
+        if (data.fbaPrice > 0 && Math.abs(data.fbaPrice - bbPrice) < 0.05) {
+             bbOwner = "FBA";
+             bbColorClass = "fba";
+        } else {
+            bbOwner = "FBM";
+            bbColorClass = "fbm";
+        }
+    }
+
+    const bbWinnerValEl = document.getElementById('bbWinnerVal');
+    const bbPriceValEl = document.getElementById('bbPriceVal');
+    const bbCondEl = document.getElementById('bbCond');
+    const bbStatusEl = document.getElementById('bbStatusText');
+    
+    if (bbCondEl) bbCondEl.innerText = isUsedCondition ? 'USED' : 'NEW';
+    
+    if (bbPriceValEl) {
+      bbPriceValEl.innerText = bbPrice > 0 ? `$${bbPrice.toFixed(2)}` : 'Suppressed';
+      bbPriceValEl.className = 'price-metric-value ' + bbColorClass;
+    }
+    
+    if (bbWinnerValEl) {
+        bbWinnerValEl.innerText = bbOwner;
+        bbWinnerValEl.className = 'price-metric-value ' + bbColorClass;
+    }
+
+    // 2. Populate BB Summary Box
+    if (bbPrice > 0) {
+        bbStatusEl.innerHTML = `
+            The Buy Box is currently held by <span class="price-metric-value ${bbColorClass}" style="font-weight:800;">${bbOwner}</span> at 
+            <span style="font-weight:800; color:var(--text);">$${bbPrice.toFixed(2)} (${isUsedCondition ? 'Used' : 'New'})</span>. 
+            <br>Your recommendation of <span style="font-weight:800; color:var(--blue);">$${res.market.toFixed(2)}</span> 
+            is based on the average profitable price range.
+        `;
+    } else {
+        bbStatusEl.innerHTML = `<span style="color:var(--red); font-weight:800;">Buy Box is suppressed or unavailable.</span> Pricing is based on historical averages and lowest active FBA/Used offers.`;
+    }
+    
+    // --- End Price Details Panel Update ---
+
+
     // Build "Why This Score?" reasoning section
     const reasoningContent = document.getElementById('reasoningContent');
     if(reasoningContent) {
@@ -1939,6 +2087,14 @@ function render(res, data) {
                 icon: '⚠️',
                 desc: `Under $20 AND slow sales (180d only). Low profit potential with high risk of long storage.`
             };
+            if(tag.includes('bb suppressed')) return {
+                icon: '🛑',
+                desc: `The Buy Box is suppressed. Listing price is critical. Use the Recommended Price, which accounts for past BB averages.`
+            };
+            if(tag.includes('bb held by amazon')) return {
+                icon: '👑',
+                desc: `Amazon currently holds the Buy Box. They often price match the lowest FBA price, limiting your short-term profit unless they run out of stock.`
+            };
             
             // Default
             return {
@@ -1989,60 +2145,23 @@ function render(res, data) {
         }
     }
     
-    // Details panel data (old location)
-    const fmtRank = (r) => {
-        if(r < 1000) return r;
-        if(r < 1000000) return (r/1000).toFixed(0)+'k';
-        return (r/1000000).toFixed(2)+'M';
-    };
-    
-    setText('rankVal', data.avgRank == -1 ? 'N/A' : fmtRank(data.avgRank));
-    setText('targetVal', `${res.market > 0 ? '$' + res.market.toFixed(2) : '--'}`); 
-    
-    setText('bbPriceVal', data.buyBoxPrice > 0 ? `$${data.buyBoxPrice.toFixed(2)}` : 'Suppressed');
-    const bbEl = document.getElementById('bbPriceVal');
-    if(bbEl) bbEl.style.color = data.buyBoxPrice > 0 ? '#fff' : 'var(--red)';
-    
-    let winner = "FBM";
-    let wColor = "var(--yellow)";
-    if(data.buyBoxPrice <= 0) { winner = "NONE"; wColor="var(--red)"; }
-    else if(data.fbaPrice > 0 && Math.abs(data.fbaPrice - data.buyBoxPrice) < 0.05) { winner = "FBA"; wColor="var(--green)"; }
-    
-    setText('bbWinnerVal', winner);
-    const wEl = document.getElementById('bbWinnerVal');
-    if(wEl) wEl.style.color = wColor;
-    
-    setText('avgBbVal', data.avgBb > 0 ? `$${data.avgBb.toFixed(2)}` : '--');
-    setText('fbaOffersVal', data.totalOffers);
-    setText('drops180Val', data.drops180);
-
-    renderTags('posTags', res.posTags);
-    renderTags('negTags', res.negTags);
-
-    const gemBadge = document.getElementById('geminiQuickBadge');
-    const gemOpinion = document.getElementById('geminiOpinion');
-    const decisionSection = document.getElementById('decisionSection');
-    
-    // AUTO-LOAD GEMINI FOR CONSIDER ITEMS
-    if (res.verdict === 'CONSIDER') {
-        // Hide badge, auto-load opinion
-        if(gemBadge) gemBadge.classList.add('hidden');
-        
-        // Show decision buttons for CONSIDER
-        if(decisionSection) decisionSection.classList.remove('hidden');
-        
-        // Auto-trigger Gemini analysis
-        setTimeout(() => loadGeminiOpinion(), 500);
-    } else {
-        // Hide Gemini and decision buttons for BUY/REJECT
-        if(gemBadge) gemBadge.classList.add('hidden');
-        if(gemOpinion) gemOpinion.classList.add('hidden');
-        if(decisionSection) decisionSection.classList.add('hidden');
-    }
-    
     card.classList.remove('hidden');
     
 }
+
+function togglePriceDetails() {
+    const body = document.getElementById('priceDetailsBody');
+    const chevron = document.getElementById('priceDetailsChevron');
+    
+    if (body.classList.contains('active')) {
+        body.classList.remove('active');
+        chevron.classList.replace('fa-chevron-up', 'fa-chevron-down');
+    } else {
+        body.classList.add('active');
+        chevron.classList.replace('fa-chevron-down', 'fa-chevron-up');
+    }
+}
+
 
 function updateSliderDisplays() {
     const cost = parseFloat(document.getElementById('sliderCost').value);
@@ -2763,6 +2882,19 @@ function togglePriceAdjuster() {
     } else {
         adjuster.classList.add('collapsed');
         icon.innerText = '▶';
+    }
+}
+
+function togglePriceDetails() {
+    const body = document.getElementById('priceDetailsBody');
+    const chevron = document.getElementById('priceDetailsChevron');
+    
+    if (body.classList.contains('active')) {
+        body.classList.remove('active');
+        chevron.classList.replace('fa-chevron-up', 'fa-chevron-down');
+    } else {
+        body.classList.add('active');
+        chevron.classList.replace('fa-chevron-down', 'fa-chevron-up');
     }
 }
 </script>
