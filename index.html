@@ -65,14 +65,105 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
 }
 .icon-btn.active { color: var(--green); border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.1); }
 
-/* --- CAMERA --- */
-#camera-overlay { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; }
-#reader { width: 100%; height: 100%; flex: 1; position: relative; }
-#close-camera {
-    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-    background: var(--red); color: white; border: none; padding: 12px 32px;
-    border-radius: 99px; font-weight: bold; font-size: 16px; z-index: 10000; cursor: pointer;
+/* --- ENHANCED CAMERA OVERLAY --- */
+#camera-overlay { 
+  position: fixed; inset: 0; z-index: 9999; background: #000; 
+  display: flex; flex-direction: column;
 }
+
+#camera-header {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 10001;
+  padding: 20px; background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+  text-align: center;
+}
+
+.camera-title {
+  font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px;
+}
+
+.camera-status {
+  font-size: 13px; font-weight: 600; color: var(--blue); 
+  padding: 6px 16px; background: rgba(96,165,250,0.15); 
+  border-radius: 99px; display: inline-block;
+  border: 1px solid rgba(96,165,250,0.3);
+}
+
+.camera-status.detecting {
+  color: var(--yellow); background: rgba(251,191,36,0.15);
+  border-color: rgba(251,191,36,0.3);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.camera-status.success {
+  color: var(--green); background: rgba(16,185,129,0.15);
+  border-color: rgba(16,185,129,0.3);
+}
+
+.camera-status.error {
+  color: var(--red); background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.3);
+}
+
+#reader { 
+  width: 100%; height: 100%; flex: 1; position: relative;
+}
+
+/* Animated Scan Frame */
+.scan-frame {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 300px; height: 180px; z-index: 10000; pointer-events: none;
+}
+
+.scan-corner {
+  position: absolute; width: 40px; height: 40px;
+  border: 3px solid var(--blue); opacity: 0.8;
+}
+
+.scan-corner.top-left { top: 0; left: 0; border-right: none; border-bottom: none; }
+.scan-corner.top-right { top: 0; right: 0; border-left: none; border-bottom: none; }
+.scan-corner.bottom-left { bottom: 0; left: 0; border-right: none; border-top: none; }
+.scan-corner.bottom-right { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+.scan-line {
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  animation: scanLine 2s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--green);
+}
+
+@keyframes scanLine {
+  0% { top: 0; opacity: 0; }
+  50% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.camera-footer {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 10001;
+  padding: 30px; background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+  display: flex; justify-content: center;
+}
+
+#close-camera {
+  background: rgba(239,68,68,0.2); color: var(--red); 
+  border: 2px solid var(--red); padding: 14px 32px;
+  border-radius: 99px; font-weight: 800; font-size: 16px; 
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+
+#close-camera:hover {
+  background: var(--red); color: #fff;
+}
+
+#close-camera:active {
+  transform: scale(0.95);
+}
+
 
 /* --- CARD --- */
 .card {
@@ -85,7 +176,7 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
 .banner.buy { background: radial-gradient(circle at top, rgba(16,185,129,0.12), transparent 70%); }
 .banner.gem { background: radial-gradient(circle at top, rgba(34, 211, 238, 0.2), transparent 70%); } 
 .banner.reject { background: radial-gradient(circle at top, rgba(239,68,68,0.12), transparent 70%); }
-.banner.maybe { background: radial-gradient(circle at top, rgba(251,191,36,0.12), transparent 70%); }
+.banner.consider { background: radial-gradient(circle at top, rgba(245,158,11,0.12), transparent 70%); }
 
 .score-container { position: relative; width: 100px; height: 100px; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; }
 .score-svg { position: absolute; top:0; left:0; width:100%; height:100%; transform: rotate(-90deg); }
@@ -101,9 +192,12 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 .decision-label {
-  font-size: 13px; font-weight: 800; text-transform: uppercase; color: #000; background: #fff;
+  font-size: 13px; font-weight: 800; text-transform: uppercase; 
   padding: 6px 14px; border-radius: 99px; display: inline-block; margin-top: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
+.decision-label.buy { background: var(--green); color: #000; }
+.decision-label.consider { background: var(--yellow); color: #000; }
+.decision-label.reject { background: var(--red); color: #fff; }
 
 #geminiQuickBadge {
     display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 14px; border-radius: 99px;
@@ -211,7 +305,132 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 .btn-set { flex: 0 0 50px; background: var(--panel); color: #fff; border: 1px solid var(--border); display: grid; place-items: center; font-size: 20px; }
 .btn-hist { background: var(--blue); color: #fff; }
 .btn-dl { background: var(--green); color: #fff; }
-.btn-clr { background: var(--red); color: #fff; }
+.btn-cam { background: rgba(34,211,238,0.2); color: var(--diamond); border: 1px solid rgba(34,211,238,0.4); font-size: 18px; }
+
+/* === UPGRADED DESIGN CSS === */
+.item-title { 
+  font-size: 18px !important; font-weight: 800 !important; color: #fff !important; line-height: 1.3 !important; 
+  margin-bottom: 16px !important; text-align: center !important; padding: 0 20px !important; 
+  min-height: 48px !important; display: flex !important; align-items: center !important; justify-content: center !important;
+  height: auto !important; -webkit-line-clamp: unset !important;
+}
+
+/* Keepa Restricted Badge */
+.keepa-restricted {
+  position: absolute; top: 10px; right: 10px; background: rgba(239,68,68,0.2); border: 2px solid var(--red);
+  color: var(--red); font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 99px;
+  text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+@keyframes pulse-badge { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+/* Visual Meter Pricing */
+.pricing-meter {
+  background: rgba(0,0,0,0.3); border-radius: 12px; padding: 20px 16px 16px; margin-bottom: 20px;
+}
+.meter-row { margin-bottom: 16px; text-align: center; }
+.meter-row:last-child { margin-bottom: 0; }
+.meter-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.05em;
+}
+.meter-value {
+  font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; margin-bottom: 8px;
+}
+.meter-bar {
+  height: 8px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; position: relative;
+}
+.meter-fill {
+  height: 100%; border-radius: 99px; transition: width 0.3s ease;
+}
+.meter-fill.green { background: linear-gradient(90deg, var(--green), rgba(16,185,129,0.6)); }
+.meter-fill.blue { background: linear-gradient(90deg, var(--blue), rgba(96,165,250,0.6)); }
+
+/* Compact Sliders */
+.adjusters-compact {
+  background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px 12px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05);
+}
+.adjuster-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.adjuster-row:last-child { margin-bottom: 0; }
+.adjuster-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); min-width: 50px; letter-spacing: 0.05em;
+}
+.adjuster-slider { flex: 1; }
+.adjuster-value {
+  font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--blue); min-width: 50px; text-align: right;
+}
+
+/* Why This Score Section */
+.reasoning-section {
+  background: rgba(255,255,255,0.03); border-radius: 12px; padding: 14px; margin-bottom: 12px;
+}
+.reasoning-header {
+  font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;
+}
+.signal-item {
+  display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; padding: 8px;
+  background: rgba(0,0,0,0.2); border-radius: 8px;
+}
+.signal-item:last-child { margin-bottom: 0; }
+.signal-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.signal-text { flex: 1; }
+.signal-text strong {
+  display: block; font-size: 12px; font-weight: 700; margin-bottom: 2px; line-height: 1.3;
+}
+.signal-text p {
+  font-size: 11px; color: var(--muted); line-height: 1.4;
+}
+
+/* Gemini Second Opinion */
+.gemini-opinion {
+  background: rgba(167,139,250,0.08); border: 2px solid rgba(167,139,250,0.3); border-radius: 12px;
+  padding: 16px; margin-bottom: 16px;
+}
+.gemini-opinion.upgrade {
+  background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.4);
+}
+.gemini-opinion.downgrade {
+  background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.4);
+}
+.gemini-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.gemini-title {
+  font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--purple); display: flex; align-items: center; gap: 6px;
+}
+.gemini-title.upgrade { color: var(--green); }
+.gemini-title.downgrade { color: var(--red); }
+.score-comparison {
+  display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px;
+}
+.score-box { text-align: center; }
+.score-box-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.05em;
+}
+.score-box-value {
+  font-size: 32px; font-weight: 800; font-family: 'JetBrains Mono', monospace; line-height: 1;
+}
+.score-box-value.amber { color: var(--yellow); }
+.score-box-value.green { color: var(--green); }
+.score-box-value.red { color: var(--red); }
+.score-arrow { font-size: 32px; font-weight: 800; }
+.score-arrow.up { color: var(--green); }
+.score-arrow.down { color: var(--red); }
+.gemini-verdict {
+  text-align: center; font-size: 13px; font-weight: 800; padding: 8px 16px; border-radius: 99px;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;
+}
+.gemini-verdict.upgrade {
+  background: rgba(16,185,129,0.2); color: var(--green); border: 2px solid rgba(16,185,129,0.4);
+}
+.gemini-verdict.downgrade {
+  background: rgba(239,68,68,0.2); color: var(--red); border: 2px solid rgba(239,68,68,0.4);
+}
+.gemini-text {
+  font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.85); text-align: left;
+}
 
 .hidden { display: none !important; }
 </style>
@@ -251,12 +470,40 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
       </div>
     </header>
 
+    <!-- ENHANCED CAMERA OVERLAY -->
+    <div id="camera-overlay" class="hidden">
+      <div id="camera-header">
+        <div class="camera-title">📷 Scan Barcode</div>
+        <div id="camera-status" class="camera-status">Ready to scan...</div>
+      </div>
+      
+      <div id="reader"></div>
+      
+      <div class="scan-frame">
+        <div class="scan-corner top-left"></div>
+        <div class="scan-corner top-right"></div>
+        <div class="scan-corner bottom-left"></div>
+        <div class="scan-corner bottom-right"></div>
+        <div class="scan-line"></div>
+      </div>
+      
+      <div class="camera-footer">
+        <button id="close-camera" onclick="stopCamera()">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+
     <div id="processing" class="hidden" style="text-align:center; padding:60px;">
       <i class="fas fa-circle-notch fa-spin" style="font-size:32px; color:var(--blue);"></i>
     </div>
 
     <div id="scanToast" class="hidden" style="position:fixed; top:80px; left:50%; transform:translateX(-50%); background:var(--green); color:black; padding:8px 16px; border-radius:99px; font-weight:bold; z-index:200;">
         Scan Detected!
+    </div>
+
+    <div id="exportToast" class="hidden" style="position:fixed; top:80px; left:50%; transform:translateX(-50%); background:var(--green); color:black; padding:12px 20px; border-radius:99px; font-weight:bold; z-index:200; font-size:14px;">
+        Export Complete!
     </div>
 
     <div class="card hidden" id="titlePickerCard">
@@ -278,51 +525,92 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 
     <div class="card hidden" id="resultCard">
       <div id="banner" class="banner buy">
+        <!-- Keepa Restricted Badge -->
+        <div id="keepaRestricted" class="keepa-restricted hidden">⚠️ RESTRICTED</div>
+        
+        <!-- Gem Icon -->
+        <div id="gemIcon" class="gem-icon">💎</div>
+        
+        <!-- Book Title at Top -->
+        <div id="itemTitle" class="item-title">--</div>
+        
+        <!-- Score Circle -->
         <div class="score-container">
           <svg class="score-svg" viewBox="0 0 100 100">
             <circle class="score-circle-bg" cx="50" cy="50" r="45" fill="none"></circle>
             <circle class="score-circle-fg" id="scoreRing" cx="50" cy="50" r="45" fill="none"></circle>
           </svg>
           <span id="confidence" class="score-num">--</span>
-          <div id="gemIcon" class="gem-icon">💎</div>
         </div>
         
+        <!-- Decision Label -->
         <div id="decision" class="decision-label">--</div>
         
+        <!-- Gemini Badge -->
         <div style="text-align:center;">
             <div id="geminiQuickBadge" onclick="toggleAI()" class="hidden">
                 <i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>
             </div>
         </div>
+      </div>
+      
+      <!-- Card Body -->
+      <div style="padding: 20px;">
+        <!-- Visual Meter Pricing -->
+        <div class="pricing-meter">
+          <div class="meter-row">
+            <div class="meter-label">Recommended Sell Price</div>
+            <div class="meter-value" id="recommendedPrice" style="color: var(--blue);">$0.00</div>
+            <div class="meter-bar">
+              <div class="meter-fill blue" id="priceFill" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="meter-row">
+            <div class="meter-label">Your Profit</div>
+            <div class="meter-value" id="profitValue">$0.00</div>
+            <div class="meter-bar">
+              <div class="meter-fill green" id="profitFill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
 
+        <!-- Condition Toggle -->
         <div class="condition-toggle">
           <div id="btnCondUsed" class="cond-btn active" onclick="setCondition('USED')">Used</div>
           <div id="btnCondNew" class="cond-btn" onclick="setCondition('NEW')">New</div>
         </div>
 
-        <div class="slider-container collapsed" id="priceAdjuster">
-          <div class="adjuster-summary" onclick="togglePriceAdjuster()">
-            Adjust Price & Buy Cost <span id="adjusterIcon">▶</span>
+        <!-- Compact Sliders -->
+        <div class="adjusters-compact">
+          <div class="adjuster-row">
+            <span class="adjuster-label">Cost</span>
+            <div class="adjuster-slider">
+              <input type="range" min="0" max="50" step="0.25" value="1" id="sliderCost" />
+            </div>
+            <span class="adjuster-value" id="costValue">$1.00</span>
           </div>
-          <div class="slider-content">
-            <div class="slider-row">
-              <div class="slider-header"><span>Buy Cost</span><span class="slider-val">$<span id="costValDisp">1.00</span></span></div>
-              <input type="range" min="0" max="20" step="0.25" id="sliderCost" value="1.00" />
+          <div class="adjuster-row">
+            <span class="adjuster-label">Floor</span>
+            <div class="adjuster-slider">
+              <input type="range" min="0" max="20" step="0.5" value="5" id="sliderFloor" />
             </div>
-            <div class="slider-row">
-              <div class="slider-header"><span>Profit Floor</span><span class="slider-val">$<span id="floorValDisp">5.00</span></span></div>
-              <input type="range" min="1" max="20" step="1" id="sliderFloor" value="5" />
-            </div>
+            <span class="adjuster-value" id="floorValue">$5.00</span>
           </div>
         </div>
 
-        <div class="profit-display">
-          <div style="font-size:11px; color:var(--muted); font-weight:700; letter-spacing:0.1em; margin-bottom:4px;">NET PROFIT</div>
-          <div id="profit" class="profit-val">--</div>
+        <!-- Why This Score Section -->
+        <div class="reasoning-section">
+          <div class="reasoning-header">
+            <span>💡</span>
+            <span>Why This Score?</span>
+          </div>
+          <div id="reasoningContent"></div>
         </div>
 
-        <div id="itemTitle" class="item-title">--</div>
+        <!-- Gemini Opinion (for CONSIDER books) -->
+        <div id="geminiOpinion" class="hidden"></div>
         
+        <!-- Links -->
         <div class="link-row">
           <button id="linkAmz" class="ext-link" onclick="openAmazonOffers()">Open Offers ↗</button>
           <button id="linkKeepa" class="ext-link" onclick="toggleKeepa()">View Graph 📉</button>
@@ -441,14 +729,17 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
   <div id="historyPage" class="hidden">
     <div class="settings-header">Scan History</div>
     <div id="historyList" style="flex:1; overflow-y:auto;"></div>
-    <button onclick="closeHistory()" class="btn-main btn-back" style="margin-top:16px;">Back</button>
+    <div class="btn-grid" style="margin-top:16px;">
+      <button onclick="closeHistory()" class="btn-main btn-back">Back</button>
+      <button onclick="clearHistory()" class="btn-main" style="background: var(--red); color: #fff;">Clear All</button>
+    </div>
   </div>
 
   <div class="actions">
     <button onclick="showSettings()" class="act-btn btn-set"><i class="fas fa-cog"></i></button>
     <button onclick="showHistory()" class="act-btn btn-hist">History</button>
-    <button class="act-btn btn-dl">CSV</button>
-    <button onclick="clearScan()" class="act-btn btn-clr">Clear</button>
+    <button onclick="exportCSV()" class="act-btn btn-dl">CSV</button>
+    <button onclick="openCamera()" class="act-btn btn-cam"><i class="fas fa-camera"></i></button>
   </div>
 </div>
 
@@ -476,8 +767,6 @@ let tokenRefill = setInterval(() => { if(tokens < 20) tokens++; updateTokenUI();
 const input = document.getElementById('scanInput');
 const costSlider = document.getElementById('sliderCost');
 const floorSlider = document.getElementById('sliderFloor');
-const costDisp = document.getElementById('costValDisp');
-const floorDisp = document.getElementById('floorValDisp');
 const geminiReasoningHeader = document.getElementById('geminiReasoningHeader');
 
 window.addEventListener('load', () => {
@@ -498,8 +787,7 @@ window.addEventListener('load', () => {
 function resetSliders() {
     costSlider.value = CONFIG.buyCost;
     floorSlider.value = CONFIG.profitFloor;
-    costDisp.innerText = CONFIG.buyCost.toFixed(2);
-    floorDisp.innerText = CONFIG.profitFloor.toFixed(2);
+    updateSliderDisplays();
 }
 
 function updateTokenUI() {
@@ -533,8 +821,7 @@ function toggleSetting(key) {
 function onSliderChange() {
   CONFIG.buyCost = parseFloat(costSlider.value);
   CONFIG.profitFloor = parseFloat(floorSlider.value);
-  costDisp.innerText = CONFIG.buyCost.toFixed(2);
-  floorDisp.innerText = CONFIG.profitFloor.toFixed(2);
+  updateSliderDisplays();
   if(lastData) {
     const result = analyze(lastData);
     render(result, lastData);
@@ -953,6 +1240,16 @@ async function processQueue() {
     if(scanQueue.length > 0) setTimeout(processQueue, 2500);
 }
 
+function clearHistory() {
+    if(!confirm('Clear all scan history? This cannot be undone.')) return;
+    
+    scanHistory = [];
+    localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+    
+    const list = document.getElementById('historyList');
+    if(list) list.innerHTML = '<div style="padding:40px; text-align:center; color:var(--muted);">No scan history</div>';
+}
+
 function clearScan() {
     input.value = '';
     document.getElementById('resultCard').classList.add('hidden');
@@ -1078,7 +1375,7 @@ function parseProduct(p) {
     };
 }
 
-/* ================= ANALYSIS (ROBUST PRICE FIX) ================= */
+/* ================= ANALYSIS (UPGRADED TO BUY/CONSIDER/REJECT) ================= */
 function analyze(data) {
     let market = 0;
     const newBuyBox = data.buyBoxPrice || data.amzPrice || data.newPrice || 999999;
@@ -1106,17 +1403,17 @@ function analyze(data) {
     const fees = 1.80 + (data.weight > 1 ? 3.50 : 2.50) + (market * 0.15);
     const profit = market - fees - CONFIG.buyCost;
     
-    let verdict = 'MAYBE';
+    let verdict = 'CONSIDER';
     let score = 50;
     let isGem = false;
     
-    const isSleeper = (data.drops === 0 && market > 35);
-    const isFbaVoid = (data.offers === 0 && data.avgRank < 600000 && profit > 10);
+    const isSleeper = (data.drops30 === 0 && market > 35);
+    const isFbaVoid = (data.totalOffers === 0 && data.avgRank < 600000 && profit > 10);
     const isDip = (data.usedPrice > 0 && data.avgUsed > 0 && data.usedPrice < (data.avgUsed * 0.4) && profit > 5);
     const isTextbook = (data.newPrice > 80 && data.usedPrice < 20);
-    const isRare = (data.avgRank !== -1 && data.avgRank < 2000000 && data.offers < 3 && market > 20);
-    const isSprinter = (data.drops > 3 && data.drops > (data.drops90/3 * 1.5)); 
-    const isPhantom = (data.offers > 50 && market > 15);
+    const isRare = (data.avgRank !== -1 && data.avgRank < 2000000 && data.totalOffers < 3 && market > 20);
+    const isSprinter = (data.drops30 > 3 && data.drops30 > (data.drops90/3 * 1.5)); 
+    const isPhantom = (data.totalOffers > 50 && market > 15);
     const isFbaPrem = (data.fbaPrice > 0 && data.usedPrice > 0 && data.fbaPrice > (data.usedPrice * 1.4) && Math.abs(data.fbaPrice - data.buyBoxPrice) < 2); 
 
     const allTags = [];
@@ -1138,8 +1435,8 @@ function analyze(data) {
     } else if(isSleeper || isFbaVoid || isDip || isTextbook || isRare || isSprinter || isPhantom || isFbaPrem) {
         // Calculate what the score would be WITHOUT gem bonus
         let baseScore = 50;
-        if (data.drops > 0) {
-            baseScore = 80 + Math.min(19, data.drops);
+        if (data.drops30 > 0) {
+            baseScore = 80 + Math.min(19, data.drops30);
         } else if (data.drops180 > 0 && market > 20) {
             baseScore = 55;
         } else if (data.drops180 > 0) {
@@ -1156,12 +1453,12 @@ function analyze(data) {
         } else {
             // Has gem signal but weak underlying metrics - no diamond
             isGem = false;
-            verdict = (baseScore >= 50) ? 'MAYBE' : 'REJECT';
+            verdict = (baseScore >= 50) ? 'CONSIDER' : 'REJECT';
             score = baseScore;
         }
-    } else if (data.drops > 0) {
+    } else if (data.drops30 > 0) {
         verdict = 'BUY';
-        score = 80 + Math.min(19, data.drops);
+        score = 80 + Math.min(19, data.drops30);
     } else {
         // RESURRECTION LOGIC
         if(data.drops180 > 0) {
@@ -1173,14 +1470,14 @@ function analyze(data) {
                 score = 30; // Base 20 + 10
                 allTags.push({text: "Slow & Cheap", type: "bad"});
             }
-            verdict = (score >= 50) ? 'MAYBE' : 'REJECT';
+            verdict = (score >= 50) ? 'CONSIDER' : 'REJECT';
         } else {
             verdict = 'REJECT';
             score = 20; 
         }
     }
 
-    if(data.drops > 5) allTags.push({text: "Good Velocity", type: "good"});
+    if(data.drops30 > 5) allTags.push({text: "Good Velocity", type: "good"});
     if(data.avgRank !== -1 && data.avgRank < 500000) allTags.push({text: "Solid Rank", type: "good"});
     if(data.avgRank > 2000000) allTags.push({text: "High Rank", type: "bad"});
 
@@ -1189,7 +1486,7 @@ function analyze(data) {
     if(profit < 0) allTags.push({text: "Negative Profit", type: "bad"});
     else if(profit < CONFIG.profitFloor) allTags.push({text: "Thin Margins", type: "warn"});
     
-    if(data.drops === 0 && !isSleeper && data.drops180 === 0) allTags.push({text: "0 Sales (180d)", type: "bad"});
+    if(data.drops30 === 0 && !isSleeper && data.drops180 === 0) allTags.push({text: "0 Sales (180d)", type: "bad"});
     if(market < 10) allTags.push({text: "Low Value Item", type: "warn"});
     
     const posTags = allTags.filter(t => t.type === 'good' || t.type === 'gem');
@@ -1211,31 +1508,116 @@ function render(res, data) {
 
     const card = document.getElementById('resultCard');
     const banner = document.getElementById('banner');
+    const decisionEl = document.getElementById('decision');
     
+    // Update banner and verdict
     banner.className = `banner ${res.isGem ? 'gem' : res.verdict.toLowerCase()}`;
     setText('confidence', res.score);
     setText('decision', res.verdict);
+    if(decisionEl) {
+        decisionEl.className = `decision-label ${res.verdict.toLowerCase()}`;
+    }
+    
+    // Show/hide gem icon
     document.getElementById('gemIcon').classList.toggle('visible', res.isGem);
     
+    // Show/hide Keepa restricted badge
+    const restrictedBadge = document.getElementById('keepaRestricted');
+    if(restrictedBadge) {
+        restrictedBadge.classList.toggle('hidden', !data.restricted);
+    }
+    
+    // Update score ring
     const offset = 283 - (283 * res.score / 100);
     const ring = document.getElementById('scoreRing');
-    if(ring) ring.style.strokeDashoffset = offset;
-    
     if(ring) {
+        ring.style.strokeDashoffset = offset;
         if(res.isGem) ring.style.color = 'var(--diamond)';
         else if(res.verdict === 'BUY') ring.style.color = 'var(--green)';
-        else if(res.verdict === 'MAYBE') ring.style.color = 'var(--yellow)';
+        else if(res.verdict === 'CONSIDER') ring.style.color = 'var(--yellow)';
         else ring.style.color = 'var(--red)';
     }
 
-    const pEl = document.getElementById('profit');
-    if(pEl) {
-        pEl.innerText = `$${res.profit.toFixed(2)}`;
-        // Profit always stays white (no color indicator)
-    }
-
+    // Update book title
     setText('itemTitle', data.title);
     
+    // Update visual meter pricing (NO + SIGNS!)
+    const maxPrice = Math.max(res.market, 100);
+    const pricePercent = Math.min(100, (res.market / maxPrice) * 100);
+    const profitPercent = Math.min(100, Math.max(0, (res.profit / (res.market || 1)) * 100));
+
+    setText('recommendedPrice', '$' + res.market.toFixed(2));
+    const priceFill = document.getElementById('priceFill');
+    if(priceFill) priceFill.style.width = pricePercent + '%';
+
+    const profitValue = document.getElementById('profitValue');
+    if(profitValue) {
+        profitValue.textContent = '$' + res.profit.toFixed(2);
+        profitValue.style.color = res.profit >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+    const profitFill = document.getElementById('profitFill');
+    if(profitFill) profitFill.style.width = profitPercent + '%';
+
+    // Update slider displays
+    updateSliderDisplays();
+
+    // Build "Why This Score?" reasoning section
+    const reasoningContent = document.getElementById('reasoningContent');
+    if(reasoningContent) {
+        const signals = [];
+        
+        // Map tags to signal objects with icons
+        res.posTags.forEach(tag => {
+            let icon = '✨';
+            if(tag.text.includes('Velocity')) icon = '🚀';
+            else if(tag.text.includes('Gem') || tag.text.includes('💎')) icon = '💎';
+            else if(tag.text.includes('Rank')) icon = '📊';
+            else if(tag.text.includes('Profitable')) icon = '💰';
+            else if(tag.text.includes('180d')) icon = '📅';
+            
+            signals.push({
+                icon: icon,
+                title: tag.text.replace('💎 ', ''),
+                text: '', // Tags don't have descriptions
+                type: 'positive'
+            });
+        });
+        
+        // Add negative signals
+        res.negTags.forEach(tag => {
+            if(tag.text === 'None') return; // Skip "None"
+            
+            let icon = '⚠️';
+            if(tag.text.includes('Profit')) icon = '❌';
+            else if(tag.text.includes('Sales')) icon = '📉';
+            else if(tag.text.includes('Rank')) icon = '📈';
+            else if(tag.text.includes('Value')) icon = '💵';
+            
+            signals.push({
+                icon: icon,
+                title: tag.text,
+                text: '',
+                type: 'negative'
+            });
+        });
+        
+        // Render signals
+        if(signals.length === 0) {
+            reasoningContent.innerHTML = '<div style="text-align: center; color: var(--muted); font-size: 11px; padding: 8px;">No specific signals</div>';
+        } else {
+            reasoningContent.innerHTML = signals.map(sig => `
+                <div class="signal-item">
+                    <span class="signal-icon">${sig.icon}</span>
+                    <div class="signal-text">
+                        <strong>${sig.title}</strong>
+                        ${sig.text ? `<p>${sig.text}</p>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+    
+    // Details panel data (old location)
     const fmtRank = (r) => {
         if(r < 1000) return r;
         if(r < 1000000) return (r/1000).toFixed(0)+'k';
@@ -1259,30 +1641,46 @@ function render(res, data) {
     if(wEl) wEl.style.color = wColor;
     
     setText('avgBbVal', data.avgBb > 0 ? `$${data.avgBb.toFixed(2)}` : '--');
-    setText('fbaOffersVal', data.offers);
+    setText('fbaOffersVal', data.totalOffers);
     setText('drops180Val', data.drops180);
 
     renderTags('posTags', res.posTags);
     renderTags('negTags', res.negTags);
 
     const gemBadge = document.getElementById('geminiQuickBadge');
-    const gemBox = document.getElementById('aiRecBox');
+    const gemOpinion = document.getElementById('geminiOpinion');
     
-    // CONDITIONAL GEMINI DISPLAY LOGIC
-    if (res.verdict === 'MAYBE') {
-        geminiReasoningHeader.classList.add('hidden'); // Ensure header is hidden until click
-        gemBox.classList.add('hidden'); // Ensure box is hidden until click
-        gemBadge.classList.remove('hidden');
-        gemBadge.className = 'gemini-style-neutral'; 
-        gemBadge.innerHTML = '<i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>';
+    // CONDITIONAL GEMINI DISPLAY LOGIC - Only show for CONSIDER books
+    if (res.verdict === 'CONSIDER') {
+        if(gemBadge) {
+            gemBadge.classList.remove('hidden');
+            gemBadge.className = 'gemini-style-neutral'; 
+            gemBadge.innerHTML = '<i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>';
+        }
+        if(gemOpinion) gemOpinion.classList.add('hidden');
     } else {
-        gemBadge.classList.add('hidden');
-        geminiReasoningHeader.classList.add('hidden');
-        gemBox.classList.add('hidden');
+        if(gemBadge) gemBadge.classList.add('hidden');
+        if(gemOpinion) gemOpinion.classList.add('hidden');
     }
+    
+    // Hide old AI box
+    const gemBox = document.getElementById('aiRecBox');
+    if(gemBox) gemBox.classList.add('hidden');
+    if(geminiReasoningHeader) geminiReasoningHeader.classList.add('hidden');
     
     setText('aiRecText', "");
     card.classList.remove('hidden');
+}
+
+function updateSliderDisplays() {
+    const cost = parseFloat(document.getElementById('sliderCost').value);
+    const floor = parseFloat(document.getElementById('sliderFloor').value);
+    
+    const costValueEl = document.getElementById('costValue');
+    const floorValueEl = document.getElementById('floorValue');
+    
+    if(costValueEl) costValueEl.textContent = '$' + cost.toFixed(2);
+    if(floorValueEl) floorValueEl.textContent = '$' + floor.toFixed(2);
 }
 
 function renderTags(id, tags) {
@@ -1322,59 +1720,108 @@ function openAmazonOffers() {
 
 /* ================= CAMERA (ROBUST) ================= */
 let html5QrCode;
+
+function openCamera() {
+    startCamera();
+}
+
+function updateCameraStatus(state, text) {
+    const status = document.getElementById('camera-status');
+    if(!status) return;
+    
+    status.className = 'camera-status ' + state;
+    status.textContent = text;
+}
+
 function startCamera() {
-    document.getElementById('camera-overlay').classList.remove('hidden');
+    const overlay = document.getElementById('camera-overlay');
+    overlay.classList.remove('hidden');
+    
+    updateCameraStatus('', 'Ready to scan...');
+    
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
         { facingMode: "environment" }, 
         { fps: 10, qrbox: { width: 250, height: 150 } },
         (decodedText) => {
-            stopCamera();
-            const toast = document.getElementById('scanToast');
-            if(toast) {
-                toast.classList.remove('hidden');
-                setTimeout(() => toast.classList.add('hidden'), 2000);
-            }
-            if(navigator.vibrate) navigator.vibrate(200); 
-            document.getElementById('scanInput').value = decodedText;
-            addToQueue(decodedText);
+            // Success!
+            updateCameraStatus('success', '✓ ISBN Detected!');
+            
+            if(navigator.vibrate) navigator.vibrate(200);
+            
+            setTimeout(() => {
+                stopCamera();
+                const toast = document.getElementById('scanToast');
+                if(toast) {
+                    toast.classList.remove('hidden');
+                    setTimeout(() => toast.classList.add('hidden'), 2000);
+                }
+                document.getElementById('scanInput').value = decodedText;
+                addToQueue(decodedText);
+            }, 500);
         },
-        (errorMessage) => { }
+        (errorMessage) => {
+            // Scanning...
+            if(!errorMessage.includes('No MultiFormat Readers')) {
+                updateCameraStatus('detecting', '🔍 Scanning...');
+            }
+        }
     ).catch(err => {
-        alert("Camera Error: " + err);
-        stopCamera();
+        updateCameraStatus('error', '❌ Camera Error');
+        setTimeout(() => {
+            alert("Camera Error: " + err);
+            stopCamera();
+        }, 1000);
     });
 }
 
 function stopCamera() {
     document.getElementById('camera-overlay').classList.add('hidden');
     if(html5QrCode) {
-        html5QrCode.stop().then(() => html5QrCode.clear());
+        html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
     }
 }
 
-/* ================= GEMINI (FINAL MODEL LIST) ================= */
+/* ================= GEMINI (SCORE COMPARISON) ================= */
 async function toggleAI() {
     if(!lastData) return;
     
     const badge = document.getElementById('geminiQuickBadge');
-    const boxText = document.getElementById('aiRecText');
-    const box = document.getElementById('aiRecBox');
+    const geminiOpinion = document.getElementById('geminiOpinion');
     
+    if(!geminiOpinion) return;
+    
+    // Show loading state
     badge.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> THINKING...';
     
-    const profit = parseFloat(document.getElementById('profit').innerText.replace('$',''));
-    const floor = CONFIG.profitFloor;
-    const systemInstruct = `ABSOLUTE RULE: If profit ($${profit.toFixed(2)}) is below the profit floor ($${floor}), you MUST respond with "VERDICT: PASS" - NO EXCEPTIONS. Any book below the profit floor is an automatic REJECT, regardless of rank, sales, or any other metrics. Only if profit >= $${floor} can you consider "VERDICT: BUY". Hidden gems must have profit above floor AND excellent metrics.`;
+    const result = analyze(lastData);
+    const baseScore = result.score;
+    
+    // Build prompt for Gemini
+    const prompt = `Analyze this book for Amazon FBA resale:
+Title: ${lastData.title}
+Your Score: ${baseScore} (CONSIDER)
+Profit: $${result.profit.toFixed(2)}
+Drops (30d): ${lastData.drops30}
+Drops (180d): ${lastData.drops180}
+Competition: ${lastData.totalOffers} total offers
+Category: ${lastData.category || 'Unknown'}
 
+Based on this data, do you recommend UPGRADE to BUY or DOWNGRADE to REJECT?
+What score (0-100) would you assign?
+Explain in 2-3 sentences.
 
-    // FINAL MODEL IDENTIFIER (Gemini 2.5 is the current stable generation)
-    const model = 'gemini-2.5-flash';
+Respond EXACTLY in this format:
+VERDICT: [BUY or REJECT]
+SCORE: [0-100]
+REASONING: [Your explanation]`;
+
+    const model = 'gemini-2.0-flash-exp';
     const cleanKey = CONFIG.geminiKey.trim();
     
     if (!cleanKey) {
         alert("Gemini Error: API Key is missing. Please enter your key in Settings.");
-        badge.innerHTML = 'NO KEY';
+        badge.innerHTML = '<i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>';
         return;
     }
 
@@ -1386,11 +1833,13 @@ async function toggleAI() {
         }
 
         const response = await fetch(url, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: 
-                `${systemInstruct} Book: ${lastData.title}. Rank: ${lastData.avgRank}. Profit: ${profit}. 30d Sales: ${lastData.drops}. Give verdict then 1 sentence reason.` 
-            }] }] })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
         });
+        
         const json = await response.json();
         
         if(json.error) throw new Error(json.error.message);
@@ -1398,34 +1847,62 @@ async function toggleAI() {
         if(json.candidates && json.candidates[0] && json.candidates[0].content) {
             const text = json.candidates[0].content.parts[0].text;
             
-            let verdict = "GEMINI: ???";
-            let style = "gemini-style-neutral"; 
-            
-            if(text.includes("VERDICT: BUY")) { 
-                verdict = "GEMINI: BUY"; style = "gemini-style-good"; 
-            } else if(text.includes("VERDICT: REJECT")) {
-                 verdict = "GEMINI: PASS"; style = "gemini-style-bad"; 
-            } else if(text.includes("VERDICT: PASS")) {
-                verdict = "GEMINI: PASS"; 
-                // Style remains neutral/purple
+            // Parse response
+            const verdictMatch = text.match(/VERDICT:\s*(BUY|REJECT)/i);
+            const scoreMatch = text.match(/SCORE:\s*(\d+)/);
+            const reasoningMatch = text.match(/REASONING:\s*(.+)/s);
+
+            const geminiVerdict = verdictMatch ? verdictMatch[1].toUpperCase() : null;
+            const geminiScore = scoreMatch ? parseInt(scoreMatch[1]) : null;
+            const geminiReasoning = reasoningMatch ? reasoningMatch[1].trim() : text;
+
+            if (!geminiVerdict || !geminiScore) {
+                throw new Error('Could not parse Gemini response');
             }
-            
-            badge.classList.remove('gemini-style-good', 'gemini-style-neutral', 'gemini-style-bad'); 
-            badge.classList.add(style);
-            badge.innerHTML = `<span>${verdict}</span>`;
-            
-            // SHOW HEADER and BOX
-            geminiReasoningHeader.classList.remove('hidden');
-            box.classList.remove('hidden');
-            
-            const reason = text.replace(/VERDICT: (BUY|PASS|REJECT)/, "").trim().replace(/^[\.\s]+/, "");
-            if(boxText) boxText.innerText = reason;
-            
+
+            // Determine if upgrade or downgrade
+            const isUpgrade = geminiVerdict === 'BUY';
+            const opinionClass = isUpgrade ? 'upgrade' : 'downgrade';
+
+            // Build the UI
+            geminiOpinion.className = 'gemini-opinion ' + opinionClass;
+            geminiOpinion.innerHTML = `
+                <div class="gemini-header">
+                    <div class="gemini-title ${opinionClass}">
+                        <span>🤖</span>
+                        <span>GEMINI SECOND OPINION</span>
+                    </div>
+                </div>
+
+                <div class="score-comparison">
+                    <div class="score-box">
+                        <div class="score-box-label">Your Score</div>
+                        <div class="score-box-value amber">${baseScore}</div>
+                    </div>
+
+                    <div class="score-arrow ${isUpgrade ? 'up' : 'down'}">→</div>
+
+                    <div class="score-box">
+                        <div class="score-box-label">Gemini Score</div>
+                        <div class="score-box-value ${isUpgrade ? 'green' : 'red'}">${geminiScore}</div>
+                    </div>
+                </div>
+
+                <div class="gemini-verdict ${opinionClass}">
+                    ${isUpgrade ? 'UPGRADE → BUY' : 'DOWNGRADE → REJECT'}
+                </div>
+
+                <div class="gemini-text">${geminiReasoning}</div>
+            `;
+
+            // Show the opinion box, hide the badge
+            geminiOpinion.classList.remove('hidden');
+            badge.classList.add('hidden');
         }
     } catch(e) { 
-        console.error(e); 
-        badge.innerHTML = "AI ERROR";
-        alert(`Gemini Fatal Error: ${e.message}\n\nTip: Please verify your API key and check the 'Use Proxy Server' setting. If this persists, the model may be temporarily unavailable.`);
+        console.error('Gemini error:', e);
+        badge.innerHTML = '<i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>';
+        alert(`Gemini Error: ${e.message}\n\nTip: Check your API key and proxy settings.`);
     }
 }
 
@@ -1463,32 +1940,103 @@ function saveSettings() {
 }
 
 function showHistory() {
-    document.getElementById('historyPage').classList.remove('hidden');
+    const page = document.getElementById('historyPage');
+    const list = document.getElementById('historyList');
+    
+    if(!list) return;
+    
+    // Render all history items
+    if(scanHistory.length === 0) {
+        list.innerHTML = '<div style="padding:40px; text-align:center; color:var(--muted);">No scan history</div>';
+    } else {
+        list.innerHTML = scanHistory.map(item => {
+            let color = 'var(--red)';
+            if(item.verdict === 'BUY') color = 'var(--green)';
+            if(item.verdict === 'CONSIDER') color = 'var(--yellow)';
+            
+            return `
+                <div style="padding:12px; border-bottom:1px solid var(--border);">
+                    <div style="display:flex; justify-content:space-between; font-weight:700;">
+                        <span style="color:${color}">${item.verdict}</span>
+                        <span style="color:${item.profit >= 0 ? 'var(--green)' : 'var(--red)'}">$${item.profit.toFixed(2)}</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--muted); margin-top:4px;">${item.title.substring(0,60)}...</div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    page.classList.remove('hidden');
 }
+
 function closeHistory() {
     document.getElementById('historyPage').classList.add('hidden');
 }
 
 function addToHistory(res, data) {
-  const item = { ...res, title: data.title };
-  scanHistory.unshift(item);
-  const list = document.getElementById('historyList');
-  const div = document.createElement('div');
-  div.style.padding = '12px';
-  div.style.borderBottom = '1px solid var(--border)';
-  
-  let color = 'var(--red)';
-  if(res.verdict === 'BUY') color = 'var(--green)';
-  if(res.verdict === 'MAYBE') color = 'var(--yellow)';
+    const item = { 
+        verdict: res.verdict, 
+        profit: res.profit, 
+        score: res.score,
+        title: data.title,
+        asin: data.asin,
+        timestamp: Date.now()
+    };
+    
+    scanHistory.unshift(item);
+    
+    // Keep only last 100 scans
+    if(scanHistory.length > 100) {
+        scanHistory = scanHistory.slice(0, 100);
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+}
 
-  div.innerHTML = `
-    <div style="display:flex; justify-content:space-between; font-weight:700;">
-      <span style="color:${color}">${res.verdict}</span>
-      <span>$${res.profit.toFixed(2)}</span>
-    </div>
-    <div style="font-size:12px; color:var(--muted); margin-top:4px;">${data.title.substring(0,40)}...</div>
-  `;
-  list.prepend(div);
+/* ================= CSV EXPORT ================= */
+function exportCSV() {
+    // Filter for BUY and CONSIDER only
+    const exportable = scanHistory.filter(item => 
+        item.verdict === 'BUY' || item.verdict === 'CONSIDER'
+    );
+    
+    if(exportable.length === 0) {
+        alert('No BUY or CONSIDER books to export!');
+        return;
+    }
+    
+    // Calculate stats
+    const buyCount = exportable.filter(item => item.verdict === 'BUY').length;
+    const considerCount = exportable.filter(item => item.verdict === 'CONSIDER').length;
+    const totalProfit = exportable.reduce((sum, item) => sum + item.profit, 0);
+    
+    // Build CSV
+    const headers = ['TITLE', 'VERDICT', 'SCORE', 'PROFIT', 'ASIN', 'DATE'];
+    const rows = exportable.map(item => {
+        const date = item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A';
+        const title = (item.title || '').replace(/"/g, '""'); // Escape quotes
+        return `"${title}","${item.verdict}",${item.score},$${item.profit.toFixed(2)},${item.asin || ''},"${date}"`;
+    });
+    
+    const csv = [headers.join(','), ...rows].join('\n');
+    
+    // Download file
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scout-export-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // Show success toast
+    const toast = document.getElementById('exportToast');
+    if(toast) {
+        toast.innerHTML = `📊 ${buyCount} BUY, ${considerCount} CONSIDER • $${totalProfit.toFixed(2)} profit`;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 4000);
+    }
 }
 
 /* ================= TOGGLE CONDITION FIX ================= */
