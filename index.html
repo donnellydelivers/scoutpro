@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 <style>
 /* --- THEME & RESET --- */
@@ -81,6 +82,26 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
   font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 8px;
 }
 
+.camera-mode-toggle {
+  display: flex; gap: 8px; justify-content: center; margin-top: 12px;
+}
+
+.mode-btn {
+  background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);
+  border: 2px solid rgba(255,255,255,0.2); padding: 8px 20px;
+  border-radius: 99px; font-weight: 700; font-size: 13px;
+  cursor: pointer; transition: all 0.2s;
+}
+
+.mode-btn.active {
+  background: rgba(96,165,250,0.2); color: var(--blue);
+  border-color: var(--blue);
+}
+
+.mode-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.15);
+}
+
 .camera-status {
   font-size: 13px; font-weight: 600; color: var(--blue); 
   padding: 6px 16px; background: rgba(96,165,250,0.15); 
@@ -112,6 +133,17 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
 .scan-frame {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   width: 300px; height: 180px; z-index: 10000; pointer-events: none;
+}
+
+/* ISBN Frame - Wider for text */
+.isbn-frame {
+  width: 280px; height: 80px;
+}
+
+.isbn-hint {
+  position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 600;
+  white-space: nowrap; text-align: center;
 }
 
 .scan-corner {
@@ -473,18 +505,36 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
     <!-- ENHANCED CAMERA OVERLAY -->
     <div id="camera-overlay" class="hidden">
       <div id="camera-header">
-        <div class="camera-title">📷 Scan Barcode</div>
+        <div class="camera-title">📷 Scan Book</div>
         <div id="camera-status" class="camera-status">Ready to scan...</div>
+        
+        <!-- Mode Toggle -->
+        <div class="camera-mode-toggle">
+          <button id="mode-barcode" class="mode-btn active" onclick="switchScanMode('barcode')">
+            📊 Barcode
+          </button>
+          <button id="mode-isbn" class="mode-btn" onclick="switchScanMode('isbn')">
+            🔢 ISBN Text
+          </button>
+        </div>
       </div>
       
       <div id="reader"></div>
       
-      <div class="scan-frame">
+      <div class="scan-frame" id="scan-frame-barcode">
         <div class="scan-corner top-left"></div>
         <div class="scan-corner top-right"></div>
         <div class="scan-corner bottom-left"></div>
         <div class="scan-corner bottom-right"></div>
         <div class="scan-line"></div>
+      </div>
+      
+      <div class="scan-frame isbn-frame hidden" id="scan-frame-isbn">
+        <div class="scan-corner top-left"></div>
+        <div class="scan-corner top-right"></div>
+        <div class="scan-corner bottom-left"></div>
+        <div class="scan-corner bottom-right"></div>
+        <div class="isbn-hint">Position ISBN number here</div>
       </div>
       
       <div class="camera-footer">
@@ -1720,9 +1770,29 @@ function openAmazonOffers() {
 
 /* ================= CAMERA (ROBUST) ================= */
 let html5QrCode;
+let scanMode = 'barcode'; // 'barcode' or 'isbn'
+let ocrInterval = null;
 
 function openCamera() {
     startCamera();
+}
+
+function switchScanMode(mode) {
+    scanMode = mode;
+    
+    // Update button states
+    document.getElementById('mode-barcode').classList.toggle('active', mode === 'barcode');
+    document.getElementById('mode-isbn').classList.toggle('active', mode === 'isbn');
+    
+    // Update frame visibility
+    document.getElementById('scan-frame-barcode').classList.toggle('hidden', mode === 'isbn');
+    document.getElementById('scan-frame-isbn').classList.toggle('hidden', mode === 'barcode');
+    
+    // Restart camera with new mode
+    if(html5QrCode) {
+        stopCamera();
+        setTimeout(() => startCamera(), 500);
+    }
 }
 
 function updateCameraStatus(state, text) {
@@ -1737,7 +1807,15 @@ function startCamera() {
     const overlay = document.getElementById('camera-overlay');
     overlay.classList.remove('hidden');
     
-    updateCameraStatus('', 'Ready to scan...');
+    if(scanMode === 'barcode') {
+        startBarcodeScanner();
+    } else {
+        startISBNScanner();
+    }
+}
+
+function startBarcodeScanner() {
+    updateCameraStatus('', 'Ready to scan barcode...');
     
     html5QrCode = new Html5Qrcode("reader");
     html5QrCode.start(
@@ -1745,17 +1823,12 @@ function startCamera() {
         { fps: 10, qrbox: { width: 250, height: 150 } },
         (decodedText) => {
             // Success!
-            updateCameraStatus('success', '✓ ISBN Detected!');
+            updateCameraStatus('success', '✓ Barcode Detected!');
             
             if(navigator.vibrate) navigator.vibrate(200);
             
             setTimeout(() => {
                 stopCamera();
-                const toast = document.getElementById('scanToast');
-                if(toast) {
-                    toast.classList.remove('hidden');
-                    setTimeout(() => toast.classList.add('hidden'), 2000);
-                }
                 document.getElementById('scanInput').value = decodedText;
                 addToQueue(decodedText);
             }, 500);
@@ -1775,8 +1848,106 @@ function startCamera() {
     });
 }
 
+function startISBNScanner() {
+    updateCameraStatus('', 'Position ISBN in frame...');
+    
+    // Start video stream
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 280, height: 80 } },
+        () => {}, // Not using barcode callback
+        () => {}  // Not using error callback
+    ).then(() => {
+        // Start OCR processing
+        startOCRProcessing();
+    }).catch(err => {
+        updateCameraStatus('error', '❌ Camera Error');
+        setTimeout(() => {
+            alert("Camera Error: " + err);
+            stopCamera();
+        }, 1000);
+    });
+}
+
+function startOCRProcessing() {
+    let isProcessing = false;
+    
+    ocrInterval = setInterval(async () => {
+        if(isProcessing) return;
+        
+        isProcessing = true;
+        updateCameraStatus('detecting', '🔍 Reading ISBN...');
+        
+        try {
+            // Capture frame from video
+            const video = document.querySelector('#reader video');
+            if(!video) {
+                isProcessing = false;
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            // Run OCR on frame
+            const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
+                logger: () => {} // Suppress logs
+            });
+            
+            // Extract ISBN from text
+            const isbn = extractISBN(text);
+            
+            if(isbn) {
+                // Success!
+                updateCameraStatus('success', '✓ ISBN Detected!');
+                
+                if(navigator.vibrate) navigator.vibrate(200);
+                
+                clearInterval(ocrInterval);
+                
+                setTimeout(() => {
+                    stopCamera();
+                    document.getElementById('scanInput').value = isbn;
+                    addToQueue(isbn);
+                }, 500);
+            } else {
+                isProcessing = false;
+            }
+            
+        } catch(err) {
+            console.error('OCR error:', err);
+            isProcessing = false;
+        }
+    }, 2000); // Check every 2 seconds
+}
+
+function extractISBN(text) {
+    // Remove all spaces and hyphens
+    const cleaned = text.replace(/[\s\-]/g, '');
+    
+    // Look for ISBN-13 (starts with 978 or 979)
+    const isbn13Match = cleaned.match(/97[89]\d{10}/);
+    if(isbn13Match) return isbn13Match[0];
+    
+    // Look for ISBN-10 (10 digits or 9 digits + X)
+    const isbn10Match = cleaned.match(/\d{9}[0-9X]/i);
+    if(isbn10Match) return isbn10Match[0];
+    
+    return null;
+}
+
 function stopCamera() {
     document.getElementById('camera-overlay').classList.add('hidden');
+    
+    if(ocrInterval) {
+        clearInterval(ocrInterval);
+        ocrInterval = null;
+    }
+    
     if(html5QrCode) {
         html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
     }
