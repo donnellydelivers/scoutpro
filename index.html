@@ -299,7 +299,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 .tag.good { background: rgba(16,185,129,0.2); color: var(--green); }
 .tag.bad { background: rgba(239,68,68,0.2); color: var(--red); }
 .tag.warn { background: rgba(251,191,36,0.2); color: var(--yellow); }
-.tag.gem { background: rgba(34, 211, 238, 0.15); color: var(--diamond); border: 1px solid rgba(34, 211, 238, 0.3); box-shadow: 0 0 5px rgba(34,211,238,0.2); }
+.tag.gem { background: rgba(34, 211, 238, 0.15); color: var(--diamond); border: 1px solid rgba(34,211,238,0.3); box-shadow: 0 0 5px rgba(34,211,238,0.2); }
 
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; margin-top: 12px; }
 .metric { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; text-align: center; }
@@ -343,7 +343,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 .act-btn:active { transform: scale(0.96); }
 .btn-set { flex: 0 0 50px; background: var(--panel); color: #fff; border: 1px solid var(--border); display: grid; place-items: center; font-size: 20px; }
 .btn-hist { background: var(--blue); color: #fff; }
-.btn-dl { background: var(--green); color: #fff; }
+.btn-dl { background: var(--green); color: #fff; } /* KEPT FOR COLOR REFERENCE IF NEEDED */
 .btn-cam { background: rgba(34,211,238,0.2); color: var(--diamond); border: 1px solid rgba(34,211,238,0.4); font-size: 18px; }
 
 /* === UPGRADED DESIGN CSS === */
@@ -555,6 +555,74 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 }
 
 .hidden { display: none !important; }
+
+/* --- NEW CSS for History Deletion UI --- */
+.history-item-wrapper {
+    position: relative;
+    margin-bottom: 10px; /* Space between items */
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--panel); /* Use panel for background to distinguish from body */
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.history-item-content {
+    padding: 12px;
+    transition: transform 0.3s;
+}
+
+.delete-confirm-overlay {
+    position: absolute;
+    inset: 0;
+    display: none; /* Hidden by default */
+    background: rgba(248, 113, 113, 0.15); /* Light red tint for warning */
+    padding: 12px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.delete-confirm-overlay.active {
+    display: flex; /* Show when active */
+}
+
+.delete-message {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--red);
+    margin-bottom: 10px;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.btn-delete-confirm {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.btn-delete-confirm.cancel {
+    background: var(--card); /* Dark background */
+    color: #fff;
+    border: 1px solid var(--border);
+}
+
+.btn-delete-confirm.delete {
+    background: var(--red); /* Red danger color */
+    color: #fff;
+    border: none;
+}
 </style>
 </head>
 <body>
@@ -592,13 +660,11 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
       </div>
     </header>
 
-    <!-- ENHANCED CAMERA OVERLAY -->
     <div id="camera-overlay" class="hidden">
       <div id="camera-header">
         <div class="camera-title">📷 Scan Book</div>
         <div id="camera-status" class="camera-status">Ready to scan...</div>
         
-        <!-- Mode Toggle -->
         <div class="camera-mode-toggle">
           <button id="mode-barcode" class="mode-btn active" onclick="switchScanMode('barcode')">
             📊 Barcode
@@ -665,22 +731,16 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 
     <div class="card hidden" id="resultCard">
       <div id="banner" class="banner buy">
-        <!-- Keepa Restricted Badge -->
         <div id="keepaRestricted" class="keepa-restricted hidden">⚠️ RESTRICTED</div>
         
-        <!-- Gem Icon -->
         <div id="gemIcon" class="gem-icon">💎</div>
         
-        <!-- Book Title at Top -->
-        <!-- Category Badge FIRST -->
         <div style="text-align: center; margin-bottom: 6px;">
           <div id="categoryBadge" class="category-badge">📚 Category Loading...</div>
         </div>
         
-        <!-- Title -->
         <div id="itemTitle" class="item-title">--</div>
         
-        <!-- Score Circle -->
         <div class="score-container">
           <svg class="score-svg" viewBox="0 0 100 100">
             <circle class="score-circle-bg" cx="50" cy="50" r="45" fill="none"></circle>
@@ -689,10 +749,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           <span id="confidence" class="score-num">--</span>
         </div>
         
-        <!-- Decision Label -->
         <div id="decision" class="decision-label">--</div>
         
-        <!-- Gemini Badge -->
         <div style="text-align:center;">
             <div id="geminiQuickBadge" onclick="toggleAI()" class="hidden">
                 <i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>
@@ -700,12 +758,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
         </div>
       </div>
       
-      <!-- Card Body -->
       <div style="padding: 16px;">
-        <!-- FIX #4: Gemini Opinion RIGHT HERE (moved from bottom) -->
         <div id="geminiOpinion" class="hidden"></div>
 
-        <!-- Visual Meter Pricing -->
         <div class="pricing-meter">
           <div class="meter-row">
             <div class="meter-label">Recommended Sell Price</div>
@@ -723,13 +778,11 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           </div>
         </div>
 
-        <!-- Condition Toggle -->
         <div class="condition-toggle">
           <div id="btnCondUsed" class="cond-btn active" onclick="setCondition('USED')">Used</div>
           <div id="btnCondNew" class="cond-btn" onclick="setCondition('NEW')">New</div>
         </div>
 
-        <!-- Compact Sliders -->
         <div class="adjusters-compact">
           <div class="adjuster-row">
             <span class="adjuster-label">Cost</span>
@@ -747,7 +800,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           </div>
         </div>
 
-        <!-- Why This Score Section -->
         <div class="reasoning-section">
           <div class="reasoning-header">
             <span>💡</span>
@@ -756,7 +808,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           <div id="reasoningContent"></div>
         </div>
         
-        <!-- Links -->
         <div class="link-row">
           <button id="linkAmz" class="ext-link" onclick="openAmazonOffers()">Open Offers ↗</button>
           <button id="linkKeepa" class="ext-link" onclick="toggleKeepa()">View Graph 📉</button>
@@ -766,7 +817,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           <div style="text-align:center; padding:10px; color:#333; font-size:12px;">Loading Graph...</div>
         </div>
 
-        <!-- Decision Tracking (only for CONSIDER) -->
         <div class="decision-section hidden" id="decisionSection">
           <div class="decision-prompt">📋 What's Your Decision?</div>
           <div class="decision-buttons">
@@ -835,14 +885,17 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
     <div id="historyList" style="flex:1; overflow-y:auto;"></div>
     <div class="btn-grid" style="margin-top:16px;">
       <button onclick="closeHistory()" class="btn-main btn-back">Back</button>
-      <button onclick="clearHistory()" class="btn-main" style="background: var(--red); color: #fff;">Clear All</button>
+      <button onclick="exportCSV()" class="btn-main btn-save">Download All CSV</button>
     </div>
+    <button onclick="clearHistory()" class="btn-main" 
+        style="background: transparent; color: var(--red); border: 1px solid var(--red); margin-top: 10px;">
+        <i class="fas fa-trash"></i> Clear All History
+    </button>
   </div>
 
   <div class="actions">
     <button onclick="showSettings()" class="act-btn btn-set"><i class="fas fa-cog"></i></button>
-    <button onclick="showHistory()" class="act-btn btn-hist">History</button>
-    <button onclick="exportCSV()" class="act-btn btn-dl">CSV</button>
+    <button onclick="showHistory()" class="act-btn btn-hist" style="flex: 2;">History</button>
     <button onclick="openCamera()" class="act-btn btn-cam"><i class="fas fa-camera"></i></button>
   </div>
 </div>
@@ -2432,11 +2485,59 @@ function saveSettings() {
     closeSettings();
 }
 
+/* ================= HISTORY MANAGEMENT (VIEW & DELETE) ================= */
+
+let focusedDeleteTimestamp = null;
+
+function toggleDeleteConfirmation(timestamp) {
+    const wrapper = document.querySelector(`.history-item-wrapper[data-timestamp="${timestamp}"]`);
+    const overlay = wrapper ? wrapper.querySelector('.delete-confirm-overlay') : null;
+    
+    // If we click the same item again (to cancel), or cancel
+    if(focusedDeleteTimestamp === timestamp) {
+        if(overlay) overlay.classList.remove('active');
+        focusedDeleteTimestamp = null;
+        return;
+    }
+    
+    // First, close any currently open confirmation
+    if (focusedDeleteTimestamp) {
+        toggleDeleteConfirmation(focusedDeleteTimestamp);
+    }
+    
+    // Then, open the new confirmation
+    if (overlay) {
+        overlay.classList.add('active');
+        focusedDeleteTimestamp = timestamp;
+    }
+}
+
+function deleteScan(timestamp) {
+    // We already have a confirmation built into the UI, so we only need the filter/re-render logic
+    
+    const initialLength = scanHistory.length;
+    
+    scanHistory = scanHistory.filter(item => item.timestamp !== timestamp);
+    localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+    
+    if (scanHistory.length < initialLength) {
+        // Successful deletion
+        if (navigator.vibrate) navigator.vibrate(50);
+        focusedDeleteTimestamp = null;
+        showHistory(); // Re-render the history page
+    } else {
+        alert("Error deleting item.");
+    }
+}
+
+
 function showHistory() {
     const page = document.getElementById('historyPage');
     const list = document.getElementById('historyList');
     
     if(!list) return;
+    
+    focusedDeleteTimestamp = null; // Reset focus when opening history
     
     // Render all history items
     if(scanHistory.length === 0) {
@@ -2450,21 +2551,32 @@ function showHistory() {
             // Decision badge
             let decisionBadge = '';
             if(item.decision === 'BOUGHT') {
-                decisionBadge = '<span style="background:rgba(16,185,129,0.2); color:var(--green); padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700;">✓ BOUGHT</span>';
+                decisionBadge = `<span style="background:rgba(16,185,129,0.2); color:var(--green); padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700;">✓ BOUGHT</span>`;
             } else if(item.decision === 'PASSED') {
-                decisionBadge = '<span style="background:rgba(239,68,68,0.2); color:var(--red); padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700;">✗ PASSED</span>';
+                decisionBadge = `<span style="background:rgba(239,68,68,0.2); color:var(--red); padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700;">✗ PASSED</span>`;
             }
             
+            // The new history item structure with click handler
             return `
-                <div style="padding:12px; border-bottom:1px solid var(--border);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:700;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="color:${color}">${item.verdict}</span>
-                            ${decisionBadge}
+                <div class="history-item-wrapper" data-timestamp="${item.timestamp}">
+                    <div class="history-item-content" onclick="toggleDeleteConfirmation(${item.timestamp})">
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-weight:700;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="color:${color}">${item.verdict}</span>
+                                ${decisionBadge}
+                            </div>
+                            <span style="color:${item.profit >= 0 ? 'var(--green)' : 'var(--red)'}">$${item.profit.toFixed(2)}</span>
                         </div>
-                        <span style="color:${item.profit >= 0 ? 'var(--green)' : 'var(--red)'}">$${item.profit.toFixed(2)}</span>
+                        <div style="font-size:12px; color:var(--muted); margin-top:4px;">${item.title.substring(0,60)}...</div>
                     </div>
-                    <div style="font-size:12px; color:var(--muted); margin-top:4px;">${item.title.substring(0,60)}...</div>
+                    
+                    <div class="delete-confirm-overlay">
+                        <div class="delete-message">Delete this scan?</div>
+                        <div class="confirm-buttons">
+                            <button class="btn-delete-confirm cancel" onclick="toggleDeleteConfirmation(${item.timestamp}); event.stopPropagation();">Cancel</button>
+                            <button class="btn-delete-confirm delete" onclick="deleteScan(${item.timestamp}); event.stopPropagation();">DELETE</button>
+                        </div>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -2540,29 +2652,25 @@ function recordDecision(decision) {
     if(navigator.vibrate) navigator.vibrate(100);
 }
 
-/* ================= CSV EXPORT ================= */
+/* ================= CSV EXPORT (UPDATED) ================= */
 function exportCSV() {
-    // Filter for BUY and CONSIDER only
-    const exportable = scanHistory.filter(item => 
-        item.verdict === 'BUY' || item.verdict === 'CONSIDER'
-    );
+    // Export ALL history items
+    const exportable = scanHistory; 
     
     if(exportable.length === 0) {
-        alert('No BUY or CONSIDER items to export!');
+        alert('No scans in history to export!');
         return;
     }
     
     // Calculate stats
-    const buyCount = exportable.filter(item => item.verdict === 'BUY').length;
-    const considerCount = exportable.filter(item => item.verdict === 'CONSIDER').length;
-    const boughtCount = exportable.filter(item => item.decision === 'BOUGHT').length;
+    const exportableLength = exportable.length;
     const totalProfit = exportable.reduce((sum, item) => sum + item.profit, 0);
     
     // Build CSV matching scout_scans_template.csv format
     // Format: TITLE,SCAN DATE,RATING,ISBN,ASIN,RECOMMENDED PRICE
     const headers = ['TITLE', 'SCAN DATE', 'RATING', 'ISBN', 'ASIN', 'RECOMMENDED PRICE'];
     const rows = exportable.map(item => {
-        // Format date as MM/DD/YYYY to match template
+        // Format date as MM/DD/YYYY
         const date = item.timestamp ? new Date(item.timestamp).toLocaleDateString('en-US') : '';
         
         // Title - escape quotes
@@ -2580,13 +2688,18 @@ function exportCSV() {
         // RECOMMENDED PRICE - market price without $ or formatting
         const price = item.market ? item.market.toFixed(2) : '0.00';
         
-        return `${title},${date},${rating},${isbn},${asin},${price}`;
+        // Ensure values are wrapped in quotes if they contain commas or quotes
+        const safeTitle = `"${title}"`;
+        const safeIsbn = `"${isbn}"`;
+        const safeAsin = `"${asin}"`;
+
+        return [safeTitle, date, rating, safeIsbn, safeAsin, price].join(',');
     });
     
     const csv = [headers.join(','), ...rows].join('\n');
     
     // Download file
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -2597,7 +2710,7 @@ function exportCSV() {
     // Show success toast with decision stats
     const toast = document.getElementById('exportToast');
     if(toast) {
-        toast.innerHTML = `📊 ${boughtCount} Bought, ${buyCount} BUY, ${considerCount} CONSIDER • $${totalProfit.toFixed(2)} profit`;
+        toast.innerHTML = `📊 ${exportableLength} Items Exported • $${totalProfit.toFixed(2)} total profit`;
         toast.classList.remove('hidden');
         setTimeout(() => toast.classList.add('hidden'), 4000);
     }
