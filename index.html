@@ -447,8 +447,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
   <div class="actions">
     <button onclick="showSettings()" class="act-btn btn-set"><i class="fas fa-cog"></i></button>
     <button onclick="showHistory()" class="act-btn btn-hist">History</button>
-    <button onclick="downloadCSV()" class="act-btn btn-dl">CSV</button>
-    <button onclick="clearCSVData()" class="act-btn btn-clr">Clear</button>
+    <button class="act-btn btn-dl">CSV</button>
+    <button onclick="clearScan()" class="act-btn btn-clr">Clear</button>
   </div>
 </div>
 
@@ -468,7 +468,6 @@ let lastData = null;
 let focusLock = false;
 let scanQueue = [];
 let scanHistory = [];
-let csvData = []; // Tracks all BUY and MAYBE scans for CSV export
 let isProcessing = false;
 let tokens = 20; 
 let tokenRefill = setInterval(() => { if(tokens < 20) tokens++; updateTokenUI(); }, 3000); 
@@ -1153,20 +1152,16 @@ function analyze(data) {
         if (baseScore >= 75) {
             isGem = true;
             verdict = 'BUY';
-            score = baseScore;
-        } else if (baseScore >= 50) {
+            score = 95;
+        } else {
             // Has gem signal but weak underlying metrics - no diamond
             isGem = false;
-            verdict = 'MAYBE';
-            score = baseScore;
-        } else {
-            isGem = false;
-            verdict = 'REJECT';
+            verdict = (baseScore >= 50) ? 'MAYBE' : 'REJECT';
             score = baseScore;
         }
     } else if (data.drops > 0) {
+        verdict = 'BUY';
         score = 80 + Math.min(19, data.drops);
-        verdict = (score >= 75) ? 'BUY' : 'MAYBE';
     } else {
         // RESURRECTION LOGIC
         if(data.drops180 > 0) {
@@ -1288,19 +1283,6 @@ function render(res, data) {
     
     setText('aiRecText', "");
     card.classList.remove('hidden');
-    
-    // Track BUY and MAYBE scans for CSV export
-    if (res.verdict === 'BUY' || res.verdict === 'MAYBE') {
-        const csvEntry = {
-            title: data.title,
-            scanDate: new Date().toLocaleDateString(),
-            rating: res.score,
-            isbn: data.isbn || '',
-            asin: data.asin || '',
-            recommendedPrice: res.market.toFixed(2)
-        };
-        csvData.push(csvEntry);
-    }
 }
 
 function renderTags(id, tags) {
@@ -1548,59 +1530,6 @@ function togglePriceAdjuster() {
         icon.innerText = '▶';
     }
 }
-
-/* ================= CSV EXPORT ================= */
-function downloadCSV() {
-    if (csvData.length === 0) {
-        alert('No BUY or MAYBE scans to export. Scan some books first!');
-        return;
-    }
-    
-    // Create CSV header
-    let csv = 'TITLE,SCAN DATE,RATING,ISBN,ASIN,RECOMMENDED PRICE\n';
-    
-    // Add data rows
-    csvData.forEach(entry => {
-        const row = [
-            entry.title,
-            entry.scanDate,
-            entry.rating,
-            entry.isbn,
-            entry.asin,
-            entry.recommendedPrice
-        ].join(',');
-        csv += row + '\n';
-    });
-    
-    // Create download link
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `scout_scans_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function clearCSVData() {
-    if (csvData.length === 0) {
-        alert('No scan data to clear.');
-        return;
-    }
-    
-    const count = csvData.length;
-    const confirmed = confirm(`Are you sure? This will clear ${count} scanned book${count !== 1 ? 's' : ''}.`);
-    
-    if (confirmed) {
-        csvData = [];
-        alert('CSV data cleared successfully.');
-    }
-}
-
 </script>
 
 <script>
