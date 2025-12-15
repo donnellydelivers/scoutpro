@@ -1153,16 +1153,20 @@ function analyze(data) {
         if (baseScore >= 75) {
             isGem = true;
             verdict = 'BUY';
-            score = 95;
-        } else {
+            score = baseScore;
+        } else if (baseScore >= 50) {
             // Has gem signal but weak underlying metrics - no diamond
             isGem = false;
-            verdict = (baseScore >= 50) ? 'MAYBE' : 'REJECT';
+            verdict = 'MAYBE';
+            score = baseScore;
+        } else {
+            isGem = false;
+            verdict = 'REJECT';
             score = baseScore;
         }
     } else if (data.drops > 0) {
-        verdict = 'BUY';
         score = 80 + Math.min(19, data.drops);
+        verdict = (score >= 75) ? 'BUY' : 'MAYBE';
     } else {
         // RESURRECTION LOGIC
         if(data.drops180 > 0) {
