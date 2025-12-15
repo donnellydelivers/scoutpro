@@ -245,6 +245,13 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
   display: flex; background: rgba(0,0,0,0.3); border-radius: 99px; padding: 4px; margin: 20px auto 16px auto;
   width: fit-content; border: 1px solid var(--border);
 }
+
+.category-badge {
+  display: inline-block; background: rgba(167,139,250,0.15); 
+  color: var(--purple); padding: 6px 14px; border-radius: 99px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; border: 1px solid rgba(167,139,250,0.3);
+}
 .cond-btn { padding: 6px 16px; border-radius: 99px; font-size: 12px; font-weight: 700; color: var(--muted); cursor: pointer; }
 .cond-btn.active { background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.4); }
 
@@ -418,6 +425,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
   background: rgba(167,139,250,0.08); border: 2px solid rgba(167,139,250,0.3); border-radius: 12px;
   padding: 16px; margin-bottom: 16px;
 }
+.gemini-opinion.loading {
+  background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.3);
+}
 .gemini-opinion.upgrade {
   background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.4);
 }
@@ -427,6 +437,16 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 .gemini-header {
   display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
   padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.collapse-icon {
+  color: rgba(255,255,255,0.5); cursor: pointer; font-size: 18px; font-weight: 800;
+  padding: 4px 8px; transition: all 0.2s;
+}
+.collapse-icon:hover {
+  color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.1); border-radius: 4px;
+}
+.gemini-content.hidden {
+  display: none;
 }
 .gemini-title {
   font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
@@ -462,6 +482,76 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 }
 .gemini-text {
   font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.85); text-align: left;
+}
+
+/* === DECISION TRACKING === */
+.decision-section {
+  background: rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 20px; margin-top: 20px;
+}
+
+.decision-prompt {
+  text-align: center; font-size: 13px; font-weight: 700;
+  color: rgba(255,255,255,0.9); margin-bottom: 14px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.decision-buttons {
+  display: flex; gap: 12px;
+}
+
+.decision-btn {
+  flex: 1; padding: 14px 20px; border-radius: 12px;
+  font-size: 15px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s;
+  border: 2px solid; display: flex; align-items: center;
+  justify-content: center; gap: 8px; background: transparent;
+}
+
+.decision-btn.buy {
+  background: rgba(16,185,129,0.2); color: var(--green);
+  border-color: rgba(16,185,129,0.5);
+}
+
+.decision-btn.buy:hover {
+  background: rgba(16,185,129,0.3); border-color: var(--green);
+  transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+}
+
+.decision-btn.buy:active {
+  transform: scale(0.98);
+}
+
+.decision-btn.pass {
+  background: rgba(239,68,68,0.2); color: var(--red);
+  border-color: rgba(239,68,68,0.5);
+}
+
+.decision-btn.pass:hover {
+  background: rgba(239,68,68,0.3); border-color: var(--red);
+  transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239,68,68,0.3);
+}
+
+.decision-btn.pass:active {
+  transform: scale(0.98);
+}
+
+.decision-btn.selected {
+  animation: decisionPulse 0.5s ease;
+}
+
+@keyframes decisionPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.decision-note {
+  text-align: center; font-size: 11px; color: #666;
+  margin-top: 10px; font-style: italic;
+}
+
+.decision-note.success {
+  color: var(--green); font-weight: 700;
 }
 
 .hidden { display: none !important; }
@@ -624,6 +714,11 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           </div>
         </div>
 
+        <!-- Category Badge -->
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div id="categoryBadge" class="category-badge">📚 Category Loading...</div>
+        </div>
+
         <!-- Condition Toggle -->
         <div class="condition-toggle">
           <div id="btnCondUsed" class="cond-btn active" onclick="setCondition('USED')">Used</div>
@@ -670,64 +765,22 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           <div style="text-align:center; padding:10px; color:#333; font-size:12px;">Loading Graph...</div>
         </div>
 
-        <details class="details-panel">
-          <summary class="details-summary">Show Details</summary>
-          <div class="details-body">
-             <div id="geminiReasoningHeader" class="hidden" style="text-align: center;">
-                 <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--purple); margin-bottom: 6px;">GEMINI REASONING</div>
-             </div>
-             
-             <div id="aiRecBox" class="ai-box hidden">
-                <div id="aiRecText" style="font-size:12px; color:#ccc; line-height:1.5;"></div>
-             </div>
-
-             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:center; margin-bottom:12px; margin-top:12px;">
-                 <div class="metric" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
-                     <div class="metric-lbl">90d AVG RANK</div>
-                     <div class="metric-val" id="rankVal">--</div>
-                 </div>
-                 <div class="metric" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
-                     <div class="metric-lbl">RECOMMENDED PRICE</div>
-                     <div class="metric-val" id="targetVal">--</div>
-                 </div>
-             </div>
-
-             <div class="metrics-grid">
-                 <div class="metric">
-                     <div class="metric-lbl">BUY BOX</div>
-                     <div class="metric-val" id="bbPriceVal">--</div>
-                 </div>
-                 <div class="metric">
-                     <div class="metric-lbl">BUY BOX WINNER</div>
-                     <div class="metric-val" id="bbWinnerVal">--</div>
-                 </div>
-                 <div class="metric">
-                     <div class="metric-lbl">90d AVG BB</div>
-                     <div class="metric-val" id="avgBbVal">--</div>
-                 </div>
-                 <div class="metric">
-                     <div class="metric-lbl">FBA OFFERS</div>
-                     <div class="metric-val" id="fbaOffersVal">--</div>
-                 </div>
-                 <div class="metric" style="grid-column: 1 / -1; background:rgba(52, 211, 153, 0.1); border:1px solid rgba(52, 211, 153, 0.2);">
-                     <div class="metric-lbl" style="color:var(--green);">180d SALES</div>
-                     <div class="metric-val" id="drops180Val">--</div>
-                 </div>
-             </div>
-
-             <div class="insight-grid">
-              <div class="insight-box">
-                <div class="insight-title" style="color:var(--green);">Positive Signals</div>
-                <div class="insight-tags" id="posTags"></div>
-              </div>
-              <div class="insight-box">
-                <div class="insight-title" style="color:var(--red);">Negative Signals</div>
-                <div class="insight-tags" id="negTags"></div>
-              </div>
-            </div>
-
+        <!-- Decision Tracking -->
+        <div class="decision-section">
+          <div class="decision-prompt">📋 What's Your Decision?</div>
+          <div class="decision-buttons">
+            <button class="decision-btn buy" onclick="recordDecision('BOUGHT')">
+              <span>✓</span>
+              <span>BUY IT</span>
+            </button>
+            <button class="decision-btn pass" onclick="recordDecision('PASSED')">
+              <span>✗</span>
+              <span>PASS</span>
+            </button>
           </div>
-        </details>
+          <div class="decision-note" id="decisionNote">Your decision will be saved with this scan</div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -808,7 +861,8 @@ let CONFIG = {
 let lastData = null;
 let focusLock = false;
 let scanQueue = [];
-let scanHistory = [];
+let scanHistory = JSON.parse(localStorage.getItem('scanHistory') || '[]');
+let currentScan = null; // Tracks current scan for decision recording
 let isProcessing = false;
 let tokens = 20; 
 let tokenRefill = setInterval(() => { if(tokens < 20) tokens++; updateTokenUI(); }, 3000); 
@@ -1404,14 +1458,20 @@ function parseProduct(p) {
     const toPrice = (v) => (v && v > 0) ? v / 100 : 0;
     const toVal = (v) => (v == -1 || v == null) ? 0 : v;
     
+    // Check for restriction flag
+    const isRestricted = p.hazMat === 1 || 
+                       (p.title && /international edition|instructor|review copy|not for resale|teacher edition/i.test(p.title));
+    
     return {
         title: p.title || "Unknown",
         asin: p.asin,
-        rank: toVal(s[3]), 
-        avgRank: toVal(avg[3]), 
-        drops: p.stats.salesRankDrops30 || 0,
+        isbn: p.eanList?.[0] || '',
+        rank: toVal(s[3]),
+        avgRank: toVal(avg[3]),
+        drops30: p.stats.salesRankDrops30 || 0,
         drops90: p.stats.salesRankDrops90 || 0,
-        drops180: p.stats.salesRankDrops180 || 0, 
+        drops180: p.stats.salesRankDrops180 || 0,
+        drops360: p.stats.salesRankDrops360 || 0,
         newPrice: toPrice(s[1]),
         usedPrice: toPrice(s[2]),
         fbaPrice: toPrice(s[10]),
@@ -1419,10 +1479,101 @@ function parseProduct(p) {
         buyBoxPrice: toPrice(s[18]),
         avgNew: toPrice(avg[1]),
         avgUsed: toPrice(avg[2]),
-        avgBb: toPrice(avg[18]), 
-        weight: p.packageWeight ? p.packageWeight/100 : 1,
-        offers: toVal(s[11]) 
+        avgBb: toPrice(avg[18]),
+        weight: p.packageWeight ? p.packageWeight / 100 : 1,
+        fbaCount: toVal(s[16]) || 0,
+        totalOffers: toVal(s[11]) || 0,
+        category: p.categoryTree?.[0]?.name || 'Unknown',
+        reviewCount: p.reviewCount || 0,
+        rating: p.rating || 0,
+        restricted: isRestricted
     };
+}
+
+/* ================= CATEGORY ICON HELPER ================= */
+function getCategoryIcon(category) {
+    const cat = (category || '').toLowerCase();
+    
+    if(cat.includes('book')) return '📚';
+    if(cat.includes('music') || cat.includes('cd') || cat.includes('vinyl')) return '💿';
+    if(cat.includes('video') || cat.includes('dvd') || cat.includes('blu-ray') || cat.includes('movie')) return '🎬';
+    if(cat.includes('video game') || cat.includes('game')) return '🎮';
+    if(cat.includes('toy')) return '🧸';
+    if(cat.includes('electronic')) return '📱';
+    if(cat.includes('home') || cat.includes('kitchen')) return '🏠';
+    if(cat.includes('sport')) return '⚽';
+    if(cat.includes('clothing') || cat.includes('apparel')) return '👕';
+    if(cat.includes('health') || cat.includes('beauty')) return '💊';
+    
+    return '📦'; // Default for unknown categories
+}
+
+/* ================= CATEGORY-AWARE RANK THRESHOLDS ================= */
+function getRankThresholds(category) {
+    const cat = (category || '').toLowerCase();
+    
+    // Each category has different rank scales
+    if(cat.includes('book')) {
+        return { good: 500000, decent: 2000000, poor: 5000000 };
+    } else if(cat.includes('music') || cat.includes('cd') || cat.includes('vinyl')) {
+        return { good: 200000, decent: 800000, poor: 2000000 };
+    } else if(cat.includes('video') || cat.includes('dvd') || cat.includes('blu-ray')) {
+        return { good: 300000, decent: 1200000, poor: 3000000 };
+    } else if(cat.includes('video game')) {
+        return { good: 100000, decent: 500000, poor: 1500000 };
+    } else if(cat.includes('toy')) {
+        return { good: 300000, decent: 1500000, poor: 4000000 };
+    } else {
+        // Default for unknown categories
+        return { good: 500000, decent: 2000000, poor: 5000000 };
+    }
+}
+
+/* ================= CATEGORY-AWARE FEE CALCULATION ================= */
+function calculateFees(price, weight, category) {
+    const closingFee = 1.80;
+    let referralFee = 0;
+    let fulfillmentFee = 0;
+    
+    // Determine category type
+    const cat = (category || '').toLowerCase();
+    const isBooks = cat.includes('book');
+    const isMedia = cat.includes('music') || cat.includes('video') || cat.includes('dvd') || cat.includes('cd') || cat.includes('vinyl') || cat.includes('blu-ray');
+    const isGames = cat.includes('game') || cat.includes('toy');
+    
+    // REFERRAL FEES (Amazon's cut)
+    if(isBooks) {
+        referralFee = price * 0.15; // 15% for books
+    } else if(isMedia) {
+        referralFee = price * 0.15; // 15% for media
+    } else if(isGames) {
+        referralFee = price * 0.15; // 15% for toys & games
+    } else {
+        referralFee = price * 0.15; // Default 15%
+    }
+    
+    // FULFILLMENT FEES (FBA shipping/handling)
+    if(isBooks) {
+        // Books: weight-based
+        if(weight <= 0.5) fulfillmentFee = 3.07;
+        else if(weight <= 1) fulfillmentFee = 3.37;
+        else if(weight <= 2) fulfillmentFee = 4.16;
+        else if(weight <= 3) fulfillmentFee = 5.32;
+        else fulfillmentFee = 5.32 + ((weight - 3) * 0.38);
+    } else if(isMedia) {
+        // Media: standard + weight
+        if(weight <= 0.5) fulfillmentFee = 2.92;
+        else if(weight <= 1) fulfillmentFee = 3.16;
+        else if(weight <= 2) fulfillmentFee = 3.74;
+        else fulfillmentFee = 3.74 + ((weight - 2) * 0.38);
+    } else {
+        // Other: standard small/large item
+        if(weight <= 1) fulfillmentFee = 3.22;
+        else if(weight <= 2) fulfillmentFee = 4.40;
+        else fulfillmentFee = 4.40 + ((weight - 2) * 0.38);
+    }
+    
+    return closingFee + referralFee + fulfillmentFee;
 }
 
 /* ================= ANALYSIS (UPGRADED TO BUY/CONSIDER/REJECT) ================= */
@@ -1450,18 +1601,22 @@ function analyze(data) {
     
     market = Math.max(0, market); // Prevent negative market price
 
-    const fees = 1.80 + (data.weight > 1 ? 3.50 : 2.50) + (market * 0.15);
+    // CATEGORY-AWARE FEE CALCULATION
+    const fees = calculateFees(market, data.weight, data.category);
     const profit = market - fees - CONFIG.buyCost;
     
     let verdict = 'CONSIDER';
     let score = 50;
     let isGem = false;
     
+    // Get category-specific rank thresholds
+    const thresholds = getRankThresholds(data.category);
+    
     const isSleeper = (data.drops30 === 0 && market > 35);
-    const isFbaVoid = (data.totalOffers === 0 && data.avgRank < 600000 && profit > 10);
+    const isFbaVoid = (data.totalOffers === 0 && data.avgRank < thresholds.decent && profit > 10);
     const isDip = (data.usedPrice > 0 && data.avgUsed > 0 && data.usedPrice < (data.avgUsed * 0.4) && profit > 5);
-    const isTextbook = (data.newPrice > 80 && data.usedPrice < 20);
-    const isRare = (data.avgRank !== -1 && data.avgRank < 2000000 && data.totalOffers < 3 && market > 20);
+    const isTextbook = (data.newPrice > 80 && data.usedPrice < 20 && data.category && data.category.toLowerCase().includes('book'));
+    const isRare = (data.avgRank !== -1 && data.avgRank < thresholds.poor && data.totalOffers < 3 && market > 20);
     const isSprinter = (data.drops30 > 3 && data.drops30 > (data.drops90/3 * 1.5)); 
     const isPhantom = (data.totalOffers > 50 && market > 15);
     const isFbaPrem = (data.fbaPrice > 0 && data.usedPrice > 0 && data.fbaPrice > (data.usedPrice * 1.4) && Math.abs(data.fbaPrice - data.buyBoxPrice) < 2); 
@@ -1510,14 +1665,17 @@ function analyze(data) {
         verdict = 'BUY';
         score = 80 + Math.min(19, data.drops30);
     } else {
-        // RESURRECTION LOGIC
+        // RESURRECTION LOGIC - No 30d sales but has 180d history
         if(data.drops180 > 0) {
             allTags.push({text: "Has 180d Sales", type: "good"}); 
-            if(market > 20) {
-                score = 55; // Base 20 + 35
+            
+            // Score based on PROFIT, not just price
+            // Good profit (>$8) OR decent price (>$15) = CONSIDER
+            if(profit >= 8 || market >= 15) {
+                score = 55;
                 allTags.push({text: "Recent Lull", type: "warn"});
             } else {
-                score = 30; // Base 20 + 10
+                score = 30;
                 allTags.push({text: "Slow & Cheap", type: "bad"});
             }
             verdict = (score >= 50) ? 'CONSIDER' : 'REJECT';
@@ -1591,6 +1749,14 @@ function render(res, data) {
     // Update book title
     setText('itemTitle', data.title);
     
+    // Update category badge
+    const categoryBadge = document.getElementById('categoryBadge');
+    if(categoryBadge) {
+        const cat = data.category || 'Unknown';
+        const icon = getCategoryIcon(cat);
+        categoryBadge.textContent = `${icon} ${cat}`;
+    }
+    
     // Update visual meter pricing (NO + SIGNS!)
     const maxPrice = Math.max(res.market, 100);
     const pricePercent = Math.min(100, (res.market / maxPrice) * 100);
@@ -1616,37 +1782,119 @@ function render(res, data) {
     if(reasoningContent) {
         const signals = [];
         
-        // Map tags to signal objects with icons
-        res.posTags.forEach(tag => {
-            let icon = '✨';
-            if(tag.text.includes('Velocity')) icon = '🚀';
-            else if(tag.text.includes('Gem') || tag.text.includes('💎')) icon = '💎';
-            else if(tag.text.includes('Rank')) icon = '📊';
-            else if(tag.text.includes('Profitable')) icon = '💰';
-            else if(tag.text.includes('180d')) icon = '📅';
+        // Signal descriptions mapping
+        const getSignalInfo = (tagText, isPositive) => {
+            const tag = tagText.toLowerCase();
             
+            // Positive signals
+            if(tag.includes('velocity')) return {
+                icon: '🚀',
+                desc: `${data.drops30} sales in 30 days shows strong demand. Items moving this fast typically sell within weeks.`
+            };
+            if(tag.includes('patience for big payout')) return {
+                icon: '💎',
+                desc: `No recent sales but worth $${res.market.toFixed(2)}. Patient sellers can capitalize when demand returns.`
+            };
+            if(tag.includes('zero fba')) return {
+                icon: '💎',
+                desc: `No FBA competition despite ${data.avgRank < 1000000 ? 'good' : 'decent'} rank. You could dominate Buy Box.`
+            };
+            if(tag.includes('buy the dip')) return {
+                icon: '💎',
+                desc: `Current price ($${data.usedPrice.toFixed(2)}) is ${Math.round((1 - data.usedPrice/data.avgUsed) * 100)}% below 90-day average. Undervalued opportunity.`
+            };
+            if(tag.includes('sell cheaper used textbook')) return {
+                icon: '💎',
+                desc: `Expensive new ($${data.newPrice.toFixed(2)}) vs cheap used ($${data.usedPrice.toFixed(2)}). Classic textbook arbitrage play.`
+            };
+            if(tag.includes('low comp')) return {
+                icon: '💎',
+                desc: `Only ${data.totalOffers} total sellers with decent rank. Less competition = easier sales.`
+            };
+            if(tag.includes('picking up pace')) return {
+                icon: '💎',
+                desc: `Recent velocity accelerating. ${data.drops30} sales in 30d vs ${Math.round(data.drops90/3)} expected shows momentum.`
+            };
+            if(tag.includes('crowded but fine')) return {
+                icon: '💎',
+                desc: `${data.totalOffers} sellers seems high, but worth $${res.market.toFixed(2)} with profit above floor. Volume market.`
+            };
+            if(tag.includes('fba premium')) return {
+                icon: '💎',
+                desc: `FBA price ($${data.fbaPrice.toFixed(2)}) is ${Math.round((data.fbaPrice/data.usedPrice - 1) * 100)}% above MF. Prime customers pay more.`
+            };
+            if(tag.includes('solid rank')) return {
+                icon: '📊',
+                desc: `Avg rank ${data.avgRank < 100000 ? 'under 100k' : 'under 500k'} indicates consistent demand in this category.`
+            };
+            if(tag.includes('180d sales')) return {
+                icon: '📅',
+                desc: `${data.drops180} sales over 180 days. Slower mover but still active. Expect 2-6 month sell-through.`
+            };
+            if(tag.includes('recent lull')) return {
+                icon: '⚠️',
+                desc: `Historical sales (${data.drops180} in 180d) but none recently. Market cooling or seasonal dip.`
+            };
+            if(tag.includes('profitable')) return {
+                icon: '💰',
+                desc: `Net profit of $${res.profit.toFixed(2)} after fees ($${(res.market * 0.15 + (data.weight > 1 ? 5.30 : 4.30)).toFixed(2)}) and your cost ($${CONFIG.buyCost.toFixed(2)}).`
+            };
+            
+            // Negative signals
+            if(tag.includes('negative profit')) return {
+                icon: '❌',
+                desc: `You'd lose $${Math.abs(res.profit).toFixed(2)} per unit after Amazon fees and your cost. Not viable.`
+            };
+            if(tag.includes('thin margins')) return {
+                icon: '⚠️',
+                desc: `Profit ($${res.profit.toFixed(2)}) below your floor ($${CONFIG.profitFloor.toFixed(2)}). Risk not worth reward.`
+            };
+            if(tag.includes('0 sales')) return {
+                icon: '📉',
+                desc: `Zero sales in 180 days. Dead inventory risk is very high. Could sit for months or years.`
+            };
+            if(tag.includes('high rank')) return {
+                icon: '📈',
+                desc: `Rank over 2M indicates very slow sales. Expect 6+ months to sell, or it may never sell.`
+            };
+            if(tag.includes('low value')) return {
+                icon: '💵',
+                desc: `Selling for under $10 means tiny profits after fees. Not worth storage space or shipping hassle.`
+            };
+            if(tag.includes('slow & cheap')) return {
+                icon: '⚠️',
+                desc: `Under $20 AND slow sales (180d only). Low profit potential with high risk of long storage.`
+            };
+            
+            // Default
+            return {
+                icon: isPositive ? '✨' : '⚠️',
+                desc: ''
+            };
+        };
+        
+        // Map positive tags
+        res.posTags.forEach(tag => {
+            if(tag.text === 'None') return;
+            
+            const info = getSignalInfo(tag.text, true);
             signals.push({
-                icon: icon,
+                icon: info.icon,
                 title: tag.text.replace('💎 ', ''),
-                text: '', // Tags don't have descriptions
+                text: info.desc,
                 type: 'positive'
             });
         });
         
-        // Add negative signals
+        // Map negative tags
         res.negTags.forEach(tag => {
-            if(tag.text === 'None') return; // Skip "None"
+            if(tag.text === 'None') return;
             
-            let icon = '⚠️';
-            if(tag.text.includes('Profit')) icon = '❌';
-            else if(tag.text.includes('Sales')) icon = '📉';
-            else if(tag.text.includes('Rank')) icon = '📈';
-            else if(tag.text.includes('Value')) icon = '💵';
-            
+            const info = getSignalInfo(tag.text, false);
             signals.push({
-                icon: icon,
+                icon: info.icon,
                 title: tag.text,
-                text: '',
+                text: info.desc,
                 type: 'negative'
             });
         });
@@ -1700,25 +1948,19 @@ function render(res, data) {
     const gemBadge = document.getElementById('geminiQuickBadge');
     const gemOpinion = document.getElementById('geminiOpinion');
     
-    // CONDITIONAL GEMINI DISPLAY LOGIC - Only show for CONSIDER books
+    // AUTO-LOAD GEMINI FOR CONSIDER ITEMS
     if (res.verdict === 'CONSIDER') {
-        if(gemBadge) {
-            gemBadge.classList.remove('hidden');
-            gemBadge.className = 'gemini-style-neutral'; 
-            gemBadge.innerHTML = '<i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>';
-        }
-        if(gemOpinion) gemOpinion.classList.add('hidden');
+        // Hide badge, auto-load opinion
+        if(gemBadge) gemBadge.classList.add('hidden');
+        
+        // Auto-trigger Gemini analysis
+        setTimeout(() => loadGeminiOpinion(), 500);
     } else {
+        // Hide both for BUY/REJECT
         if(gemBadge) gemBadge.classList.add('hidden');
         if(gemOpinion) gemOpinion.classList.add('hidden');
     }
     
-    // Hide old AI box
-    const gemBox = document.getElementById('aiRecBox');
-    if(gemBox) gemBox.classList.add('hidden');
-    if(geminiReasoningHeader) geminiReasoningHeader.classList.add('hidden');
-    
-    setText('aiRecText', "");
     card.classList.remove('hidden');
 }
 
@@ -1953,30 +2195,43 @@ function stopCamera() {
     }
 }
 
-/* ================= GEMINI (SCORE COMPARISON) ================= */
-async function toggleAI() {
-    if(!lastData) return;
+/* ================= GEMINI (AUTO-LOAD FOR CONSIDER) ================= */
+async function loadGeminiOpinion() {
+    if(!lastData || !currentScan) return;
+    if(!CONFIG.geminiKey) return; // Skip if no API key
     
-    const badge = document.getElementById('geminiQuickBadge');
     const geminiOpinion = document.getElementById('geminiOpinion');
-    
     if(!geminiOpinion) return;
-    
-    // Show loading state
-    badge.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> THINKING...';
     
     const result = analyze(lastData);
     const baseScore = result.score;
     
+    // Show loading state
+    geminiOpinion.className = 'gemini-opinion loading';
+    geminiOpinion.innerHTML = `
+        <div class="gemini-header">
+            <div class="gemini-title">
+                <span>🤖</span>
+                <span>GEMINI SECOND OPINION</span>
+            </div>
+        </div>
+        <div style="text-align:center; padding:30px; color:var(--muted);">
+            <i class="fas fa-circle-notch fa-spin" style="font-size:24px; margin-bottom:10px;"></i>
+            <div>Analyzing item...</div>
+        </div>
+    `;
+    geminiOpinion.classList.remove('hidden');
+    
     // Build prompt for Gemini
-    const prompt = `Analyze this book for Amazon FBA resale:
+    const itemType = lastData.category || 'item';
+    const prompt = `Analyze this ${itemType} for Amazon FBA resale:
 Title: ${lastData.title}
+Category: ${lastData.category || 'Unknown'}
 Your Score: ${baseScore} (CONSIDER)
 Profit: $${result.profit.toFixed(2)}
-Drops (30d): ${lastData.drops30}
-Drops (180d): ${lastData.drops180}
+Sales (30d): ${lastData.drops30}
+Sales (180d): ${lastData.drops180}
 Competition: ${lastData.totalOffers} total offers
-Category: ${lastData.category || 'Unknown'}
 
 Based on this data, do you recommend UPGRADE to BUY or DOWNGRADE to REJECT?
 What score (0-100) would you assign?
@@ -1989,12 +2244,6 @@ REASONING: [Your explanation]`;
 
     const model = 'gemini-2.0-flash-exp';
     const cleanKey = CONFIG.geminiKey.trim();
-    
-    if (!cleanKey) {
-        alert("Gemini Error: API Key is missing. Please enter your key in Settings.");
-        badge.innerHTML = '<i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>';
-        return;
-    }
 
     try {
         let url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`;
@@ -2031,6 +2280,19 @@ REASONING: [Your explanation]`;
                 throw new Error('Could not parse Gemini response');
             }
 
+            // Save to current scan history
+            if(currentScan) {
+                currentScan.geminiVerdict = geminiVerdict;
+                currentScan.geminiScore = geminiScore;
+                
+                // Update in scanHistory (first item)
+                if(scanHistory[0]) {
+                    scanHistory[0].geminiVerdict = geminiVerdict;
+                    scanHistory[0].geminiScore = geminiScore;
+                    localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+                }
+            }
+
             // Determine if upgrade or downgrade
             const isUpgrade = geminiVerdict === 'BUY';
             const opinionClass = isUpgrade ? 'upgrade' : 'downgrade';
@@ -2043,37 +2305,57 @@ REASONING: [Your explanation]`;
                         <span>🤖</span>
                         <span>GEMINI SECOND OPINION</span>
                     </div>
+                    <div class="collapse-icon" onclick="toggleGeminiCollapse()">−</div>
                 </div>
 
-                <div class="score-comparison">
-                    <div class="score-box">
-                        <div class="score-box-label">Your Score</div>
-                        <div class="score-box-value amber">${baseScore}</div>
+                <div class="gemini-content" id="geminiContent">
+                    <div class="score-comparison">
+                        <div class="score-box">
+                            <div class="score-box-label">Your Score</div>
+                            <div class="score-box-value amber">${baseScore}</div>
+                        </div>
+
+                        <div class="score-arrow ${isUpgrade ? 'up' : 'down'}">→</div>
+
+                        <div class="score-box">
+                            <div class="score-box-label">Gemini Score</div>
+                            <div class="score-box-value ${isUpgrade ? 'green' : 'red'}">${geminiScore}</div>
+                        </div>
                     </div>
 
-                    <div class="score-arrow ${isUpgrade ? 'up' : 'down'}">→</div>
-
-                    <div class="score-box">
-                        <div class="score-box-label">Gemini Score</div>
-                        <div class="score-box-value ${isUpgrade ? 'green' : 'red'}">${geminiScore}</div>
+                    <div class="gemini-verdict ${opinionClass}">
+                        ${isUpgrade ? '✓ UPGRADE → BUY' : '✗ DOWNGRADE → REJECT'}
                     </div>
-                </div>
 
-                <div class="gemini-verdict ${opinionClass}">
-                    ${isUpgrade ? 'UPGRADE → BUY' : 'DOWNGRADE → REJECT'}
+                    <div class="gemini-text">${geminiReasoning}</div>
                 </div>
-
-                <div class="gemini-text">${geminiReasoning}</div>
             `;
 
-            // Show the opinion box, hide the badge
             geminiOpinion.classList.remove('hidden');
-            badge.classList.add('hidden');
         }
     } catch(e) { 
         console.error('Gemini error:', e);
-        badge.innerHTML = '<i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>';
-        alert(`Gemini Error: ${e.message}\n\nTip: Check your API key and proxy settings.`);
+        // Show error state but don't interrupt user
+        geminiOpinion.innerHTML = `
+            <div class="gemini-header">
+                <div class="gemini-title">
+                    <span>🤖</span>
+                    <span>GEMINI UNAVAILABLE</span>
+                </div>
+            </div>
+            <div style="text-align:center; padding:20px; color:var(--muted); font-size:12px;">
+                ${e.message.includes('API') ? 'Check your API key in Settings' : 'Connection error'}
+            </div>
+        `;
+    }
+}
+
+function toggleGeminiCollapse() {
+    const content = document.getElementById('geminiContent');
+    const icon = document.querySelector('.collapse-icon');
+    if(content && icon) {
+        content.classList.toggle('hidden');
+        icon.textContent = content.classList.contains('hidden') ? '+' : '−';
     }
 }
 
@@ -2125,10 +2407,21 @@ function showHistory() {
             if(item.verdict === 'BUY') color = 'var(--green)';
             if(item.verdict === 'CONSIDER') color = 'var(--yellow)';
             
+            // Decision badge
+            let decisionBadge = '';
+            if(item.decision === 'BOUGHT') {
+                decisionBadge = '<span style="background:rgba(16,185,129,0.2); color:var(--green); padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700;">✓ BOUGHT</span>';
+            } else if(item.decision === 'PASSED') {
+                decisionBadge = '<span style="background:rgba(239,68,68,0.2); color:var(--red); padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700;">✗ PASSED</span>';
+            }
+            
             return `
                 <div style="padding:12px; border-bottom:1px solid var(--border);">
-                    <div style="display:flex; justify-content:space-between; font-weight:700;">
-                        <span style="color:${color}">${item.verdict}</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:700;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="color:${color}">${item.verdict}</span>
+                            ${decisionBadge}
+                        </div>
                         <span style="color:${item.profit >= 0 ? 'var(--green)' : 'var(--red)'}">$${item.profit.toFixed(2)}</span>
                     </div>
                     <div style="font-size:12px; color:var(--muted); margin-top:4px;">${item.title.substring(0,60)}...</div>
@@ -2149,8 +2442,14 @@ function addToHistory(res, data) {
         verdict: res.verdict, 
         profit: res.profit, 
         score: res.score,
+        market: res.market, // Add market price for CSV export
         title: data.title,
         asin: data.asin,
+        isbn: data.isbn || '', // Add ISBN for CSV export
+        category: data.category || 'Unknown',
+        geminiVerdict: null, // Will be filled when Gemini responds
+        geminiScore: null,
+        decision: null, // 'BOUGHT', 'PASSED', or null
         timestamp: Date.now()
     };
     
@@ -2163,6 +2462,42 @@ function addToHistory(res, data) {
     
     // Save to localStorage
     localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+    
+    // Set as current scan for decision tracking
+    currentScan = item;
+}
+
+/* ================= DECISION TRACKING ================= */
+function recordDecision(decision) {
+    if(!currentScan) {
+        alert('No active scan to record decision for');
+        return;
+    }
+    
+    // Update current scan
+    currentScan.decision = decision;
+    
+    // Update in scanHistory (it's the first item)
+    if(scanHistory[0]) {
+        scanHistory[0].decision = decision;
+        localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+    }
+    
+    // Visual feedback
+    const buttons = document.querySelectorAll('.decision-btn');
+    buttons.forEach(btn => btn.classList.remove('selected'));
+    event.target.closest('.decision-btn').classList.add('selected');
+    
+    const note = document.getElementById('decisionNote');
+    if(note) {
+        const emoji = decision === 'BOUGHT' ? '✓' : '✗';
+        const action = decision === 'BOUGHT' ? 'BUYING' : 'PASSING ON';
+        note.textContent = `${emoji} Decision saved: ${action} this item`;
+        note.className = 'decision-note success';
+    }
+    
+    // Vibrate if available
+    if(navigator.vibrate) navigator.vibrate(100);
 }
 
 /* ================= CSV EXPORT ================= */
@@ -2173,21 +2508,39 @@ function exportCSV() {
     );
     
     if(exportable.length === 0) {
-        alert('No BUY or CONSIDER books to export!');
+        alert('No BUY or CONSIDER items to export!');
         return;
     }
     
     // Calculate stats
     const buyCount = exportable.filter(item => item.verdict === 'BUY').length;
     const considerCount = exportable.filter(item => item.verdict === 'CONSIDER').length;
+    const boughtCount = exportable.filter(item => item.decision === 'BOUGHT').length;
     const totalProfit = exportable.reduce((sum, item) => sum + item.profit, 0);
     
-    // Build CSV
-    const headers = ['TITLE', 'VERDICT', 'SCORE', 'PROFIT', 'ASIN', 'DATE'];
+    // Build CSV matching scout_scans_template.csv format
+    // Format: TITLE,SCAN DATE,RATING,ISBN,ASIN,RECOMMENDED PRICE
+    const headers = ['TITLE', 'SCAN DATE', 'RATING', 'ISBN', 'ASIN', 'RECOMMENDED PRICE'];
     const rows = exportable.map(item => {
-        const date = item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A';
-        const title = (item.title || '').replace(/"/g, '""'); // Escape quotes
-        return `"${title}","${item.verdict}",${item.score},$${item.profit.toFixed(2)},${item.asin || ''},"${date}"`;
+        // Format date as MM/DD/YYYY to match template
+        const date = item.timestamp ? new Date(item.timestamp).toLocaleDateString('en-US') : '';
+        
+        // Title - escape quotes
+        const title = (item.title || '').replace(/"/g, '""');
+        
+        // RATING = score (0-100)
+        const rating = item.score || 0;
+        
+        // ISBN - extract from stored data
+        const isbn = item.isbn || '';
+        
+        // ASIN
+        const asin = item.asin || '';
+        
+        // RECOMMENDED PRICE - market price without $ or formatting
+        const price = item.market ? item.market.toFixed(2) : '0.00';
+        
+        return `${title},${date},${rating},${isbn},${asin},${price}`;
     });
     
     const csv = [headers.join(','), ...rows].join('\n');
@@ -2201,10 +2554,10 @@ function exportCSV() {
     a.click();
     URL.revokeObjectURL(url);
     
-    // Show success toast
+    // Show success toast with decision stats
     const toast = document.getElementById('exportToast');
     if(toast) {
-        toast.innerHTML = `📊 ${buyCount} BUY, ${considerCount} CONSIDER • $${totalProfit.toFixed(2)} profit`;
+        toast.innerHTML = `📊 ${boughtCount} Bought, ${buyCount} BUY, ${considerCount} CONSIDER • $${totalProfit.toFixed(2)} profit`;
         toast.classList.remove('hidden');
         setTimeout(() => toast.classList.add('hidden'), 4000);
     }
