@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Batch Product Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root { --primary: #4285f4; --success: #34a853; --danger: #ea4335; --advanced: #8e24aa; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f1f3f4; padding: 20px; color: #1a1a1a; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        header { background: white; padding: 20px 30px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        
+        /* Master Controls */
+        .global-controls { background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e0e0e0; }
+        .slider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 15px 0; }
+        
+        /* Drop Zone */
+        .drop-zone { background: white; border: 3px dashed #cbd5e0; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; margin-bottom: 20px; transition: 0.3s; }
+        .drop-zone:hover { border-color: var(--primary); background: #f8fbff; }
+
+        .image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
+        .image-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: flex; flex-direction: column; position: relative; }
+        
+        .image-preview { width: 100%; height: 280px; display: flex; align-items: center; justify-content: center; background: #e9ecef; position: relative; padding: 15px; overflow: hidden; }
+        .image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        .editor-panel { padding: 15px; background: #fafafa; border-top: 1px solid #eee; }
+        .control-group { margin-bottom: 10px; }
+        .control-group label { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #666; margin-bottom: 3px; text-transform: uppercase; }
+        
+        .btn-group { padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: white; border-top: 1px solid #eee; }
+        button { padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: 0.2s; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-adv { background: var(--advanced); color: white; }
+        .btn-undo { background: #f1f3f4; color: #3c4043; }
+        .btn-save-crop { background: var(--success); color: white; width: 100%; margin-top: 8px; display: none; }
+        
+        .status-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; z-index: 5; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pro Batch Product Editor</h1>
+            <div id="stats">0 Images Loaded</div>
+            <button class="btn-main" onclick="document.getElementById('apiModal').classList.add('active')">API Settings</button>
+        </header>
+
+        <div class="global-controls">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong>Mass Adjustments</strong>
+                <button class="btn-undo" onclick="undoMassStraightening()">↺ Undo All Straightening</button>
+            </div>
+            <div class="slider-grid">
+                <div class="control-group"><label>Mass Straighten</label><input type="range" id="g-rot" min="-45" max="45" step="0.5" value="0" oninput="syncAll('rot', this.value)"></div>
+                <div class="control-group"><label>Mass Lightning</label><input type="range" id="g-bri" min="50" max="150" value="100" oninput="syncAll('bri', this.value)"></div>
+                <div class="control-group"><label>Mass Saturation</label><input type="range" id="g-sat" min="0" max="150" value="100" oninput="syncAll('sat', this.value)"></div>
+                <div class="control-group"><label>Mass Shadow</label><input type="range" id="g-shd" min="0" max="25" value="0" oninput="syncAll('shd', this.value)"></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-main" onclick="batchProcessAI('1.4')">Remove All BG (v1.4)</button>
+                <button class="btn-adv" onclick="batchProcessAI('2.0')">Advanced Fix (v2.0)</button>
+                <button class="btn-main" style="background:#333" onclick="downloadAll()">Download All (ZIP)</button>
+            </div>
+        </div>
+
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <p><strong>Click or Drop Images Here</strong></p>
+            <input type="file" id="fileInput" multiple accept="image/*" onchange="handleFiles(this.files)" style="display:none">
+        </div>
+
+        <div class="image-grid" id="imageGrid"></div>
+    </div>
+
+    <div class="modal" id="apiModal">
+        <div style="background:white; padding:30px; border-radius:12px; width:350px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <h3>Hugging Face Token</h3>
+            <p style="font-size:11px; color:#666; margin: 10px 0;">Required for background removal.</p>
+            <input type="password" id="apiKeyInput" placeholder="hf_..." style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:6px;">
+            <button class="btn-main" style="width:100%; margin-bottom:8px;" onclick="saveKey()">Save & Close</button>
+            <button class="btn-undo" style="width:100%;" onclick="document.getElementById('apiModal').classList.remove('active')">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let images = [];
+        let apiKey = localStorage.getItem('huggingface_api_token') || '';
+
+        function saveKey() {
+            apiKey = document.getElementById('apiKeyInput').value.trim();
+            localStorage.setItem('huggingface_api_token', apiKey);
+            document.getElementById('apiModal').classList.remove('active');
+        }
+
+        async function handleFiles(files) {
+            for (const file of Array.from(files)) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = { id: Date.now() + Math.random(), name: file.name, originalData: e.target.result, processedData: null };
+                    images.push(img);
+                    renderImage(img);
+                    updateStats();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function renderImage(img) {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+            card.id = `card-${img.id}`;
+            card.innerHTML = `
+                <div class="image-preview">
+                    <img id="view-${img.id}" src="${img.originalData}">
+                    <div class="status-badge" id="status-${img.id}">Original</div>
+                </div>
+                <div class="editor-panel">
+                    <div class="control-group"><label>Straighten <span id="v-rot-${img.id}">0°</span></label><input type="range" id="rot-${img.id}" min="-45" max="45" step="0.5" value="0" oninput="applyFilters('${img.id}')"></div>
+                    <div class="control-group"><label>Lightning <span id="v-bri-${img.id}">100%</span></label><input type="range" id="bri-${img.id}" min="50" max="150" value="100" oninput="applyFilters('${img.id}')"></div>
+                    <div class="control-group"><label>Saturation <span id="v-sat-${img.id}">100%</span></label><input type="range" id="sat-${img.id}" min="0" max="150" value="100" oninput="applyFilters('${img.id}')"></div>
+                    <div class="control-group"><label>Shadow <span id="v-shd-${img.id}">0px</span></label><input type="range" id="shd-${img.id}" min="0" max="25" value="0" oninput="applyFilters('${img.id}')"></div>
+                    <button id="apply-${img.id}" class="btn-save-crop" onclick="saveEdits('${img.id}')">Save & Auto-Crop</button>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-main" onclick="processAI('${img.id}', '1.4')">Remove BG</button>
+                    <button class="btn-undo" onclick="revertImage('${img.id}')">Revert</button>
+                </div>
+            `;
+            document.getElementById('imageGrid').appendChild(card);
+        }
+
+        function syncAll(type, val) {
+            images.forEach(img => {
+                const slider = document.getElementById(`${type}-${img.id}`);
+                if (slider) { slider.value = val; applyFilters(img.id); }
+            });
+        }
+
+        function undoMassStraightening() {
+            document.getElementById('g-rot').value = 0;
+            syncAll('rot', 0);
+        }
+
+        async function applyFilters(id) {
+            const imgObj = images.find(i => i.id == id);
+            const rot = document.getElementById(`rot-${id}`).value;
+            const bri = document.getElementById(`bri-${id}`).value;
+            const sat = document.getElementById(`sat-${id}`).value;
+            const shd = document.getElementById(`shd-${id}`).value;
+
+            document.getElementById(`v-rot-${id}`).textContent = rot + '°';
+            document.getElementById(`v-bri-${id}`).textContent = bri + '%';
+            document.getElementById(`v-sat-${id}`).textContent = sat + '%';
+            document.getElementById(`v-shd-${id}`).textContent = shd + 'px';
+            document.getElementById(`apply-${id}`).style.display = 'block';
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                canvas.width = tempImg.width; canvas.height = tempImg.height;
+                ctx.filter = `brightness(${bri}%) saturate(${sat}%) drop-shadow(0 ${shd}px ${shd}px rgba(0,0,0,0.4))`;
+                ctx.translate(canvas.width/2, canvas.height/2);
+                ctx.rotate(rot * Math.PI / 180);
+                ctx.drawImage(tempImg, -tempImg.width/2, -tempImg.height/2);
+                document.getElementById(`view-${id}`).src = canvas.toDataURL();
+            };
+            tempImg.src = imgObj.processedData || imgObj.originalData;
+        }
+
+        async function batchProcessAI(version) {
+            if(!apiKey) return document.getElementById('apiModal').classList.add('active');
+            for(let img of images) await processAI(img.id, version);
+        }
+
+        async function processAI(id, version, retryCount = 0) {
+            const imgObj = images.find(i => i.id == id);
+            const model = version === '2.0' ? 'briaai/RMBG-2.0' : 'briaai/RMBG-1.4';
+            document.getElementById(`status-${id}`).textContent = 'Connecting...';
+
+            try {
+                const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${apiKey}` },
+                    body: await (await fetch(imgObj.originalData)).blob()
+                });
+
+                if (response.status === 503 && retryCount < 3) {
+                    await new Promise(r => setTimeout(r, 4000));
+                    return processAI(id, version, retryCount + 1);
+                }
+
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    imgObj.processedData = reader.result;
+                    document.getElementById(`view-${id}`).src = reader.result;
+                    document.getElementById(`status-${id}`).textContent = `Ready (v${version})`;
+                };
+                reader.readAsDataURL(blob);
+            } catch (e) { document.getElementById(`status-${id}`).textContent = 'API Blocked - Use Live Server'; }
+        }
+
+        function revertImage(id) {
+            const imgObj = images.find(i => i.id == id);
+            imgObj.processedData = null;
+            document.getElementById(`view-${id}`).src = imgObj.originalData;
+            document.getElementById(`status-${id}`).textContent = 'Original';
+            ['rot', 'bri', 'sat', 'shd'].forEach(t => {
+                document.getElementById(`${t}-${id}`).value = (t === 'bri' || t === 'sat') ? 100 : 0;
+            });
+            applyFilters(id);
+        }
+
+        function updateStats() { document.getElementById('stats').textContent = `${images.length} Images Loaded`; }
+    </script>
+</body>
+</html>
