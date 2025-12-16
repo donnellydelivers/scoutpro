@@ -894,11 +894,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           <div id="reasoningContent"></div>
         </div>
         
-        <div class="link-row">
-          <button id="linkAmz" class="ext-link" onclick="openAmazonOffers()">Open Offers ↗</button>
-          <button id="linkKeepa" class="ext-link" onclick="toggleKeepa()">View Graph 📉</button>
-        </div>
-
         <div id="keepaGraphContainer" class="keepa-embed hidden">
           <div style="text-align:center; padding:10px; color:#333; font-size:12px;">Loading Graph...</div>
         </div>
@@ -2011,8 +2006,22 @@ function render(res, data) {
     // Inject historical context warning if live BB is very low
     let historicalContext = '';
     const recommended = res.market;
-    if (bbPrice > 0 && recommended > (bbPrice + 1.00)) {
-        historicalContext = `<span style="color:var(--yellow); font-weight:800; display:block; margin-top: 5px;">⚠️ Recommended price ($${recommended.toFixed(2)}) is based on higher historical sales data.</span>`;
+    
+    // NEW CLARIFICATION LOGIC
+    // Check if the recommended price is significantly higher than the live BB/inferred price.
+    // Use a $5 margin and a 50% ratio as threshold for a strong warning.
+    if (bbPrice > 0 && recommended > (bbPrice + 5.00) && recommended > (bbPrice * 1.5)) {
+        historicalContext = `
+            <span style="color:var(--yellow); font-weight:800; display:block; margin-top: 5px;">
+                ⚠️ Market Anomaly Detected:
+            </span>
+            <span style="font-size:11px; line-height:1.4; color:rgba(255,255,255,0.8);">
+                The current \$${bbPrice.toFixed(2)} price is being ignored for profitability because it's severely underpriced. The Recommended Sell Price (\$${recommended.toFixed(2)}) is based on higher historical Buy Box averages for the ${CONFIG.condition.toLowerCase()} condition.
+            </span>
+        `;
+    } else if (bbPrice > 0 && recommended > (bbPrice + 1.00)) {
+        // Keep the mild warning if the price is just slightly higher
+        historicalContext = `<span style="color:var(--yellow); font-weight:800; display:block; margin-top: 5px;">⚠️ Recommended price (\$${recommended.toFixed(2)}) is based on higher historical sales data.</span>`;
     }
 
     if (bbPrice > 0) {
@@ -2351,32 +2360,6 @@ function renderTags(id, tags) {
         el.innerHTML += `<span class="tag ${t.type}">${t.text}</span>`;
     });
 }
-
-function toggleKeepa() {
-  const container = document.getElementById('keepaGraphContainer');
-  const btn = document.getElementById('linkKeepa');
-  if(container.classList.contains('hidden')) {
-    if(lastData && lastData.asin) {
-      container.innerHTML = `
-        <img src="https://graph.keepa.com/pricehistory.png?asin=${lastData.asin}&domain=1&t=${Date.now()}&width=400" alt="Keepa Graph" />
-      `;
-      container.classList.remove('hidden');
-      btn.innerText = "Close Graph ✖";
-    }
-  } else {
-    container.classList.add('hidden');
-    btn.innerText = "View Graph 📉";
-  }
-}
-
-function openAmazonOffers() {
-    if(lastData && lastData.asin) {
-        window.open(`https://www.amazon.com/gp/offer-listing/${lastData.asin}/`, '_blank');
-    } else {
-        alert("No ASIN available to open offers.");
-    }
-}
-
 
 /* ================= CAMERA (ROBUST) ================= */
 let html5QrCode;
