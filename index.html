@@ -1803,13 +1803,13 @@ function analyze(data) {
         market = data.usedPrice || data.inferredBbPrice || data.avgBb || 0;
     }
     
-    // Safety check: ensure price is at least a minimum for meaningful calculation
-    market = Math.max(10.00, market); 
-    
     // Ceiling Check (used price shouldn't beat new)
-    if(CONFIG.condition === 'USED' && market > newBuyBox) market = newBuyBox * 0.95;
+    if(CONFIG.condition === 'USED' && market > newBuyBox) {
+        market = newBuyBox * 0.95;
+    }
     
-    market = Math.max(0, market); // Prevent negative market price
+    // Final safety check: ensure price is at least a minimum for meaningful calculation
+    market = Math.max(10.00, market);
 
     // --- 2. PROFIT & FEES CALCULATION ---
     const fees = calculateFees(market, data.weight, data.category);
@@ -1877,14 +1877,24 @@ function analyze(data) {
         else if(data.fbaCount <= 5) compScore = 2;
         else compScore = -4;
 
-        // E. FINAL SCORE & VERDICT
+        // E. CALCULATE BASE SCORE
         score = 50 + velocityScore + bbScore + compScore;
+        
+        // F. APPLY RESTRICTION PENALTY (BEFORE VERDICT)
+        if(data.restricted) { 
+            score = score - 8; // Soft penalty applied before verdict
+        }
+        
+        // G. CLAMP SCORE TO 0-100 RANGE
         score = Math.round(Math.max(0, Math.min(100, score)));
 
-        // VERDICT ADJUSTMENT (Crucial)
+        // H. FINAL VERDICT ASSIGNMENT (Based on adjusted score)
         if (score >= 75) {
             verdict = 'BUY';
-            if (allTags.filter(t => t.type === 'gem').length > 0) isGem = true;
+            // Gems are BUY-tier items (75+) with hidden opportunity characteristics
+            if (allTags.filter(t => t.type === 'gem').length > 0) {
+                isGem = true;
+            }
         } else if (score >= 50) {
             verdict = 'CONSIDER';
         } else {
@@ -1907,10 +1917,9 @@ function analyze(data) {
         allTags.push({text: "BB Held by Amazon", type: "bad"});
     }
 
-    // RESTRICTION SOFT PENALTY
+    // RESTRICTION TAG (penalty already applied to score above)
     if(data.restricted) { 
         allTags.push({text: "⚠️ Restricted Item - Check Seller Central", type: "warn"});
-        score = Math.max(0, score - 8); // Soft penalty
     }
 
     // Sales/Rank/Profit Tags
@@ -2633,7 +2642,7 @@ Category: ${lastData.category || 'Unknown'}
 Sales Rank: ${lastData.rank ? lastData.rank.toLocaleString() : 'Unknown'}
 
 FINANCIAL ANALYSIS:
-Your Cost: $${CONFIG.cost.toFixed(2)}
+Your Cost: $${CONFIG.buyCost.toFixed(2)}
 Recommended Sell Price: $${result.market.toFixed(2)}
 CALCULATED NET PROFIT: $${result.profit.toFixed(2)} 
 (This includes ALL Amazon FBA fees, referral fees, closing fees, and your cost. This is the FINAL profit number - do NOT recalculate.)
@@ -2763,6 +2772,17 @@ function renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseSc
     // Determine if upgrade or downgrade
     const isUpgrade = geminiVerdict === 'BUY';
     const opinionClass = isUpgrade ? 'upgrade' : 'downgrade';
+    
+    // CRITICAL: If Gemini upgrades to BUY and there are gem tags, show gem icon
+    if (isUpgrade && geminiScore >= 75) {
+        const hasGemTags = result.posTags.concat(result.negTags).some(tag => tag.type === 'gem');
+        if (hasGemTags) {
+            const gemIcon = document.getElementById('gemIcon');
+            if (gemIcon) {
+                gemIcon.classList.add('visible');
+            }
+        }
+    }
 
     // Build the UI
     geminiOpinion.className = 'gemini-opinion ' + opinionClass;
