@@ -843,12 +843,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
         </div>
         
         <div id="decision" class="decision-label">--</div>
-        
-        <div style="text-align:center;">
-            <div id="geminiQuickBadge" onclick="toggleAI()" class="hidden">
-                <i class="fas fa-sparkles"></i> <span>ASK GEMINI</span>
-            </div>
-        </div>
       </div>
       
       <div style="padding: 16px;">
@@ -2247,24 +2241,17 @@ function render(res, data) {
         }
     }
     
-    // --- Gemini Quick Badge Logic (FIXED) ---
-    const geminiBadge = document.getElementById('geminiQuickBadge');
+    // --- Auto-load Gemini Opinion (No Badge Needed) ---
     const geminiOpinion = document.getElementById('geminiOpinion');
     
     // Check if Gemini API key exists AND the verdict is 'CONSIDER'
     if(CONFIG.geminiKey && res.verdict === 'CONSIDER') {
-        geminiBadge.classList.remove('hidden');
-        geminiBadge.className = 'gemini-quick-badge';
-        document.querySelector('#geminiQuickBadge span').textContent = 'ASK GEMINI';
-        
-        // Auto-load Gemini on first render if it's a CONSIDER item
-        // This function will handle not re-loading if the opinion is already stored
+        // Auto-load Gemini opinion for CONSIDER items
         loadGeminiOpinion(); 
     } else {
-        geminiBadge.classList.add('hidden');
         geminiOpinion.classList.add('hidden');
     }
-    // --- End Gemini Quick Badge Logic ---
+    // --- End Gemini Auto-load Logic ---
 
     card.classList.remove('hidden');
 }
@@ -2658,18 +2645,26 @@ Total Competition: ${lastData.totalOffers} sellers
 Current Buy Box: $${lastData.inferredBbPrice > 0 ? lastData.inferredBbPrice.toFixed(2) : 'N/A'}
 
 INITIAL ASSESSMENT:
-Your Algorithm Score: ${baseScore}/100 (CONSIDER tier)
+Your Algorithm Score: ${baseScore}/100 (CONSIDER tier - needs second opinion)
 
-Based on ALL of the above data, should this be UPGRADED to BUY or DOWNGRADED to REJECT?
-What score (0-100) would you assign?
-Provide a brief explanation focusing on sales velocity and profit margin relative to risk.
+YOUR TASK: Provide a decisive second opinion. Should this be UPGRADED to BUY or DOWNGRADED to REJECT?
 
-CRITICAL: Use the $${result.profit.toFixed(2)} profit figure provided above. Do not recalculate fees or profit.
+IMPORTANT RULES:
+1. You must choose either BUY or REJECT - never CONSIDER
+2. Use the $${result.profit.toFixed(2)} profit figure provided above. Do NOT recalculate fees or profit.
+3. Focus on sales velocity and profit margin relative to storage risk
+
+SCORE RANGES (CRITICAL):
+- UPGRADE to BUY: Score must be 75-100 (strong profit + good velocity)
+- DOWNGRADE to REJECT: Score must be 0-49 (too risky or low profit)
+- NEVER give scores 50-74 (that's CONSIDER, which is not a valid Gemini verdict)
+
+Provide a brief explanation (2-3 sentences) focusing on why you're upgrading or downgrading.
 
 Respond EXACTLY in this format:
 VERDICT: [BUY or REJECT]
-SCORE: [0-100]
-REASONING: [Your explanation in 2-3 sentences]`;
+SCORE: [0-49 for REJECT, 75-100 for BUY]
+REASONING: [Your explanation]`;
 
     const model = 'gemini-2.0-flash-exp';
     const cleanKey = CONFIG.geminiKey.trim();
@@ -2708,23 +2703,39 @@ REASONING: [Your explanation in 2-3 sentences]`;
             if (!geminiVerdict || !geminiScore) {
                 throw new Error('Could not parse Gemini response');
             }
+            
+            // VALIDATE: Gemini must give BUY (75+) or REJECT (<50), never CONSIDER
+            // Score ranges: BUY = 75-100, CONSIDER = 50-74, REJECT = 0-49
+            let validatedVerdict = geminiVerdict;
+            
+            if (geminiScore >= 75 && geminiVerdict !== 'BUY') {
+                console.warn('Gemini verdict mismatch: score', geminiScore, 'should be BUY');
+                validatedVerdict = 'BUY';
+            } else if (geminiScore < 50 && geminiVerdict !== 'REJECT') {
+                console.warn('Gemini verdict mismatch: score', geminiScore, 'should be REJECT');
+                validatedVerdict = 'REJECT';
+            } else if (geminiScore >= 50 && geminiScore < 75) {
+                // This is INVALID - Gemini should never return a CONSIDER score
+                console.error('INVALID: Gemini returned CONSIDER range score', geminiScore, '- forcing to REJECT');
+                validatedVerdict = 'REJECT';
+            }
 
             // Save to current scan history
             if(currentScan) {
-                currentScan.geminiVerdict = geminiVerdict;
+                currentScan.geminiVerdict = validatedVerdict;
                 currentScan.geminiScore = geminiScore;
                 currentScan.geminiReasoning = geminiReasoning;
                 
                 // Update in scanHistory (first item)
                 if(scanHistory[0]) {
-                    scanHistory[0].geminiVerdict = geminiVerdict;
+                    scanHistory[0].geminiVerdict = validatedVerdict;
                     scanHistory[0].geminiScore = geminiScore;
                     scanHistory[0].geminiReasoning = geminiReasoning;
                     localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
                 }
             }
             
-            renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseScore);
+            renderGeminiOpinion(validatedVerdict, geminiScore, geminiReasoning, baseScore);
 
         }
     } catch(e) { 
