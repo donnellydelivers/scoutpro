@@ -55,6 +55,29 @@ header { padding: 12px 16px; background: var(--bg); position: sticky; top: 0; z-
 .status-badge.dead { color: var(--red); border-color: rgba(248, 113, 113, 0.2); background: rgba(248, 113, 113, 0.1); }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
+/* --- RESTRICTED BADGE --- */
+.restricted-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(248, 113, 113, 0.15); color: var(--red);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  padding: 3px 8px; border-radius: 4px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+}
+.restricted-count {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--red); font-size: 12px; font-weight: 600;
+}
+.btn-remove-restricted {
+  background: rgba(248, 113, 113, 0.2); color: var(--red);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  padding: 6px 12px; border-radius: 8px;
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-remove-restricted:hover {
+  background: rgba(248, 113, 113, 0.3);
+}
+
 .search-container { position: relative; display: flex; gap: 8px; }
 .input-wrapper { position: relative; flex: 1; }
 .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; }
@@ -963,6 +986,15 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 
   <div id="historyPage" class="hidden">
     <div class="settings-header">Scan History</div>
+    <div id="historyStats" style="padding: 12px 16px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+      <div class="restricted-count" id="restrictedCount" style="display: none;">
+        <span>🔒</span>
+        <span id="restrictedCountText">0 restricted</span>
+      </div>
+      <button onclick="removeRestrictedItems()" id="btnRemoveRestricted" class="btn-remove-restricted" style="display: none;">
+        Remove Restricted
+      </button>
+    </div>
     <div id="historyList" style="flex:1; overflow-y:auto;"></div>
     <div class="btn-grid" style="margin-top:16px;">
       <button onclick="closeHistory()" class="btn-main btn-back">Back</button>
@@ -1613,7 +1645,9 @@ function parseProduct(p) {
     const toVal = (v) => (v == -1 || v == null) ? 0 : v;
     
     // Check for restriction flag
-    const isRestricted = p.hazMat === 1 || 
+    // productType: 0 = standard, 1 = restricted, 2 = meltable
+    const isRestricted = p.productType === 1 || 
+                       p.hazMat === 1 || 
                        (p.title && /international edition|instructor|review copy|not for resale|teacher edition/i.test(p.title));
     
     // --- START: NEW BUY BOX INFERENCE LOGIC (FIXED) ---
@@ -2837,6 +2871,21 @@ function showHistory() {
     
     focusedDeleteTimestamp = null; // Reset focus when opening history
     
+    // Calculate restricted count
+    const restrictedCount = scanHistory.filter(item => item.restricted).length;
+    const restrictedCountEl = document.getElementById('restrictedCount');
+    const restrictedCountText = document.getElementById('restrictedCountText');
+    const btnRemoveRestricted = document.getElementById('btnRemoveRestricted');
+    
+    if(restrictedCount > 0) {
+        restrictedCountEl.style.display = 'flex';
+        btnRemoveRestricted.style.display = 'block';
+        restrictedCountText.textContent = `${restrictedCount} restricted`;
+    } else {
+        restrictedCountEl.style.display = 'none';
+        btnRemoveRestricted.style.display = 'none';
+    }
+    
     // Render all history items
     if(scanHistory.length === 0) {
         list.innerHTML = '<div style="padding:40px; text-align:center; color:var(--muted);">No scan history</div>';
@@ -2854,6 +2903,12 @@ function showHistory() {
                 decisionBadge = `<span style="background:rgba(239,68,68,0.2); color:var(--red); padding:2px 8px; border-radius:99px; font-size:10px; font-weight:700;">✗ PASSED</span>`;
             }
             
+            // Restricted badge
+            let restrictedBadge = '';
+            if(item.restricted) {
+                restrictedBadge = `<span class="restricted-badge">🔒 RESTRICTED</span>`;
+            }
+            
             // The new history item structure with click handler
             return `
                 <div class="history-item-wrapper" data-timestamp="${item.timestamp}">
@@ -2862,6 +2917,7 @@ function showHistory() {
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <span style="color:${color}">${item.verdict}</span>
                                 ${decisionBadge}
+                                ${restrictedBadge}
                             </div>
                             <span style="color:${item.profit >= 0 ? 'var(--green)' : 'var(--red)'}">$${item.profit.toFixed(2)}</span>
                         </div>
@@ -2887,6 +2943,31 @@ function closeHistory() {
     document.getElementById('historyPage').classList.add('hidden');
 }
 
+function removeRestrictedItems() {
+    const restrictedCount = scanHistory.filter(item => item.restricted).length;
+    
+    if(restrictedCount === 0) {
+        alert('No restricted items to remove');
+        return;
+    }
+    
+    if(!confirm(`Remove ${restrictedCount} restricted item${restrictedCount > 1 ? 's' : ''} from history?`)) {
+        return;
+    }
+    
+    // Filter out restricted items
+    scanHistory = scanHistory.filter(item => !item.restricted);
+    
+    // Save to localStorage
+    localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+    
+    // Refresh display
+    showHistory();
+    
+    // Show feedback
+    alert(`✓ Removed ${restrictedCount} restricted item${restrictedCount > 1 ? 's' : ''}`);
+}
+
 function addToHistory(res, data) {
     const item = { 
         verdict: res.verdict, 
@@ -2897,6 +2978,7 @@ function addToHistory(res, data) {
         asin: data.asin,
         isbn: data.isbn || '', // Add ISBN for CSV export
         category: data.category || 'Unknown',
+        restricted: data.restricted || false, // Add restriction flag
         geminiVerdict: null, // Will be filled when Gemini responds
         geminiScore: null,
         geminiReasoning: null,
