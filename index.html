@@ -2639,22 +2639,37 @@ async function loadGeminiOpinion() {
     // Build prompt for Gemini
     const itemType = lastData.category || 'item';
     const prompt = `Analyze this ${itemType} for Amazon FBA resale:
+
+ITEM DETAILS:
 Title: ${lastData.title}
 Category: ${lastData.category || 'Unknown'}
-Your Score: ${baseScore} (CONSIDER)
-Profit: $${result.profit.toFixed(2)}
-Sales (30d): ${lastData.drops30}
-Sales (180d): ${lastData.drops180}
-Competition: ${lastData.totalOffers} total offers
+Sales Rank: ${lastData.rank ? lastData.rank.toLocaleString() : 'Unknown'}
 
-Based on this data, do you recommend UPGRADE to BUY or DOWNGRADE to REJECT?
+FINANCIAL ANALYSIS:
+Your Cost: $${CONFIG.cost.toFixed(2)}
+Recommended Sell Price: $${result.market.toFixed(2)}
+CALCULATED NET PROFIT: $${result.profit.toFixed(2)} 
+(This includes ALL Amazon FBA fees, referral fees, closing fees, and your cost. This is the FINAL profit number - do NOT recalculate.)
+
+MARKET DATA:
+Sales Velocity (30 days): ${lastData.drops30} drops
+Sales Velocity (180 days): ${lastData.drops180} drops
+Total Competition: ${lastData.totalOffers} sellers
+Current Buy Box: $${lastData.inferredBbPrice > 0 ? lastData.inferredBbPrice.toFixed(2) : 'N/A'}
+
+INITIAL ASSESSMENT:
+Your Algorithm Score: ${baseScore}/100 (CONSIDER tier)
+
+Based on ALL of the above data, should this be UPGRADED to BUY or DOWNGRADED to REJECT?
 What score (0-100) would you assign?
-Explain in 2-3 sentences.
+Provide a brief explanation focusing on sales velocity and profit margin relative to risk.
+
+CRITICAL: Use the $${result.profit.toFixed(2)} profit figure provided above. Do not recalculate fees or profit.
 
 Respond EXACTLY in this format:
 VERDICT: [BUY or REJECT]
 SCORE: [0-100]
-REASONING: [Your explanation]`;
+REASONING: [Your explanation in 2-3 sentences]`;
 
     const model = 'gemini-2.0-flash-exp';
     const cleanKey = CONFIG.geminiKey.trim();
