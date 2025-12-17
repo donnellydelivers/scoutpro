@@ -558,6 +558,43 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 .info-value.price { color: var(--blue); }
 .info-value.profit { color: var(--green); }
 
+/* Time Badge - Shown below profit */
+.profit-with-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.time-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.time-badge.fast {
+  background: rgba(52,211,153,0.2);
+  color: var(--green);
+  border: 1px solid rgba(52,211,153,0.3);
+}
+
+.time-badge.medium {
+  background: rgba(251,191,36,0.2);
+  color: var(--yellow);
+  border: 1px solid rgba(251,191,36,0.3);
+}
+
+.time-badge.slow {
+  background: rgba(248,113,113,0.2);
+  color: var(--red);
+  border: 1px solid rgba(248,113,113,0.3);
+}
+
 /* Collapsible Sections */
 .collapsible-section {
   margin: 12px 16px; border-radius: 12px; overflow: hidden;
@@ -1105,7 +1142,10 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           </div>
           <div class="info-box profit-box">
             <div class="info-label">Your Profit</div>
-            <div class="info-value profit" id="profitValue">$0.00</div>
+            <div class="profit-with-time">
+              <div class="info-value profit" id="profitValue">$0.00</div>
+              <div class="time-badge hidden" id="timeBadge">-- WAIT</div>
+            </div>
           </div>
         </div>
       </div>
@@ -2306,6 +2346,11 @@ function analyze(data) {
     let score = 50;
     let isGem = false;
     let allTags = [];
+    let estimatedDaysOptimistic = 0; // Initialize here so it's always defined
+    let estimatedDaysConservative = 0; // Initialize here so it's always defined
+    let queuePosition = 1; // Initialize here so it's always defined
+    let queuePositionOptimistic = 1; // Initialize here so it's always defined
+    let salesPerMonth = 0; // Initialize here so it's always defined
     
     const thresholds = getRankThresholds(data.category);
     
@@ -2331,13 +2376,15 @@ function analyze(data) {
     if(isPhantom) { allTags.push({text: "💎 Crowded But Fine", type: "gem"}); }
     if(isFbaPrem) { allTags.push({text: "💎 FBA Premium", type: "gem"}); }
 
-    // --- 4. CORE SCORE CALCULATION (USING REWEIGHTING) ---
+    // --- 4. SMART SCORE CALCULATION (TIME-TO-SALE + ROI MODEL) ---
     
     // Initialize score breakdown variables (always defined)
     let velocityScore = 0;
     let bbScore = 0;
     let compScore = 0;
     let bbConfidence = 0.0;
+    let estimatedDaysToSale = 0;
+    let roiScore = 0;
     
     // A. PROFIT FLOOR CHECK (CRITICAL)
     if(profit < CONFIG.profitFloor) {
@@ -2345,49 +2392,142 @@ function analyze(data) {
         score = Math.round(Math.max(0, 40 - (CONFIG.profitFloor - profit)));
         isGem = false; // Cannot be a gem with low profit
     } else {
-        // B. BASE VELOCITY SCORE
-        if(data.drops30 >= 10) velocityScore = 20;
-        else if(data.drops30 >= 5) velocityScore = 14;
-        else if(data.drops30 >= 1) velocityScore = 6;
-        else if(data.drops180 > 0) velocityScore = 2; // Historical sales
-        else velocityScore = 0; // Truly dead
+        // B. ESTIMATE TIME TO SALE (The Core Calculation)
+        // This combines velocity (how often book sells) with competition (queue position)
         
-        // C. BUY BOX SCORE (NEW: +15 for FBA rotation)
+        // Step 1: Determine sales per month based on drops data
+        let salesPerMonth = 0;
+        if (data.drops30 > 0) {
+            // Recent velocity (most reliable)
+            salesPerMonth = data.drops30;
+        } else if (data.drops90 > 0) {
+            // Medium-term velocity (scale to monthly)
+            salesPerMonth = data.drops90 / 3;
+        } else if (data.drops180 > 0) {
+            // Long-term velocity (scale to monthly)
+            salesPerMonth = data.drops180 / 6;
+        } else {
+            // No sales history - very risky
+            salesPerMonth = 0.1; // Assume one sale per 10 months
+        }
+        
+        // Step 2: Calculate queue position (BOTH optimistic and conservative for range display)
+        // Optimistic = fair rotation assumption (old model)
+        // Conservative = Buy Box concentration assumption (realistic for crowded markets)
+        // Note: variables already declared at top of function, this is just assignment
+        queuePosition = 1; // Conservative number (used for scoring)
+        queuePositionOptimistic = 1; // Optimistic number (for range display)
+        
+        if (data.bbOwnerType === 'ROTATING_FBA' || data.bbOwnerType === 'EXPLICIT_BB') {
+            let effectiveCompetitors = Math.max(1, data.fbaCount);
+            
+            // ALWAYS calculate optimistic (old fair rotation model)
+            queuePositionOptimistic = effectiveCompetitors / 2;
+            
+            // CONSERVATIVE varies by competition level
+            if (effectiveCompetitors <= 2) {
+                // LOW COMPETITION: both numbers are the same
+                queuePosition = effectiveCompetitors / 2;
+            } else if (effectiveCompetitors <= 7) {
+                // MEDIUM COMPETITION: 0.6x multiplier
+                queuePosition = effectiveCompetitors * 0.6;
+            } else {
+                // HIGH COMPETITION: 0.8x multiplier
+                queuePosition = effectiveCompetitors * 0.8;
+            }
+        } else if (data.bbOwnerType === 'FBM_PRICE_DRIVEN') {
+            queuePositionOptimistic = Math.max(2, data.fbaCount);
+            queuePosition = Math.max(3, data.fbaCount + 2);
+        } else {
+            // Suppressed BB
+            queuePositionOptimistic = 8;
+            queuePosition = 12;
+        }
+        
+        // Step 3: Calculate expected days to sale (BOTH optimistic and conservative)
+        let monthsToSaleConservative = queuePosition / Math.max(0.1, salesPerMonth);
+        let monthsToSaleOptimistic = queuePositionOptimistic / Math.max(0.1, salesPerMonth);
+        
+        estimatedDaysToSale = Math.round(monthsToSaleConservative * 30); // Use conservative for scoring
+        estimatedDaysOptimistic = Math.round(monthsToSaleOptimistic * 30); // Assignment, not declaration
+        estimatedDaysConservative = Math.round(monthsToSaleConservative * 30); // Assignment, not declaration
+        
+        // Step 4: Calculate ROI-based score (Profit vs Wait Time)
+        // This is the key insight: same profit is worth MORE if you don't wait as long
+        
+        // Velocity Score: How fast will you sell? (0-25 points)
+        if (estimatedDaysToSale <= 14) {
+            velocityScore = 25; // Sell within 2 weeks = excellent
+        } else if (estimatedDaysToSale <= 30) {
+            velocityScore = 20; // Sell within 1 month = very good
+        } else if (estimatedDaysToSale <= 60) {
+            velocityScore = 15; // Sell within 2 months = good
+        } else if (estimatedDaysToSale <= 90) {
+            velocityScore = 10; // Sell within 3 months = moderate
+        } else if (estimatedDaysToSale <= 180) {
+            velocityScore = 5;  // Sell within 6 months = patient inventory
+        } else {
+            velocityScore = 0;  // Over 6 months = very slow
+        }
+        
+        // C. BUY BOX ACCESSIBILITY SCORE (Can you even compete?)
         if (data.bbOwnerType === 'EXPLICIT_BB') { bbScore = 18; bbConfidence = 1.0; }
         else if (data.bbOwnerType === 'ROTATING_FBA') { bbScore = 15; bbConfidence = 0.85; }
         else if (data.bbOwnerType === 'FBM_PRICE_DRIVEN') { bbScore = 5; bbConfidence = 0.6; }
-        else { bbScore = -15; bbConfidence = 0.0; } // Truly suppressed / No offers
+        else { bbScore = -15; bbConfidence = 0.0; } // Truly suppressed
 
-        // D. COMPETITION SCORE (NEW: +10 for 0 FBA)
-        if(data.fbaCount === 0) compScore = 10;
-        else if(data.fbaCount <= 2) compScore = 6;
-        else if(data.fbaCount <= 5) compScore = 2;
-        else compScore = -4;
+        // D. COMPETITION BONUS (Fewer competitors = higher share of sales)
+        if(data.fbaCount === 0) compScore = 12; // No competition!
+        else if(data.fbaCount <= 2) compScore = 8;  // Very low competition
+        else if(data.fbaCount <= 5) compScore = 4;  // Low competition
+        else if(data.fbaCount <= 10) compScore = 0; // Moderate competition
+        else compScore = -5; // High competition
 
-        // E. CALCULATE BASE SCORE
+        // E. PROFIT MULTIPLIER (Higher profit compensates for longer wait)
+        // This is where we apply your insight: profit matters MORE for slow movers
+        let profitMultiplier = 1.0;
+        
+        if (estimatedDaysToSale > 90) {
+            // For slow movers (90+ days), profit needs to be higher to justify the wait
+            if (profit >= 15) profitMultiplier = 1.4;      // $15+ justifies 6-month wait
+            else if (profit >= 12) profitMultiplier = 1.2; // $12+ justifies 4-month wait
+            else if (profit >= 10) profitMultiplier = 1.0; // $10 is breakeven
+            else if (profit >= 8) profitMultiplier = 0.8;  // $8 is marginal
+            else profitMultiplier = 0.6;                    // Under $8 is weak
+        } else if (estimatedDaysToSale > 30) {
+            // For medium movers (30-90 days), profit matters but less critically
+            if (profit >= 12) profitMultiplier = 1.3;
+            else if (profit >= 8) profitMultiplier = 1.1;
+            else if (profit >= 6) profitMultiplier = 0.9;
+            else profitMultiplier = 0.7;
+        } else {
+            // For fast movers (under 30 days), even modest profit is fine
+            if (profit >= 10) profitMultiplier = 1.2;
+            else if (profit >= 6) profitMultiplier = 1.0;
+            else profitMultiplier = 0.8;
+        }
+        
+        // Apply profit multiplier to velocity score
+        velocityScore = Math.round(velocityScore * profitMultiplier);
+        
+        // F. CALCULATE FINAL SCORE
         score = 50 + velocityScore + bbScore + compScore;
         
-        // F. PROFIT BONUS (NEW: Reward higher profit margins)
-        // Add up to +15 points for exceptional profit
-        if (profit >= 15) score += 15;        // $15+ profit = max bonus
-        else if (profit >= 12) score += 12;   // $12-15 = strong bonus
-        else if (profit >= 10) score += 9;    // $10-12 = good bonus
-        else if (profit >= 8) score += 6;     // $8-10 = moderate bonus
-        else if (profit >= 6) score += 3;     // $6-8 = small bonus
-        // Below $6 profit = no bonus (still above floor of $5)
-        
-        console.log('📊 SCORE BREAKDOWN:', {
-            base: 50,
-            velocity: velocityScore,
-            buyBox: bbScore,
-            competition: compScore,
-            profitBonus: score - (50 + velocityScore + bbScore + compScore),
-            total: score
+        console.log('📊 SMART SCORE BREAKDOWN:', {
+            estimatedDaysToSale: estimatedDaysToSale,
+            salesPerMonth: salesPerMonth.toFixed(1),
+            queuePosition: queuePosition.toFixed(1),
+            profit: profit.toFixed(2),
+            profitMultiplier: profitMultiplier.toFixed(2),
+            velocityScore: velocityScore,
+            bbScore: bbScore,
+            compScore: compScore,
+            baseScore: score
         });
         
-        // G. APPLY RESTRICTION PENALTY (BEFORE VERDICT)
+        // G. APPLY RESTRICTION PENALTY
         if(data.restricted) { 
-            score = score - 8; // Soft penalty applied before verdict
+            score = score - 8;
         }
         
         // H. CLAMP SCORE TO 0-100 RANGE
@@ -2459,6 +2599,9 @@ function analyze(data) {
         score: Math.round(score), 
         market,
         noNewOpportunity, // Flag when NEW condition but no new sellers
+        estimatedDaysToSale, // Conservative estimate (used for scoring)
+        estimatedDaysOptimistic, // Optimistic estimate (for range display)
+        estimatedDaysConservative, // Conservative estimate (for range display)
         posTags, 
         negTags, 
         isGem,
@@ -2466,7 +2609,10 @@ function analyze(data) {
         breakdown: { 
             velocityScore, 
             bbScore, 
-            compScore, 
+            compScore,
+            salesPerMonth: salesPerMonth,
+            queuePosition: queuePosition,
+            queuePositionOptimistic: queuePositionOptimistic,
             // Calculate penalty amount for the breakdown UI
             profitPenalty: profit < CONFIG.profitFloor ? (CONFIG.profitFloor - profit) : 0 
         }
@@ -2544,6 +2690,40 @@ function render(res, data) {
     if(profitValue) {
         profitValue.textContent = '$' + res.profit.toFixed(2);
         profitValue.style.color = res.profit >= 0 ? 'var(--green)' : 'var(--red)';
+    }
+    
+    // Update time badge based on estimated days to sale
+    const timeBadge = document.getElementById('timeBadge');
+    if(timeBadge && res.estimatedDaysToSale !== undefined) {
+        let badgeText = '';
+        let badgeClass = '';
+        
+        if (res.estimatedDaysToSale <= 7) {
+            badgeText = '1 WEEK';
+            badgeClass = 'fast';
+        } else if (res.estimatedDaysToSale <= 14) {
+            badgeText = '2 WEEKS';
+            badgeClass = 'fast';
+        } else if (res.estimatedDaysToSale <= 30) {
+            badgeText = '1 MONTH';
+            badgeClass = 'medium';
+        } else if (res.estimatedDaysToSale <= 60) {
+            badgeText = '2 MONTHS';
+            badgeClass = 'medium';
+        } else if (res.estimatedDaysToSale <= 90) {
+            badgeText = '3 MONTHS';
+            badgeClass = 'medium';
+        } else if (res.estimatedDaysToSale <= 180) {
+            badgeText = Math.round(res.estimatedDaysToSale / 30) + ' MONTHS';
+            badgeClass = 'slow';
+        } else {
+            badgeText = Math.round(res.estimatedDaysToSale / 30) + ' MONTHS';
+            badgeClass = 'slow';
+        }
+        
+        timeBadge.textContent = badgeText;
+        timeBadge.className = 'time-badge ' + badgeClass;
+        timeBadge.classList.remove('hidden');
     }
 
     // Update slider displays
@@ -2763,11 +2943,54 @@ function render(res, data) {
             });
         });
         
-        // Render signals
+        // Render signals with time-to-sale insight at the top
         if(signals.length === 0) {
             reasoningContent.innerHTML = '<div style="text-align: center; color: var(--muted); font-size: 11px; padding: 8px;">No specific signals</div>';
         } else {
-            reasoningContent.innerHTML = signals.map(sig => `
+            // Build time-to-sale insight box (always at the top)
+            let timeInsightHTML = '';
+            if (res.estimatedDaysToSale !== undefined && res.breakdown) {
+                const days = res.estimatedDaysToSale;
+                const salesPerMonth = res.breakdown.salesPerMonth || 0;
+                const queuePos = res.breakdown.queuePosition || 0;
+                
+                let timeColor = days <= 30 ? 'var(--green)' : days <= 90 ? 'var(--yellow)' : 'var(--red)';
+                let timeLabel = days <= 7 ? '~1 week' : 
+                                days <= 14 ? '~2 weeks' :
+                                days <= 30 ? '~1 month' :
+                                days <= 60 ? '~2 months' :
+                                days <= 90 ? '~3 months' :
+                                `~${Math.round(days/30)} months`;
+                
+                let waitDescription = days <= 30 ? 'Quick flip — your capital turns over fast' :
+                                      days <= 90 ? 'Medium wait — acceptable for this profit margin' :
+                                      days <= 180 ? 'Patient inventory — longer hold but manageable' :
+                                      'Very slow mover — requires patience and shelf space';
+                
+                timeInsightHTML = `
+                    <div style="background: rgba(34,211,238,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; border-left: 3px solid var(--diamond);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 10px; font-weight: 700; color: var(--diamond); text-transform: uppercase;">⏱️ Expected Time to Sale</span>
+                            <span style="font-size: 16px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: ${timeColor};">${timeLabel}</span>
+                        </div>
+                        <div style="font-size: 10px; color: rgba(255,255,255,0.7); line-height: 1.5; margin-bottom: 8px;">
+                            ${waitDescription}
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; text-align: center;">
+                                <div style="font-size: 8px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Sales/Month</div>
+                                <div style="font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--text);">${salesPerMonth.toFixed(1)}</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; text-align: center;">
+                                <div style="font-size: 8px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Queue Position</div>
+                                <div style="font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--text);">${queuePos.toFixed(1)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            reasoningContent.innerHTML = timeInsightHTML + signals.map(sig => `
                 <div class="signal-item">
                     <span class="signal-icon">${sig.icon}</span>
                     <div class="signal-text">
@@ -3662,6 +3885,17 @@ function addToHistory(res, data) {
         isbn: data.isbn || '', // Add ISBN for CSV export
         category: data.category || 'Unknown',
         restricted: data.restricted || false, // Add restriction flag
+        // Time-to-sale and velocity metrics (for repricer intelligence)
+        estimatedDaysToSale: res.estimatedDaysToSale || 0,
+        salesPerMonth: res.breakdown?.salesPerMonth || 0,
+        queuePosition: res.breakdown?.queuePosition || 0,
+        drops30: data.drops30 || 0,
+        drops90: data.drops90 || 0,
+        drops180: data.drops180 || 0,
+        fbaCount: data.fbaCount || 0,
+        totalOffers: data.totalOffers || 0,
+        bbOwnerType: data.bbOwnerType || 'UNKNOWN',
+        currentBbPrice: data.inferredBbPrice || 0,
         // Pricing strategy fields
         strategyType: data.strategyType || 'UNKNOWN',
         bbRangeMin: data.bbPriceRange?.min || 0,
@@ -3739,10 +3973,11 @@ function exportCSV() {
     const exportableLength = exportable.length;
     const totalProfit = exportable.reduce((sum, item) => sum + item.profit, 0);
     
-    // Build CSV with enhanced columns for pricing strategy
-    // Format: TITLE, SCAN DATE, RATING, ISBN, ASIN, RECOMMENDED PRICE, STRATEGY TYPE, BB MIN, BB MAX, BB SPREAD, PRICING NOTES, FBA PREMIUM
+    // Build CSV with comprehensive columns for repricer intelligence
     const headers = [
         'TITLE', 'SCAN DATE', 'RATING', 'ISBN', 'ASIN', 'RECOMMENDED PRICE',
+        'EST DAYS TO SALE', 'SALES PER MONTH', 'QUEUE POSITION', 'FBA COUNT', 'TOTAL OFFERS',
+        'DROPS 30', 'DROPS 90', 'DROPS 180', 'BB OWNER TYPE', 'CURRENT BB PRICE',
         'STRATEGY TYPE', 'BB MIN', 'BB MAX', 'BB SPREAD', 'PRICING NOTES', 'FBA PREMIUM %'
     ];
     
@@ -3765,6 +4000,18 @@ function exportCSV() {
         // RECOMMENDED PRICE - market price without $ or formatting
         const price = item.market ? item.market.toFixed(2) : '0.00';
         
+        // Time-to-sale and velocity metrics (NEW for repricer)
+        const estDays = item.estimatedDaysToSale || 0;
+        const salesPerMonth = item.salesPerMonth ? item.salesPerMonth.toFixed(2) : '0.00';
+        const queuePos = item.queuePosition ? item.queuePosition.toFixed(2) : '0.00';
+        const fbaCount = item.fbaCount || 0;
+        const totalOffers = item.totalOffers || 0;
+        const drops30 = item.drops30 || 0;
+        const drops90 = item.drops90 || 0;
+        const drops180 = item.drops180 || 0;
+        const bbOwnerType = item.bbOwnerType || 'UNKNOWN';
+        const currentBbPrice = item.currentBbPrice ? item.currentBbPrice.toFixed(2) : '0.00';
+        
         // Pricing strategy fields
         const strategyType = item.strategyType || 'UNKNOWN';
         const bbMin = item.bbRangeMin ? item.bbRangeMin.toFixed(2) : '0.00';
@@ -3781,6 +4028,8 @@ function exportCSV() {
 
         return [
             safeTitle, date, rating, safeIsbn, safeAsin, price,
+            estDays, salesPerMonth, queuePos, fbaCount, totalOffers,
+            drops30, drops90, drops180, bbOwnerType, currentBbPrice,
             strategyType, bbMin, bbMax, bbSpread, safePricingNotes, fbaPremium
         ].join(',');
     });
