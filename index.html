@@ -3884,27 +3884,6 @@ function addToHistory(res, data) {
         asin: data.asin,
         isbn: data.isbn || '', // Add ISBN for CSV export
         category: data.category || 'Unknown',
-        restricted: data.restricted || false, // Add restriction flag
-        // Time-to-sale and velocity metrics (for repricer intelligence)
-        estimatedDaysToSale: res.estimatedDaysToSale || 0,
-        salesPerMonth: res.breakdown?.salesPerMonth || 0,
-        queuePosition: res.breakdown?.queuePosition || 0,
-        drops30: data.drops30 || 0,
-        drops90: data.drops90 || 0,
-        drops180: data.drops180 || 0,
-        fbaCount: data.fbaCount || 0,
-        totalOffers: data.totalOffers || 0,
-        bbOwnerType: data.bbOwnerType || 'UNKNOWN',
-        currentBbPrice: data.inferredBbPrice || 0,
-        // Pricing strategy fields
-        strategyType: data.strategyType || 'UNKNOWN',
-        bbRangeMin: data.bbPriceRange?.min || 0,
-        bbRangeMax: data.bbPriceRange?.max || 0,
-        bbRangeSpread: data.bbPriceRange?.spread || 0,
-        pricingNotes: data.pricingNotes || '',
-        fbaPremiumAmount: data.fbaPremium?.amount || 0,
-        fbaPremiumPercent: data.fbaPremium?.percentage || 0,
-        // Gemini fields
         geminiVerdict: null, // Will be filled when Gemini responds
         geminiScore: null,
         geminiReasoning: null,
@@ -3973,13 +3952,9 @@ function exportCSV() {
     const exportableLength = exportable.length;
     const totalProfit = exportable.reduce((sum, item) => sum + item.profit, 0);
     
-    // Build CSV with comprehensive columns for repricer intelligence
-    const headers = [
-        'TITLE', 'SCAN DATE', 'RATING', 'ISBN', 'ASIN', 'RECOMMENDED PRICE',
-        'EST DAYS TO SALE', 'SALES PER MONTH', 'QUEUE POSITION', 'FBA COUNT', 'TOTAL OFFERS',
-        'DROPS 30', 'DROPS 90', 'DROPS 180', 'BB OWNER TYPE', 'CURRENT BB PRICE',
-        'STRATEGY TYPE', 'BB MIN', 'BB MAX', 'BB SPREAD', 'PRICING NOTES', 'FBA PREMIUM %'
-    ];
+    // Build CSV matching scout_scans_template.csv format
+    // Format: TITLE,SCAN DATE,RATING,ISBN,ASIN,RECOMMENDED PRICE
+    const headers = ['TITLE', 'SCAN DATE', 'RATING', 'ISBN', 'ASIN', 'RECOMMENDED PRICE'];
     
     const rows = exportable.map(item => {
         // Format date as MM/DD/YYYY
@@ -4000,38 +3975,12 @@ function exportCSV() {
         // RECOMMENDED PRICE - market price without $ or formatting
         const price = item.market ? item.market.toFixed(2) : '0.00';
         
-        // Time-to-sale and velocity metrics (NEW for repricer)
-        const estDays = item.estimatedDaysToSale || 0;
-        const salesPerMonth = item.salesPerMonth ? item.salesPerMonth.toFixed(2) : '0.00';
-        const queuePos = item.queuePosition ? item.queuePosition.toFixed(2) : '0.00';
-        const fbaCount = item.fbaCount || 0;
-        const totalOffers = item.totalOffers || 0;
-        const drops30 = item.drops30 || 0;
-        const drops90 = item.drops90 || 0;
-        const drops180 = item.drops180 || 0;
-        const bbOwnerType = item.bbOwnerType || 'UNKNOWN';
-        const currentBbPrice = item.currentBbPrice ? item.currentBbPrice.toFixed(2) : '0.00';
-        
-        // Pricing strategy fields
-        const strategyType = item.strategyType || 'UNKNOWN';
-        const bbMin = item.bbRangeMin ? item.bbRangeMin.toFixed(2) : '0.00';
-        const bbMax = item.bbRangeMax ? item.bbRangeMax.toFixed(2) : '0.00';
-        const bbSpread = item.bbRangeSpread ? item.bbRangeSpread.toFixed(2) : '0.00';
-        const pricingNotes = (item.pricingNotes || '').replace(/"/g, '""');
-        const fbaPremium = item.fbaPremiumPercent || 0;
-        
         // Ensure values are wrapped in quotes if they contain commas or quotes
         const safeTitle = `"${title}"`;
         const safeIsbn = `"${isbn}"`;
         const safeAsin = `"${asin}"`;
-        const safePricingNotes = `"${pricingNotes}"`;
 
-        return [
-            safeTitle, date, rating, safeIsbn, safeAsin, price,
-            estDays, salesPerMonth, queuePos, fbaCount, totalOffers,
-            drops30, drops90, drops180, bbOwnerType, currentBbPrice,
-            strategyType, bbMin, bbMax, bbSpread, safePricingNotes, fbaPremium
-        ].join(',');
+        return [safeTitle, date, rating, safeIsbn, safeAsin, price].join(',');
     });
     
     const csv = [headers.join(','), ...rows].join('\n');
