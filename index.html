@@ -457,7 +457,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 /* Gemini Second Opinion */
 .gemini-opinion {
   background: rgba(167,139,250,0.08); border: 2px solid rgba(167,139,250,0.3); border-radius: 12px;
-  padding: 12px; margin-bottom: 12px;
+  padding: 12px; margin: 12px 16px; /* Match other collapsible sections */
 }
 .gemini-opinion.loading {
   background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.3);
@@ -517,6 +517,150 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 .gemini-text {
   font-size: 11px; line-height: 1.5; color: rgba(255,255,255,0.85); text-align: left;
 }
+
+/* CONCEPT 3: COLOR-CODED REDESIGN */
+
+/* Key Info Section - Always Visible */
+.key-info {
+  padding: 16px; background: rgba(0,0,0,0.3);
+}
+
+.price-profit-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+
+.info-box {
+  border-radius: 10px; padding: 14px; text-align: center;
+  transition: all 0.2s; position: relative;
+}
+
+.info-box.price-box {
+  border: 2px solid var(--blue);
+  background: rgba(96,165,250,0.08);
+  box-shadow: 0 0 20px rgba(96,165,250,0.2);
+}
+
+.info-box.profit-box {
+  border: 2px solid var(--green);
+  background: rgba(52,211,153,0.08);
+  box-shadow: 0 0 20px rgba(52,211,153,0.2);
+}
+
+.info-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px; letter-spacing: 0.05em;
+}
+
+.info-value {
+  font-size: 28px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+}
+
+.info-value.price { color: var(--blue); }
+.info-value.profit { color: var(--green); }
+
+/* Collapsible Sections */
+.collapsible-section {
+  margin: 12px 16px; border-radius: 12px; overflow: hidden;
+  border: 2px solid; transition: all 0.2s;
+}
+
+.collapsible-section.score-section {
+  border-color: rgba(251,191,36,0.4);
+  background: rgba(251,191,36,0.05);
+  box-shadow: 0 0 20px rgba(251,191,36,0.15);
+}
+
+.collapsible-section.pricing-section {
+  border-color: rgba(34,211,238,0.4);
+  background: rgba(34,211,238,0.05);
+  box-shadow: 0 0 20px rgba(34,211,238,0.15);
+}
+
+.collapsible-header {
+  padding: 14px 16px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  transition: background 0.2s; user-select: none;
+}
+
+.collapsible-header:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.collapsible-header:active {
+  transform: scale(0.99);
+}
+
+.collapsible-title {
+  font-size: 12px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px;
+}
+
+.collapsible-title.score-title { color: var(--yellow); }
+.collapsible-title.pricing-title { color: var(--diamond); }
+
+.chevron {
+  font-size: 14px; color: var(--muted); transition: transform 0.3s ease;
+}
+
+.collapsible-section.open .chevron {
+  transform: rotate(180deg);
+}
+
+.collapsible-body {
+  padding: 16px; border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 11px; line-height: 1.6; display: none;
+  animation: slideDown 0.3s ease-out;
+}
+
+.collapsible-section.open .collapsible-body {
+  display: block;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes flashBlue {
+  0% { box-shadow: 0 0 20px rgba(96,165,250,0.2); }
+  50% { box-shadow: 0 0 40px rgba(96,165,250,0.8), 0 0 60px rgba(96,165,250,0.4); transform: scale(1.02); }
+  100% { box-shadow: 0 0 20px rgba(96,165,250,0.2); transform: scale(1); }
+}
+
+@keyframes flashGreen {
+  0% { box-shadow: 0 0 20px rgba(52,211,153,0.2); }
+  50% { box-shadow: 0 0 40px rgba(52,211,153,0.8), 0 0 60px rgba(52,211,153,0.4); transform: scale(1.02); }
+  100% { box-shadow: 0 0 20px rgba(52,211,153,0.2); transform: scale(1); }
+}
+
+/* Controls Section */
+.controls-section {
+  padding: 16px; background: rgba(0,0,0,0.2);
+  border-top: 1px solid var(--border);
+}
+
+/* Update condition toggle to be centered and have proper spacing */
+.controls-section .condition-toggle {
+  margin: 0 auto 16px auto;
+  display: flex;
+  width: fit-content;
+}
+
+/* Signal items in Why Score section */
+.signal-item {
+  display: flex; align-items: flex-start; gap: 6px; margin-bottom: 6px; padding: 6px;
+  background: rgba(0,0,0,0.2); border-radius: 6px;
+}
+.signal-item:last-child { margin-bottom: 0; }
+.signal-icon { font-size: 14px; flex-shrink: 0; margin-top: 0; }
+.signal-text { flex: 1; }
+.signal-text strong {
+  display: block; font-size: 11px; font-weight: 700; margin-bottom: 2px; line-height: 1.3;
+}
+.signal-text p {
+  font-size: 10px; color: var(--muted); line-height: 1.3; margin: 0;
+}
+
 
 /* Pricing Strategy Section (Concept 3 Style) */
 .pricing-strategy {
@@ -952,37 +1096,60 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
         <div id="decision" class="decision-label">--</div>
       </div>
       
-      <div style="padding: 16px;">
-        <div id="geminiOpinion" class="hidden"></div>
-        
-        <div id="pricingStrategy" class="hidden"></div>
-        
-        <div id="scoreExplanationPanel">
-            <div class="score-details-header" onclick="toggleScoreExplanation()">
-                <span>📊 SCORE BREAKDOWN & MARKET INSIGHTS</span>
-                <i id="scoreExplanationToggleIcon" class="fas fa-chevron-down"></i>
-            </div>
-            <div id="scoreExplanationContent" class="hidden">
-                </div>
-        </div>
-        <div class="pricing-meter">
-          <div class="meter-row">
-            <div class="meter-label">Recommended Sell Price</div>
-            <div class="meter-value" id="recommendedPrice" style="color: var(--blue);">$0.00</div>
-            <div class="meter-bar">
-              <div class="meter-fill blue" id="priceFill" style="width: 0%;"></div>
-            </div>
+      <!-- KEY INFO: ALWAYS VISIBLE (Price + Profit boxes) -->
+      <div class="key-info">
+        <div class="price-profit-grid">
+          <div class="info-box price-box">
+            <div class="info-label">List at This Price</div>
+            <div class="info-value price" id="recommendedPrice">$0.00</div>
           </div>
-          
-          <div class="meter-row">
-            <div class="meter-label">Your Profit</div>
-            <div class="meter-value" id="profitValue">$0.00</div>
-            <div class="meter-bar">
-              <div class="meter-fill green" id="profitFill" style="width: 0%;"></div>
-            </div>
+          <div class="info-box profit-box">
+            <div class="info-label">Your Profit</div>
+            <div class="info-value profit" id="profitValue">$0.00</div>
           </div>
         </div>
-
+      </div>
+      
+      <!-- GEMINI (if active) -->
+      <div id="geminiOpinion" class="hidden"></div>
+      
+      <!-- COLLAPSIBLE: WHY THIS SCORE? -->
+      <div class="collapsible-section score-section" id="whyScoreSection">
+        <div class="collapsible-header" onclick="toggleSection('whyScoreSection')">
+          <div class="collapsible-title score-title">
+            <span>💡</span>
+            <span>Why This Score?</span>
+          </div>
+          <i class="fas fa-chevron-down chevron" id="whyScoreChevron"></i>
+        </div>
+        <div class="collapsible-body" id="whyScoreBody">
+          <div id="bbSummaryBox" style="background:rgba(96,165,250,0.1); border:1px solid var(--blue); padding:10px; border-radius:6px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; color:var(--blue); margin-bottom:4px;">
+              <span>CURRENT BUY BOX PRICE (<span id="bbCond">--</span>)</span>
+              <span style="font-weight:800;" id="bbPriceVal">--</span>
+            </div>
+            <div id="bbStatusText" style="font-size:12px; line-height:1.4;">--</div>
+          </div>
+          <div id="reasoningContent"></div>
+        </div>
+      </div>
+      
+      <!-- COLLAPSIBLE: PRICING STRATEGY -->
+      <div class="collapsible-section pricing-section" id="pricingStrategySection">
+        <div class="collapsible-header" onclick="toggleSection('pricingStrategySection')">
+          <div class="collapsible-title pricing-title">
+            <span>💎</span>
+            <span>Pricing Strategy</span>
+          </div>
+          <i class="fas fa-chevron-down chevron" id="pricingStrategyChevron"></i>
+        </div>
+        <div class="collapsible-body" id="pricingStrategyBody">
+          <!-- Content rendered by renderPricingStrategy() -->
+        </div>
+      </div>
+      
+      <!-- CONTROLS: ALWAYS VISIBLE AT BOTTOM -->
+      <div class="controls-section">
         <div class="condition-toggle">
           <div id="btnCondUsed" class="cond-btn active" onclick="setCondition('USED')">Used</div>
           <div id="btnCondNew" class="cond-btn" onclick="setCondition('NEW')">New</div>
@@ -1004,22 +1171,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
             <span class="adjuster-value" id="floorValue">$5.00</span>
           </div>
         </div>
-
-        <div class="reasoning-section">
-          <div class="reasoning-header">
-            <span>💡</span>
-            <span>Why This Score?</span>
-          </div>
-          <div id="bbSummaryBox" style="background:rgba(96,165,250,0.1); border:1px solid var(--blue); padding:10px; border-radius:6px; margin-bottom:10px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; color:var(--blue); margin-bottom:4px;">
-                <span>CURRENT BUY BOX PRICE (<span id="bbCond">--</span>)</span>
-                <span style="font-weight:800;" id="bbPriceVal">--</span>
-              </div>
-              <div id="bbStatusText" style="font-size:12px; line-height:1.4;">--</div>
-          </div>
-          <div id="reasoningContent"></div>
-        </div>
-        
+      </div>
+      
+      <div style="padding: 16px;">
         <div id="keepaGraphContainer" class="keepa-embed hidden">
           <div style="text-align:center; padding:10px; color:#333; font-size:12px;">Loading Graph...</div>
         </div>
@@ -1513,7 +1667,7 @@ async function searchByTitle(title) {
         renderTitlePicker(title, results);
 
     } catch(e) {
-        console.error('searchByTitle error:', e);
+        console.error('searchByTitle error:', e.message, e.stack);
         closeTitlePicker();
         alert(`Keepa Search Error: ${e.message}. \n\nTip: Check your API key and try toggling the Proxy setting.`);
     } finally {
@@ -1675,7 +1829,7 @@ async function fetchKeepa(query, retryAsISBN = false) {
     // Everything else is ASIN (including 10-digit all-numeric on first try)
     const paramName = isISBN ? 'code' : 'asin';
     
-    let url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=1&${paramName}=${clean}&stats=${days}&history=0`;
+    let url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=1&${paramName}=${clean}&stats=${days}&history=1`;
     
     console.log('fetchKeepa:', { query, clean, isISBN13, isISBN10WithX, is10DigitNumeric, isISBN, paramName, retryAsISBN, url: url.replace(CONFIG.keepaKey, 'KEY_HIDDEN') });
 
@@ -1827,8 +1981,101 @@ function parseProduct(p) {
     }
     // --- END: NEW BUY BOX INFERENCE LOGIC ---
     
-    // --- START: BUY BOX PRICE RANGE ANALYSIS (90 DAYS) ---
-    const bbPriceRange = calculatePriceRange(p.csv?.[18] || [], 90); // csv[18] = Buy Box price history
+    // --- START: BUY BOX PRICE RANGE ANALYSIS (90 DAYS) - CONDITION AWARE ---
+    console.log('Keepa product data:', { hasCsv: !!p.csv, csvLength: p.csv?.[18]?.length || 0 });
+    console.log('BB data check:', { 
+        csvBB: p.csv?.[18]?.length || 0,
+        csvNew: p.csv?.[1]?.length || 0,
+        csvUsed: p.csv?.[2]?.length || 0,
+        avgBB: avg[18], 
+        currentBB: s[18],
+        keepaBb: keepaBb 
+    });
+    
+    // Parse BOTH new and used price ranges separately
+    let newPriceRange = calculatePriceRange(p.csv?.[1] || [], 90); // csv[1] = New price history
+    let usedPriceRange = calculatePriceRange(p.csv?.[2] || [], 90); // csv[2] = Used price history
+    let bbPriceRange = calculatePriceRange(p.csv?.[18] || [], 90); // csv[18] = Generic Buy Box history
+    
+    console.log('Price ranges:', { newPriceRange, usedPriceRange, bbPriceRange });
+    
+    // FALLBACK 1: If no csv history for new, estimate from current/avg data
+    if (!newPriceRange.hasData && s[1] > 0) {
+        const currentNew = toPrice(s[1]);
+        const avgNew = avg[1] > 0 ? toPrice(avg[1]) : currentNew;
+        
+        newPriceRange = {
+            min: Math.min(currentNew * 0.90, avgNew * 0.85),
+            max: Math.max(currentNew * 1.10, avgNew * 1.15),
+            spread: 0,
+            hasData: true,
+            isEstimated: true
+        };
+        newPriceRange.spread = newPriceRange.max - newPriceRange.min;
+        console.log('Using estimated NEW range:', newPriceRange);
+    }
+    
+    // FALLBACK 2: If no csv history for used, estimate from current/avg data
+    if (!usedPriceRange.hasData && s[2] > 0) {
+        const currentUsed = toPrice(s[2]);
+        const avgUsed = avg[2] > 0 ? toPrice(avg[2]) : currentUsed;
+        
+        usedPriceRange = {
+            min: Math.min(currentUsed * 0.90, avgUsed * 0.85),
+            max: Math.max(currentUsed * 1.10, avgUsed * 1.15),
+            spread: 0,
+            hasData: true,
+            isEstimated: true
+        };
+        usedPriceRange.spread = usedPriceRange.max - usedPriceRange.min;
+        console.log('Using estimated USED range:', usedPriceRange);
+    }
+    
+    // FALLBACK 3: If still no new/used ranges, fall back to generic BB range
+    if (!bbPriceRange.hasData && avg[18] > 0) {
+        const avgBbPrice = toPrice(avg[18]);
+        const currentBbPrice = keepaBb > 0 ? keepaBb : avgBbPrice;
+        
+        console.log('Fallback 1 calculation:', { avgBbPrice, currentBbPrice });
+        
+        // Estimate a range: +/- 15% from average, or use current if different
+        const estimatedMin = Math.min(avgBbPrice * 0.85, currentBbPrice * 0.90);
+        const estimatedMax = Math.max(avgBbPrice * 1.15, currentBbPrice * 1.10);
+        
+        bbPriceRange = {
+            min: estimatedMin,
+            max: estimatedMax,
+            spread: estimatedMax - estimatedMin,
+            hasData: true,
+            isEstimated: true
+        };
+        
+        console.log('Using estimated BB range from avg90:', bbPriceRange);
+    }
+    
+    // FALLBACK 2: If still no data AND we have current prices, use those to estimate
+    if (!bbPriceRange.hasData && (fbaPrice > 0 || usedPrice > 0)) {
+        const basePrice = fbaPrice > 0 ? fbaPrice : usedPrice;
+        
+        console.log('Fallback 2 calculation - using current prices:', { fbaPrice, usedPrice, basePrice });
+        
+        // Estimate range: +/- 20% from current price
+        const estimatedMin = basePrice * 0.80;
+        const estimatedMax = basePrice * 1.20;
+        
+        bbPriceRange = {
+            min: estimatedMin,
+            max: estimatedMax,
+            spread: estimatedMax - estimatedMin,
+            hasData: true,
+            isEstimated: true,
+            isHighlyEstimated: true // Flag for very rough estimate
+        };
+        
+        console.log('Using highly estimated BB range from current prices:', bbPriceRange);
+    }
+    
+    console.log('Final bbPriceRange:', bbPriceRange);
     
     // Determine strategy type based on spread
     let strategyType = 'TIGHT_RANGE';
@@ -1840,13 +2087,17 @@ function parseProduct(p) {
     } else if (bbPriceRange.spread >= 5 && bbPriceRange.spread / bbPriceRange.min >= 0.20) {
         // Wide range: $5+ spread AND 20%+ variation
         strategyType = 'WIDE_RANGE';
-        pricingNotes = `Wide pricing range ($${bbPriceRange.min.toFixed(2)}-$${bbPriceRange.max.toFixed(2)}). Start high, lower gradually.`;
+        const estimatedNote = bbPriceRange.isHighlyEstimated ? ' (rough estimate from current prices)' : 
+                              bbPriceRange.isEstimated ? ' (estimated from averages)' : '';
+        pricingNotes = `Wide pricing range ($${bbPriceRange.min.toFixed(2)}-$${bbPriceRange.max.toFixed(2)})${estimatedNote}. Start high, lower gradually.`;
     } else if (bbOwnerType === 'FBM_PRICE_DRIVEN') {
         strategyType = 'FBM_DRIVEN';
         pricingNotes = 'FBM controls Buy Box. Must match lowest price to compete.';
     } else {
         // Tight range
-        pricingNotes = `Tight pricing ($${bbPriceRange.min.toFixed(2)}-$${bbPriceRange.max.toFixed(2)}). Match competitive FBA price.`;
+        const estimatedNote = bbPriceRange.isHighlyEstimated ? ' (rough estimate from current prices)' : 
+                              bbPriceRange.isEstimated ? ' (estimated from averages)' : '';
+        pricingNotes = `Tight pricing ($${bbPriceRange.min.toFixed(2)}-$${bbPriceRange.max.toFixed(2)})${estimatedNote}. Match competitive FBA price.`;
     }
     
     // Calculate FBA premium if applicable
@@ -1880,6 +2131,8 @@ function parseProduct(p) {
         inferredBbPrice: inferredBbPrice,
         bbOwnerType: bbOwnerType,
         bbPriceRange: bbPriceRange,
+        newPriceRange: newPriceRange,  // NEW: Separate price range for NEW condition
+        usedPriceRange: usedPriceRange, // NEW: Separate price range for USED condition
         strategyType: strategyType,
         pricingNotes: pricingNotes,
         fbaPremium: fbaPremium,
@@ -1986,19 +2239,52 @@ function calculateFees(price, weight, category) {
 /* ================= ANALYSIS (UPGRADED TO BUY/CONSIDER/REJECT) ================= */
 function analyze(data) {
     // --- 1. MARKET PRICE SELECTION (Condition-Aware) ---
+    console.log('analyze() called with condition:', CONFIG.condition);
+    console.log('Available prices:', {
+        newPrice: data.newPrice,
+        usedPrice: data.usedPrice,
+        inferredBbPrice: data.inferredBbPrice,
+        avgBb: data.avgBb,
+        fbaPrice: data.fbaPrice,
+        amzPrice: data.amzPrice
+    });
+    
     let market = 0;
+    let hasNewCompetition = false;
+    let noNewOpportunity = false; // Flag for "no new sellers" opportunity
+    
     const newBuyBox = data.newPrice || data.amzPrice || 999999;
     
     if(CONFIG.condition === 'NEW') {
-        // For NEW condition, use new price or inferred BB (which should be new pricing)
-        market = data.newPrice || data.inferredBbPrice || data.avgBb || 0;
+        // Check if there's actual new competition
+        hasNewCompetition = data.newPrice > 0;
+        
+        if(hasNewCompetition) {
+            // Standard case: use new price
+            market = data.newPrice;
+            console.log('NEW condition with competition, market price:', market);
+        } else {
+            // OPPORTUNITY: No new sellers! Price above used BB with premium
+            const usedReference = data.usedPrice || data.inferredBbPrice || data.avgBb || 0;
+            if(usedReference > 0) {
+                // Apply 25% premium over used price for new condition
+                market = usedReference * 1.25;
+                noNewOpportunity = true;
+                console.log('NEW condition with NO competition! Pricing at 25% premium over used:', market);
+            } else {
+                // No pricing data at all - use fallback
+                market = data.inferredBbPrice || data.avgBb || 0;
+                console.log('NEW condition, no data, using fallback:', market);
+            }
+        }
     } else {
-        // For USED condition, use used price or inferred BB (if it's used-based)
+        // USED condition - standard logic
         market = data.usedPrice || data.inferredBbPrice || data.avgBb || 0;
+        console.log('USED condition selected, market price:', market);
     }
     
-    // Ceiling Check (used price shouldn't beat new)
-    if(CONFIG.condition === 'USED' && market > newBuyBox) {
+    // Ceiling Check (used price shouldn't beat new if new exists)
+    if(CONFIG.condition === 'USED' && hasNewCompetition && market > newBuyBox) {
         market = newBuyBox * 0.95;
     }
     
@@ -2008,6 +2294,13 @@ function analyze(data) {
     // --- 2. PROFIT & FEES CALCULATION ---
     const fees = calculateFees(market, data.weight, data.category);
     const profit = market - fees - CONFIG.buyCost;
+    
+    console.log('💰 PROFIT CALCULATION:', {
+        market: market.toFixed(2),
+        fees: fees.toFixed(2),
+        buyCost: CONFIG.buyCost.toFixed(2),
+        profit: profit.toFixed(2)
+    });
     
     let verdict = 'CONSIDER';
     let score = 50;
@@ -2074,12 +2367,30 @@ function analyze(data) {
         // E. CALCULATE BASE SCORE
         score = 50 + velocityScore + bbScore + compScore;
         
-        // F. APPLY RESTRICTION PENALTY (BEFORE VERDICT)
+        // F. PROFIT BONUS (NEW: Reward higher profit margins)
+        // Add up to +15 points for exceptional profit
+        if (profit >= 15) score += 15;        // $15+ profit = max bonus
+        else if (profit >= 12) score += 12;   // $12-15 = strong bonus
+        else if (profit >= 10) score += 9;    // $10-12 = good bonus
+        else if (profit >= 8) score += 6;     // $8-10 = moderate bonus
+        else if (profit >= 6) score += 3;     // $6-8 = small bonus
+        // Below $6 profit = no bonus (still above floor of $5)
+        
+        console.log('📊 SCORE BREAKDOWN:', {
+            base: 50,
+            velocity: velocityScore,
+            buyBox: bbScore,
+            competition: compScore,
+            profitBonus: score - (50 + velocityScore + bbScore + compScore),
+            total: score
+        });
+        
+        // G. APPLY RESTRICTION PENALTY (BEFORE VERDICT)
         if(data.restricted) { 
             score = score - 8; // Soft penalty applied before verdict
         }
         
-        // G. CLAMP SCORE TO 0-100 RANGE
+        // H. CLAMP SCORE TO 0-100 RANGE
         score = Math.round(Math.max(0, Math.min(100, score)));
 
         // H. FINAL VERDICT ASSIGNMENT (Based on adjusted score)
@@ -2134,11 +2445,20 @@ function analyze(data) {
     if(posTags.length === 0) posTags.push({text: "None", type: "warn"});
     if(negTags.length === 0) negTags.push({text: "None", type: "good"});
 
+    console.log('🎯 FINAL ANALYSIS RESULT:', {
+        condition: CONFIG.condition,
+        market: market.toFixed(2),
+        profit: profit.toFixed(2),
+        score: Math.round(score),
+        verdict: verdict
+    });
+
     return { 
         verdict, 
         profit, 
         score: Math.round(score), 
-        market, 
+        market,
+        noNewOpportunity, // Flag when NEW condition but no new sellers
         posTags, 
         negTags, 
         isGem,
@@ -2204,25 +2524,40 @@ function render(res, data) {
         categoryBadge.textContent = `${icon} ${cat}`;
     }
     
-    // Update visual meter pricing (NO + SIGNS!)
-    const maxPrice = Math.max(res.market, 100);
-    const pricePercent = Math.min(100, (res.market / maxPrice) * 100);
-    const profitPercent = Math.min(100, Math.max(0, (res.profit / (res.market || 1)) * 100));
-
+    // Update price and profit boxes WITH FLASH ANIMATION
+    const priceBox = document.querySelector('.info-box.price-box');
+    const profitBox = document.querySelector('.info-box.profit-box');
+    
+    // Flash animation on change
+    if (priceBox) {
+        priceBox.style.animation = 'none';
+        setTimeout(() => { priceBox.style.animation = 'flashBlue 0.5s ease-out'; }, 10);
+    }
+    if (profitBox) {
+        profitBox.style.animation = 'none';
+        setTimeout(() => { profitBox.style.animation = 'flashGreen 0.5s ease-out'; }, 10);
+    }
+    
     setText('recommendedPrice', '$' + res.market.toFixed(2));
-    const priceFill = document.getElementById('priceFill');
-    if(priceFill) priceFill.style.width = pricePercent + '%';
 
     const profitValue = document.getElementById('profitValue');
     if(profitValue) {
         profitValue.textContent = '$' + res.profit.toFixed(2);
         profitValue.style.color = res.profit >= 0 ? 'var(--green)' : 'var(--red)';
     }
-    const profitFill = document.getElementById('profitFill');
-    if(profitFill) profitFill.style.width = profitPercent + '%';
 
     // Update slider displays
     updateSliderDisplays();
+    
+    // Initialize collapsible sections (closed by default)
+    const whyScoreSection = document.getElementById('whyScoreSection');
+    const pricingStrategySection = document.getElementById('pricingStrategySection');
+    if (whyScoreSection && !whyScoreSection.classList.contains('open')) {
+        whyScoreSection.classList.remove('open');
+    }
+    if (pricingStrategySection) {
+        pricingStrategySection.classList.add('open'); // Open by default
+    }
 
     // --- Buy Box Status and Price Update (FIXED) ---
     const isUsedCondition = CONFIG.condition === 'USED';
@@ -2445,15 +2780,20 @@ function render(res, data) {
     }
     
     // --- Render Pricing Strategy Section ---
-    renderPricingStrategy(data, res.market);
+    renderPricingStrategy(data, res.market, res.profit);
     
     // --- Auto-load Gemini Opinion (No Badge Needed) ---
     const geminiOpinion = document.getElementById('geminiOpinion');
     
     // Check if Gemini API key exists AND the verdict is 'CONSIDER'
-    if(CONFIG.geminiKey && res.verdict === 'CONSIDER') {
-        // Auto-load Gemini opinion for CONSIDER items
+    // BUT: Don't re-run if we already have a Gemini response (from condition toggle)
+    if(CONFIG.geminiKey && res.verdict === 'CONSIDER' && currentScan && !currentScan.geminiScore) {
+        // Auto-load Gemini opinion for CONSIDER items (only once)
         loadGeminiOpinion(); 
+    } else if(currentScan && currentScan.geminiScore && res.verdict === 'CONSIDER') {
+        // If we already have Gemini data and verdict is still CONSIDER, just render it
+        renderGeminiOpinion(currentScan.geminiVerdict, currentScan.geminiScore, currentScan.geminiReasoning);
+        geminiOpinion.classList.remove('hidden');
     } else {
         geminiOpinion.classList.add('hidden');
     }
@@ -2463,91 +2803,91 @@ function render(res, data) {
 }
 
 /* ================= PRICING STRATEGY RENDERER ================= */
-function renderPricingStrategy(data, recommendedPrice) {
-    const strategyDiv = document.getElementById('pricingStrategy');
-    if (!strategyDiv) return;
+function renderPricingStrategy(data, recommendedPrice, profit) {
+    const strategyBody = document.getElementById('pricingStrategyBody');
+    const strategySection = document.getElementById('pricingStrategySection');
+    if (!strategyBody || !strategySection) return;
     
-    // Don't show if no price history data
-    if (!data.bbPriceRange || !data.bbPriceRange.hasData) {
-        strategyDiv.classList.add('hidden');
+    // Select the appropriate price range based on current condition
+    const isNewCondition = CONFIG.condition === 'NEW';
+    const activeRange = isNewCondition ? data.newPriceRange : data.usedPriceRange;
+    const currentPrice = isNewCondition ? data.newPrice : data.usedPrice;
+    const conditionLabel = isNewCondition ? 'NEW' : 'USED';
+    
+    console.log('renderPricingStrategy:', { 
+        condition: CONFIG.condition, 
+        activeRange, 
+        currentPrice,
+        hasNewRange: data.newPriceRange?.hasData,
+        hasUsedRange: data.usedPriceRange?.hasData
+    });
+    
+    // Hide section if no price history data for this condition
+    if (!activeRange || !activeRange.hasData) {
+        strategySection.style.display = 'none';
         return;
     }
     
-    const range = data.bbPriceRange;
-    const strategy = data.strategyType;
-    const notes = data.pricingNotes;
+    strategySection.style.display = 'block';
     
-    // Determine icon and styling based on strategy type
-    let iconSymbol = '📊';
-    let strategyLabel = 'Standard Pricing';
-    let styleClass = '';
+    const range = activeRange;
+    const isEstimated = range.isEstimated;
     
-    if (strategy === 'WIDE_RANGE') {
-        iconSymbol = '💎';
-        strategyLabel = 'Wide Price Range';
-        styleClass = 'wide-range';
-    } else if (strategy === 'TIGHT_RANGE') {
-        iconSymbol = '⚠️';
-        strategyLabel = 'Tight Price Range';
-        styleClass = 'tight-range';
-    } else if (strategy === 'FBM_DRIVEN') {
-        iconSymbol = '🎯';
-        strategyLabel = 'FBM Price Match Required';
-        styleClass = 'fbm-driven';
+    // Determine strategy based on spread
+    let strategyType = 'TIGHT_RANGE';
+    let strategyNotes = '';
+    
+    if (range.spread >= 5 && range.spread / range.min >= 0.20) {
+        strategyType = 'WIDE_RANGE';
+        strategyNotes = `Wide pricing range for ${conditionLabel}. Start at recommended price, lower gradually if no BB wins.`;
+    } else {
+        strategyType = 'TIGHT_RANGE';
+        strategyNotes = `Tight pricing for ${conditionLabel}. Match competitive price immediately.`;
     }
     
-    // Calculate recommended list price (start high for wide range, mid-range for others)
-    let listPrice = recommendedPrice;
-    if (strategy === 'WIDE_RANGE') {
-        listPrice = Math.min(range.max, recommendedPrice * 1.1); // Start near the top
-    }
-    
-    strategyDiv.className = `pricing-strategy ${styleClass}`;
-    strategyDiv.innerHTML = `
-        <div class="strategy-header">
-            <div class="strategy-title ${styleClass}">
-                <span>${iconSymbol}</span>
-                <span>PRICING STRATEGY</span>
+    // Build HTML content
+    strategyBody.innerHTML = `
+        <div style="background: rgba(251,191,36,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; border-left: 3px solid var(--yellow);">
+            <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.05em;">
+                Current ${conditionLabel} Buy Box Price
             </div>
-            <div class="strategy-icon ${styleClass}">
-                <i class="fas fa-chart-line"></i>
+            <div style="font-size: 24px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--yellow);">
+                ${currentPrice > 0 ? '$' + currentPrice.toFixed(2) : 'No ' + conditionLabel + ' Sellers'}
             </div>
         </div>
-        <div class="strategy-body">
-            <div class="strategy-type ${styleClass}">${strategyLabel}</div>
-            <div class="strategy-details">${notes}</div>
-            
-            <div class="price-range-display">
-                <span class="price-range-label">90-Day BB Range:</span>
-                <div class="price-range-values">
-                    <span class="price-range-min">$${range.min.toFixed(2)}</span>
-                    <span class="price-range-separator">→</span>
-                    <span class="price-range-max">$${range.max.toFixed(2)}</span>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin-bottom: 12px;">
+            <span style="font-size: 10px; color: var(--muted); font-weight: 600;">Historical ${conditionLabel} Range (90d${isEstimated ? ', est.' : ''}):</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px;">
+                <span style="color: var(--red);">$${range.min.toFixed(2)}</span>
+                <span style="color: var(--muted); margin: 0 6px;">→</span>
+                <span style="color: var(--green);">$${range.max.toFixed(2)}</span>
+            </span>
+        </div>
+        
+        <div style="font-size: 11px; color: rgba(255,255,255,0.8); line-height: 1.5; padding: 10px; background: rgba(34,211,238,0.1); border-radius: 8px; border-left: 3px solid var(--diamond);">
+            <strong style="color: var(--diamond);">${strategyType === 'WIDE_RANGE' ? 'Wide Range Strategy' : 'Tight Range Strategy'}:</strong> 
+            ${strategyNotes}
+        </div>
+        
+        ${currentPrice === 0 && !isNewCondition ? `
+            <div style="margin-top: 10px; padding: 10px; background: rgba(34,211,238,0.15); border-radius: 8px; border-left: 3px solid var(--diamond);">
+                <strong style="color: var(--diamond); font-size: 11px;">💡 Opportunity:</strong>
+                <div style="font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 4px; line-height: 1.4;">
+                    No ${conditionLabel} sellers! You have pricing power. Consider listing above typical range.
                 </div>
             </div>
-            
-            ${strategy === 'WIDE_RANGE' ? `
-                <div class="recommended-list-price">
-                    <div class="list-price-label">Recommended List Price</div>
-                    <div class="list-price-value">$${listPrice.toFixed(2)}</div>
-                    <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">
-                        Start high, lower gradually if no BB wins
-                    </div>
-                </div>
-            ` : ''}
-            
-            ${data.fbaPremium && data.fbaPremium.exists ? `
-                <div style="margin-top: 10px; padding: 8px; background: rgba(34,211,238,0.1); border-radius: 6px; font-size: 10px;">
-                    <strong style="color: var(--diamond);">FBA Premium:</strong> 
-                    <span style="color: rgba(255,255,255,0.8);">
-                        FBA sellers command +$${data.fbaPremium.amount.toFixed(2)} (${data.fbaPremium.percentage}%) over MF
-                    </span>
-                </div>
-            ` : ''}
-        </div>
+        ` : ''}
+        
+        ${data.amzPrice > 0 ? `
+            <div style="margin-top: 10px; padding: 8px; background: rgba(239,68,68,0.1); border-radius: 6px; font-size: 10px; border-left: 3px solid var(--red);">
+                <strong style="color: var(--red);">⚠️ Amazon Present:</strong> 
+                <span style="color: rgba(255,255,255,0.8);">
+                    Amazon is selling at $${data.amzPrice.toFixed(2)}. They often control Buy Box.
+                </span>
+            </div>
+        ` : ''}
     `;
-    
-    strategyDiv.classList.remove('hidden');
 }
 
 /* ================= SCORE EXPLANATION LOGIC (NEW) ================= */
@@ -2850,7 +3190,7 @@ function startOCRProcessing() {
             }
             
         } catch(err) {
-            console.error('OCR error:', err);
+            console.error('OCR error:', err.message || err);
             isProcessing = false;
         }
     }, 1000); // FIX #1: Check every 1 second (was 2 seconds)
@@ -3011,19 +3351,18 @@ REASONING: [Your explanation]`;
                 throw new Error('Could not parse Gemini response');
             }
             
-            // VALIDATE: Gemini must give BUY (75+) or REJECT (<50), never CONSIDER
+            // VALIDATE: Align Gemini verdict with score ranges
             // Score ranges: BUY = 75-100, CONSIDER = 50-74, REJECT = 0-49
             let validatedVerdict = geminiVerdict;
             
             if (geminiScore >= 75 && geminiVerdict !== 'BUY') {
                 console.warn('Gemini verdict mismatch: score', geminiScore, 'should be BUY');
                 validatedVerdict = 'BUY';
+            } else if (geminiScore >= 50 && geminiScore < 75 && geminiVerdict !== 'CONSIDER') {
+                console.warn('Gemini verdict mismatch: score', geminiScore, 'should be CONSIDER');
+                validatedVerdict = 'CONSIDER';
             } else if (geminiScore < 50 && geminiVerdict !== 'REJECT') {
                 console.warn('Gemini verdict mismatch: score', geminiScore, 'should be REJECT');
-                validatedVerdict = 'REJECT';
-            } else if (geminiScore >= 50 && geminiScore < 75) {
-                // This is INVALID - Gemini should never return a CONSIDER score
-                console.error('INVALID: Gemini returned CONSIDER range score', geminiScore, '- forcing to REJECT');
                 validatedVerdict = 'REJECT';
             }
 
@@ -3046,7 +3385,7 @@ REASONING: [Your explanation]`;
 
         }
     } catch(e) { 
-        console.error('Gemini error:', e);
+        console.error('Gemini error:', e.message, e.stack);
         // Show error state but don't interrupt user
         geminiOpinion.innerHTML = `
             <div class="gemini-header">
@@ -3466,8 +3805,18 @@ function exportCSV() {
     }
 }
 
+/* ================= COLLAPSIBLE SECTION TOGGLE ================= */
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    
+    section.classList.toggle('open');
+}
+
 /* ================= TOGGLE CONDITION FIX ================= */
 function setCondition(c) {
+    console.log('setCondition called:', c, 'Previous condition:', CONFIG.condition);
+    
     // 1. Update State
     CONFIG.condition = c;
     
@@ -3487,8 +3836,18 @@ function setCondition(c) {
     
     // 3. Re-run Analysis if we have data
     if(lastData) {
+        console.log('Re-analyzing with condition:', c);
         const result = analyze(lastData);
+        console.log('New analysis result:', {
+            condition: c,
+            market: result.market,
+            profit: result.profit,
+            score: result.score,
+            verdict: result.verdict
+        });
         render(result, lastData);
+    } else {
+        console.log('No lastData available to re-analyze');
     }
 }
 </script>
