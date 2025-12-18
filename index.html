@@ -295,6 +295,7 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
 .adjuster-summary { padding: 12px 16px; cursor: pointer; font-size: 12px; color: var(--muted); text-align: center; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s; }
 .adjuster-summary:hover { color: var(--blue); }
 .slider-content { padding-top: 8px; }
+.slider-content { padding-top: 8px; }
 .slider-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .slider-row:last-child { margin-bottom: 0; }
 .slider-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Inter', sans-serif; }
@@ -1134,7 +1135,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
         <div id="decision" class="decision-label">--</div>
       </div>
       
-      <!-- KEY INFO: ALWAYS VISIBLE (Price + Profit boxes) -->
       <div class="key-info">
         <div class="price-profit-grid">
           <div class="info-box price-box">
@@ -1151,10 +1151,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
         </div>
       </div>
       
-      <!-- GEMINI (if active) -->
       <div id="geminiOpinion" class="hidden"></div>
       
-      <!-- COLLAPSIBLE: WHY THIS SCORE? -->
       <div class="collapsible-section score-section" id="whyScoreSection">
         <div class="collapsible-header" onclick="toggleSection('whyScoreSection')">
           <div class="collapsible-title score-title">
@@ -1175,7 +1173,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
         </div>
       </div>
       
-      <!-- COLLAPSIBLE: PRICING STRATEGY -->
       <div class="collapsible-section pricing-section" id="pricingStrategySection">
         <div class="collapsible-header" onclick="toggleSection('pricingStrategySection')">
           <div class="collapsible-title pricing-title">
@@ -1185,11 +1182,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           <i class="fas fa-chevron-down chevron" id="pricingStrategyChevron"></i>
         </div>
         <div class="collapsible-body" id="pricingStrategyBody">
-          <!-- Content rendered by renderPricingStrategy() -->
-        </div>
+          </div>
       </div>
       
-      <!-- CONTROLS: ALWAYS VISIBLE AT BOTTOM -->
       <div class="controls-section">
         <div class="condition-toggle">
           <div id="btnCondUsed" class="cond-btn active" onclick="setCondition('USED')">Used</div>
@@ -3451,12 +3446,11 @@ function stopCamera() {
 /* ================= GEMINI (AUTO-LOAD FOR CONSIDER) ================= */
 async function loadGeminiOpinion() {
     if(!lastData || !currentScan) return;
-    if(!CONFIG.geminiKey) return; // Skip if no API key
+    if(!CONFIG.geminiKey) return; 
     
     const geminiOpinion = document.getElementById('geminiOpinion');
     if(!geminiOpinion) return;
     
-    // If we already have a Gemini score saved for this scan, render it and exit
     if (currentScan.geminiScore) {
         renderGeminiOpinion(currentScan.geminiVerdict, currentScan.geminiScore, currentScan.geminiReasoning);
         return;
@@ -3465,7 +3459,6 @@ async function loadGeminiOpinion() {
     const result = analyze(lastData);
     const baseScore = result.score;
     
-    // Show loading state
     geminiOpinion.className = 'gemini-opinion loading';
     geminiOpinion.innerHTML = `
         <div class="gemini-header">
@@ -3481,7 +3474,6 @@ async function loadGeminiOpinion() {
     `;
     geminiOpinion.classList.remove('hidden');
     
-    // Build prompt for Gemini
     const itemType = lastData.category || 'item';
     const prompt = `Analyze this ${itemType} for Amazon FBA resale:
 
@@ -3505,7 +3497,7 @@ Current Buy Box: $${lastData.inferredBbPrice > 0 ? lastData.inferredBbPrice.toFi
 INITIAL ASSESSMENT:
 Your Algorithm Score: ${baseScore}/100 (CONSIDER tier - needs second opinion)
 
-YOUR TASK: Provide a decisive second opinion. Should this be UPGRADED to BUY or DOWNGRADED to REJECT?
+YOUR TASK: Provide a decisive second opinion. Refine the algorithm's score based on the qualitative data (title, profit-to-wait ratio, and competition).
 
 BUSINESS CONTEXT:
 - Inventory with 3-6 month sell-through is acceptable if profit is solid
@@ -3514,27 +3506,21 @@ BUSINESS CONTEXT:
 - Higher profit can justify slower velocity
 
 EVALUATION CRITERIA:
-1. You must choose either BUY or REJECT - never CONSIDER
+1. Refine the algorithm's score (0-100 scale).
 2. Use the $${result.profit.toFixed(2)} profit figure provided above. Do NOT recalculate fees or profit.
-3. Focus on whether the profit justifies the wait time, not just velocity alone
-4. Consider: Would you rather have $${result.profit.toFixed(2)} in 4 months or pass entirely?
-5. Slower sales are acceptable if profit margin is solid relative to effort
+3. Focus on whether the profit justifies the wait time, not just velocity alone.
+4. Slower sales are acceptable if profit margin is solid relative to effort.
 
-SCORE RANGES (CRITICAL):
-- UPGRADE to BUY: Score 60-100
-  * 85-100: Excellent opportunity (strong profit + good velocity)
-  * 75-84: Solid buy (good profit, acceptable velocity)
-  * 60-74: Worth it (profit justifies longer wait OR decent velocity with okay profit)
-- DOWNGRADE to REJECT: Score 0-49
-  * Items where profit doesn't justify the storage time
-  * Very slow movers (<3 drops in 180d) with thin profit (<$4)
-  * High competition with low profit margin
+SCORE RANGES:
+- 75-100: BUY (Highly recommended)
+- 50-74: CONSIDER (Marginal/Needs caution)
+- 0-49: REJECT (High risk/Low reward)
 
 Provide a brief explanation (2-3 sentences) focusing on the profit-to-wait-time value proposition.
 
 Respond EXACTLY in this format:
-VERDICT: [BUY or REJECT]
-SCORE: [0-49 for REJECT, 60-100 for BUY]
+VERDICT: [BUY, CONSIDER, or REJECT]
+SCORE: [0-100]
 REASONING: [Your explanation]`;
 
     const model = 'gemini-2.0-flash-exp';
@@ -3562,55 +3548,31 @@ REASONING: [Your explanation]`;
         if(json.candidates && json.candidates[0] && json.candidates[0].content) {
             const text = json.candidates[0].content.parts[0].text;
             
-            // Parse response
-            const verdictMatch = text.match(/VERDICT:\s*(BUY|REJECT)/i);
+            const verdictMatch = text.match(/VERDICT:\s*(BUY|CONSIDER|REJECT)/i);
             const scoreMatch = text.match(/SCORE:\s*(\d+)/);
             const reasoningMatch = text.match(/REASONING:\s*(.+)/s);
 
-            const geminiVerdict = verdictMatch ? verdictMatch[1].toUpperCase() : null;
-            const geminiScore = scoreMatch ? parseInt(scoreMatch[1]) : null;
+            const geminiVerdict = verdictMatch ? verdictMatch[1].toUpperCase() : 'CONSIDER';
+            const geminiScore = scoreMatch ? parseInt(scoreMatch[1]) : 50;
             const geminiReasoning = reasoningMatch ? reasoningMatch[1].trim() : text;
 
-            if (!geminiVerdict || !geminiScore) {
-                throw new Error('Could not parse Gemini response');
-            }
-            
-            // VALIDATE: Align Gemini verdict with score ranges
-            // Score ranges: BUY = 75-100, CONSIDER = 50-74, REJECT = 0-49
-            let validatedVerdict = geminiVerdict;
-            
-            if (geminiScore >= 75 && geminiVerdict !== 'BUY') {
-                console.warn('Gemini verdict mismatch: score', geminiScore, 'should be BUY');
-                validatedVerdict = 'BUY';
-            } else if (geminiScore >= 50 && geminiScore < 75 && geminiVerdict !== 'CONSIDER') {
-                console.warn('Gemini verdict mismatch: score', geminiScore, 'should be CONSIDER');
-                validatedVerdict = 'CONSIDER';
-            } else if (geminiScore < 50 && geminiVerdict !== 'REJECT') {
-                console.warn('Gemini verdict mismatch: score', geminiScore, 'should be REJECT');
-                validatedVerdict = 'REJECT';
-            }
-
-            // Save to current scan history
             if(currentScan) {
-                currentScan.geminiVerdict = validatedVerdict;
+                currentScan.geminiVerdict = geminiVerdict;
                 currentScan.geminiScore = geminiScore;
                 currentScan.geminiReasoning = geminiReasoning;
                 
-                // Update in scanHistory (first item)
                 if(scanHistory[0]) {
-                    scanHistory[0].geminiVerdict = validatedVerdict;
+                    scanHistory[0].geminiVerdict = geminiVerdict;
                     scanHistory[0].geminiScore = geminiScore;
                     scanHistory[0].geminiReasoning = geminiReasoning;
                     localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
                 }
             }
             
-            renderGeminiOpinion(validatedVerdict, geminiScore, geminiReasoning, baseScore);
-
+            renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseScore);
         }
     } catch(e) { 
-        console.error('Gemini error:', e.message, e.stack);
-        // Show error state but don't interrupt user
+        console.error('Gemini error:', e.message);
         geminiOpinion.innerHTML = `
             <div class="gemini-header">
                 <div class="gemini-title">
@@ -3630,28 +3592,35 @@ function renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseSc
     const result = analyze(lastData);
     const baseScore = baseScoreOverride !== undefined ? baseScoreOverride : result.score;
     
-    // Determine if upgrade or downgrade
-    const isUpgrade = geminiVerdict === 'BUY';
-    const opinionClass = isUpgrade ? 'upgrade' : 'downgrade';
-    
-    // CRITICAL: If Gemini upgrades to BUY and there are gem tags, show gem icon
-    if (isUpgrade && geminiScore >= 75) {
+    // Determine the Trend (Upgrade, Downgrade, Refined)
+    const isUpgrade = geminiScore > baseScore;
+    const isDowngrade = geminiScore < baseScore;
+    const trendIcon = isUpgrade ? '↑' : isDowngrade ? '↓' : '→';
+    const trendText = isUpgrade ? 'UPGRADED' : isDowngrade ? 'DOWNGRADED' : 'REFINED';
+    const trendClass = isUpgrade ? 'up' : isDowngrade ? 'down' : '';
+
+    // Determine the Visual Tier (Color Coding based on destination)
+    let tierClass = 'downgrade'; // Default REJECT (Red)
+    if (geminiScore >= 75) {
+        tierClass = 'upgrade'; // BUY (Green)
+    } else if (geminiScore >= 50) {
+        tierClass = 'loading'; // CONSIDER (Amber/Blue)
+    }
+
+    if (geminiScore >= 75) {
         const hasGemTags = result.posTags.concat(result.negTags).some(tag => tag.type === 'gem');
         if (hasGemTags) {
             const gemIcon = document.getElementById('gemIcon');
-            if (gemIcon) {
-                gemIcon.classList.add('visible');
-            }
+            if (gemIcon) gemIcon.classList.add('visible');
         }
     }
 
-    // Build the UI
-    geminiOpinion.className = 'gemini-opinion ' + opinionClass;
+    geminiOpinion.className = 'gemini-opinion ' + tierClass;
     geminiOpinion.innerHTML = `
         <div class="gemini-header">
-            <div class="gemini-title ${opinionClass}">
+            <div class="gemini-title ${tierClass}">
                 <span>🤖</span>
-                <span>GEMINI SECOND OPINION</span>
+                <span>GEMINI ${trendText}</span>
             </div>
             <div class="collapse-icon" onclick="toggleGeminiCollapse()">−</div>
         </div>
@@ -3659,20 +3628,20 @@ function renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseSc
         <div class="gemini-content" id="geminiContent">
             <div class="score-comparison">
                 <div class="score-box">
-                    <div class="score-box-label">Your Score</div>
+                    <div class="score-box-label">Algo Score</div>
                     <div class="score-box-value amber">${baseScore}</div>
                 </div>
 
-                <div class="score-arrow ${isUpgrade ? 'up' : 'down'}">→</div>
+                <div class="score-arrow ${trendClass}">${trendIcon}</div>
 
                 <div class="score-box">
                     <div class="score-box-label">Gemini Score</div>
-                    <div class="score-box-value ${isUpgrade ? 'green' : 'red'}">${geminiScore}</div>
+                    <div class="score-box-value ${tierClass}">${geminiScore}</div>
                 </div>
             </div>
 
-            <div class="gemini-verdict ${opinionClass}">
-                ${isUpgrade ? '✓ UPGRADE → BUY' : '✗ DOWNGRADE → REJECT'}
+            <div class="gemini-verdict ${tierClass}">
+                ${geminiVerdict} Tier
             </div>
 
             <div class="gemini-text">${geminiReasoning}</div>
@@ -4247,11 +4216,9 @@ function showSourceSettings() {
     
     document.body.appendChild(modal);
     
-    // Set current source
     const select = document.getElementById('sourceSelect');
     select.value = config.source || 'OW';
     
-    // CSV upload handler
     document.getElementById('csvUpload').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -4260,7 +4227,6 @@ function showSourceSettings() {
                 const sources = parseSourcesCSV(evt.target.result);
                 config.sources = sources;
                 
-                // Rebuild select
                 select.innerHTML = sources.map(s => 
                     `<option value="${s.code}">${s.name} (${s.code})</option>`
                 ).join('');
@@ -4271,7 +4237,6 @@ function showSourceSettings() {
         }
     });
     
-    // Save button
     document.getElementById('saveSrcBtn').onclick = () => {
         config.source = select.value;
         saveSourceConfig(config);
@@ -4279,8 +4244,6 @@ function showSourceSettings() {
         alert('✓ Source settings saved!');
     };
 }
-
 </script>
-
 </body>
 </html>
