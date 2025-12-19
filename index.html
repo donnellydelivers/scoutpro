@@ -336,6 +336,40 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 .tag.warn { background: rgba(251,191,36,0.2); color: var(--yellow); }
 .tag.gem { background: rgba(34, 211, 238, 0.15); color: var(--diamond); border: 1px solid rgba(34,211,238,0.3); box-shadow: 0 0 5px rgba(34,211,238,0.2); }
 
+/* Plain English Trigger Signal Badges */
+.signals-container {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0;
+  padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.signal-badge {
+  font-size: 10px; font-weight: 700; padding: 5px 10px;
+  border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;
+  text-transform: uppercase; letter-spacing: 0.03em;
+  cursor: help; transition: all 0.2s;
+  border: 1.5px solid;
+}
+.signal-badge:hover {
+  transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.signal-badge.signal-good {
+  background: rgba(52, 211, 153, 0.15); color: var(--green);
+  border-color: rgba(52, 211, 153, 0.4);
+}
+.signal-badge.signal-warn {
+  background: rgba(251, 191, 36, 0.15); color: var(--yellow);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+.signal-badge.signal-bad {
+  background: rgba(248, 113, 113, 0.15); color: var(--red);
+  border-color: rgba(248, 113, 113, 0.4);
+}
+.signals-title {
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; margin-top: 12px; }
 .metric { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; text-align: center; }
 .metric-lbl { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
@@ -1149,6 +1183,12 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
             </div>
           </div>
         </div>
+      </div>
+      
+      <!-- Plain English Signals (2025 Strategy) -->
+      <div id="signalsContainer" class="signals-container hidden">
+        <div class="signals-title">⚡ Strategy Signals</div>
+        <div id="signalsBadges" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
       </div>
       
       <div id="geminiOpinion" class="hidden"></div>
@@ -2372,6 +2412,50 @@ function analyze(data) {
     if(isPhantom) { allTags.push({text: "💎 Crowded But Fine", type: "gem"}); }
     if(isFbaPrem) { allTags.push({text: "💎 FBA Premium", type: "gem"}); }
 
+    // --- 3B. PLAIN ENGLISH TRIGGERS (2025 AGNOSTIC BUY BOX STRATEGY) ---
+    // These signals help navigate the new Featured Offer landscape where MFN can compete directly
+    let signals = []; // Strategic trigger labels for UI display
+    let triggerScoreAdjustment = 0; // Cumulative score impact from all triggers
+    
+    // TRIGGER 1: LONE WOLF - You're the only FBA option (massive advantage)
+    const isLoneWolf = (data.fbaCount === 0);
+    if (isLoneWolf) {
+        signals.push({text: "💎 LONE WOLF", type: "signal-good", tooltip: "Zero FBA competition - Prime members will choose you"});
+        triggerScoreAdjustment += 20;
+    }
+    
+    // TRIGGER 2: MFN CROWDED - MFN sellers are 20%+ cheaper (high risk)
+    const isMfnCrowded = (data.usedPrice > 0 && data.fbaPrice > 0 && data.usedPrice < (data.fbaPrice * 0.8));
+    if (isMfnCrowded) {
+        signals.push({text: "⚠️ MFN CROWDED", type: "signal-warn", tooltip: "MFN sellers are 20%+ cheaper - they may win Featured Offer"});
+        triggerScoreAdjustment -= 10;
+    }
+    
+    // TRIGGER 3: AMZ CAMPING - Amazon is on the listing (slow turns expected)
+    const isAmzCamping = (data.amzPrice > 0);
+    if (isAmzCamping) {
+        signals.push({text: "🛑 AMZ CAMPING", type: "signal-bad", tooltip: "Amazon is selling - you'll only get sales when they stock out"});
+        triggerScoreAdjustment -= 15;
+    }
+    
+    // TRIGGER 4: QUALITY LEAD - Your condition is better than Buy Box holder
+    // Note: We can't easily determine BB holder's condition from Keepa, so we'll use a proxy:
+    // If you're NEW and BB is held by FBM (likely used), you have quality advantage
+    const isQualityLead = (CONFIG.condition === 'NEW' && data.bbOwnerType === 'FBM_PRICE_DRIVEN');
+    if (isQualityLead) {
+        signals.push({text: "✨ QUALITY LEAD", type: "signal-good", tooltip: "Your condition is superior - can price higher and still win"});
+        triggerScoreAdjustment += 10;
+    }
+    
+    // TRIGGER 5: JUNK COMP - Low-rated sellers in competition (easy to beat)
+    // Note: Keepa doesn't provide seller ratings, so we use low offer count + low FBA as proxy
+    // Items with very few total offers (<5) but market activity suggest poor quality competition
+    const isJunkComp = (data.totalOffers > 0 && data.totalOffers < 5 && data.drops30 > 2);
+    if (isJunkComp) {
+        signals.push({text: "📉 JUNK COMP", type: "signal-good", tooltip: "Low offer count with sales activity - competitors likely low-rated"});
+        triggerScoreAdjustment += 5;
+    }
+
     // --- 4. SMART SCORE CALCULATION (TIME-TO-SALE + ROI MODEL) ---
     
     // Initialize score breakdown variables (always defined)
@@ -2526,6 +2610,15 @@ function analyze(data) {
             score = score - 8;
         }
         
+        // G2. APPLY PLAIN ENGLISH TRIGGER ADJUSTMENTS (2025 Strategy)
+        score = score + triggerScoreAdjustment;
+        
+        console.log('🎯 TRIGGER ADJUSTMENTS:', {
+            signals: signals.map(s => s.text),
+            triggerScoreAdjustment: triggerScoreAdjustment,
+            scoreAfterTriggers: score
+        });
+        
         // H. CLAMP SCORE TO 0-100 RANGE
         score = Math.round(Math.max(0, Math.min(100, score)));
 
@@ -2601,6 +2694,7 @@ function analyze(data) {
         posTags, 
         negTags, 
         isGem,
+        signals, // Plain English Triggers for 2025 strategy
         // FIXED: Expose all breakdown metrics for the explanation panel
         breakdown: { 
             velocityScore, 
@@ -2609,6 +2703,7 @@ function analyze(data) {
             salesPerMonth: salesPerMonth,
             queuePosition: queuePosition,
             queuePositionOptimistic: queuePositionOptimistic,
+            triggerScoreAdjustment: triggerScoreAdjustment, // Show trigger impact
             // Calculate penalty amount for the breakdown UI
             profitPenalty: profit < CONFIG.profitFloor ? (CONFIG.profitFloor - profit) : 0 
         }
@@ -2720,6 +2815,24 @@ function render(res, data) {
         timeBadge.textContent = badgeText;
         timeBadge.className = 'time-badge ' + badgeClass;
         timeBadge.classList.remove('hidden');
+    }
+    
+    // Render Plain English Signals (2025 Strategy)
+    const signalsContainer = document.getElementById('signalsContainer');
+    const signalsBadges = document.getElementById('signalsBadges');
+    if (signalsContainer && signalsBadges && res.signals && res.signals.length > 0) {
+        signalsContainer.classList.remove('hidden');
+        signalsBadges.innerHTML = '';
+        
+        res.signals.forEach(signal => {
+            const badge = document.createElement('div');
+            badge.className = `signal-badge ${signal.type}`;
+            badge.textContent = signal.text;
+            badge.title = signal.tooltip || signal.text;
+            signalsBadges.appendChild(badge);
+        });
+    } else if (signalsContainer) {
+        signalsContainer.classList.add('hidden');
     }
 
     // Update slider displays
