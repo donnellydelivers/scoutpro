@@ -231,24 +231,28 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
 }
 @keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 
-.banner { padding: 16px 16px; text-align: center; position: relative; }
-.banner.buy { background: radial-gradient(circle at top, rgba(16,185,129,0.12), transparent 70%); }
-.banner.gem { background: radial-gradient(circle at top, rgba(34, 211, 238, 0.2), transparent 70%); } 
-.banner.reject { background: radial-gradient(circle at top, rgba(239,68,68,0.12), transparent 70%); }
-.banner.consider { background: radial-gradient(circle at top, rgba(245,158,11,0.12), transparent 70%); }
+.banner { padding: 32px 24px; text-align: center; position: relative; }
+.banner.buy { background: linear-gradient(180deg, #064e3b 0%, var(--bg) 100%); }
+.banner.gem { background: linear-gradient(180deg, #064e3b 0%, var(--bg) 100%); } 
+.banner.reject { background: linear-gradient(180deg, #7f1d1d 0%, var(--bg) 100%); }
+.banner.consider { background: linear-gradient(180deg, #78350f 0%, var(--bg) 100%); }
 
-.score-container { position: relative; width: 80px; height: 80px; margin: 0 auto 10px auto; display: flex; align-items: center; justify-content: center; }
+.score-container { position: relative; width: 140px; height: 140px; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; }
 .score-svg { position: absolute; top:0; left:0; width:100%; height:100%; transform: rotate(-90deg); }
-.score-circle-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 8; }
-.score-circle-fg { fill: none; stroke: currentColor; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s; stroke-dasharray: 283; stroke-dashoffset: 283; }
-.score-num { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -0.04em; z-index: 2; }
+.score-circle-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 5; }
+.score-circle-fg { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 1s; stroke-dasharray: 440; stroke-dashoffset: 440; animation: pulse-ring 2s ease-in-out infinite; }
+@keyframes pulse-ring {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+.score-num { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 64px; font-weight: 700; color: #fff; letter-spacing: -0.04em; z-index: 2; background: linear-gradient(135deg, var(--green), var(--diamond)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-feature-settings: 'tnum'; }
 
 /* REPOSITIONED GEM ICON (FIXED) */
 .gem-icon {
     position: absolute; 
     top: 10px; 
     left: 50%;
-    margin-left: 45px; /* Positions it 45px to the right of the center (next to the 80px score ring) */
+    margin-left: 80px; /* Positions it next to the 140px score ring */
     font-size: 28px; 
     filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.8)); 
     animation: float 3s ease-in-out infinite; 
@@ -258,12 +262,13 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 .decision-label {
-  font-size: 13px; font-weight: 800; text-transform: uppercase; 
-  padding: 6px 14px; border-radius: 99px; display: inline-block; margin-top: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 28px; font-weight: 800; text-transform: uppercase; 
+  padding: 0; border-radius: 0; display: inline-block; margin-top: 0; box-shadow: none; letter-spacing: 1px;
 }
-.decision-label.buy { background: var(--green); color: #000; }
-.decision-label.consider { background: var(--yellow); color: #000; }
-.decision-label.reject { background: var(--red); color: #fff; }
+.decision-label.buy { background: transparent; color: var(--green); text-shadow: 0 2px 10px rgba(52, 211, 153, 0.3); }
+.decision-label.consider { background: transparent; color: var(--yellow); text-shadow: 0 2px 10px rgba(251, 191, 36, 0.3); }
+.decision-label.reject { background: transparent; color: var(--red); text-shadow: 0 2px 10px rgba(248, 113, 113, 0.3); }
 
 #geminiQuickBadge {
     display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 14px; border-radius: 99px;
@@ -491,21 +496,31 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 
 /* Gemini Second Opinion */
 .gemini-opinion {
-  background: rgba(167,139,250,0.08); border: 2px solid rgba(167,139,250,0.3); border-radius: 12px;
-  padding: 12px; margin: 12px 16px; /* Match other collapsible sections */
+  background: rgba(16,185,129,0.08);
+  border-top: 2px solid rgba(16,185,129,0.4);
+  border-bottom: 2px solid rgba(16,185,129,0.4);
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+  padding: 20px;
+  margin: 0;
 }
 .gemini-opinion.loading {
   background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.3);
 }
 .gemini-opinion.upgrade {
-  background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.4);
+  background: rgba(16,185,129,0.08); 
+  border-top-color: rgba(16,185,129,0.4);
+  border-bottom-color: rgba(16,185,129,0.4);
 }
 .gemini-opinion.downgrade {
-  background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.4);
+  background: rgba(239,68,68,0.08); 
+  border-top-color: rgba(239,68,68,0.4);
+  border-bottom-color: rgba(239,68,68,0.4);
 }
 .gemini-header {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
-  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+  padding-bottom: 0; border-bottom: none;
 }
 .collapse-icon {
   color: rgba(255,255,255,0.5); cursor: pointer; font-size: 18px; font-weight: 800;
@@ -518,25 +533,28 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
   display: none;
 }
 .gemini-title {
-  font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--purple); display: flex; align-items: center; gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--green); display: flex; align-items: center; gap: 6px;
 }
 .gemini-title.upgrade { color: var(--green); }
 .gemini-title.downgrade { color: var(--red); }
 .score-comparison {
-  display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;
 }
 .score-box { text-align: center; }
 .score-box-label {
-  font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.05em;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.5px;
 }
 .score-box-value {
-  font-size: 28px; font-weight: 800; font-family: 'JetBrains Mono', monospace; line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 32px; font-weight: 700; line-height: 1; font-feature-settings: 'tnum';
 }
 .score-box-value.amber { color: var(--yellow); }
 .score-box-value.green { color: var(--green); }
 .score-box-value.red { color: var(--red); }
-.score-arrow { font-size: 24px; font-weight: 800; }
+.score-arrow { font-size: 28px; font-weight: 800; }
 .score-arrow.up { color: var(--green); }
 .score-arrow.down { color: var(--red); }
 .gemini-verdict {
@@ -550,84 +568,95 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
   background: rgba(239,68,68,0.2); color: var(--red); border: 2px solid rgba(239,68,68,0.4);
 }
 .gemini-text {
-  font-size: 11px; line-height: 1.5; color: rgba(255,255,255,0.85); text-align: left;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.9); text-align: left;
+  background: rgba(0,0,0,0.3);
+  padding: 14px;
+  border-radius: 8px;
+  border-left: 3px solid var(--green);
+  font-weight: 500;
+}
+.gemini-text strong {
+  font-weight: 700;
 }
 
-/* CONCEPT 3: COLOR-CODED REDESIGN */
-
-/* Key Info Section - Always Visible */
+/* Key Info Section - Simplified for mockup */
 .key-info {
-  padding: 16px; background: rgba(0,0,0,0.3);
+  padding: 24px; background: rgba(0,0,0,0.3);
 }
 
 .price-profit-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  display: flex; flex-direction: column; gap: 20px;
 }
 
 .info-box {
-  border-radius: 10px; padding: 14px; text-align: center;
-  transition: all 0.2s; position: relative;
+  display: flex; justify-content: space-between; align-items: center;
+  border-radius: 0; padding: 0; text-align: left;
+  transition: none; position: relative; border: none; background: none; box-shadow: none;
 }
 
 .info-box.price-box {
-  border: 2px solid var(--blue);
-  background: rgba(96,165,250,0.08);
-  box-shadow: 0 0 20px rgba(96,165,250,0.2);
+  border: none; background: none; box-shadow: none;
 }
 
 .info-box.profit-box {
-  border: 2px solid var(--green);
-  background: rgba(52,211,153,0.08);
-  box-shadow: 0 0 20px rgba(52,211,153,0.2);
+  border: none; background: none; box-shadow: none;
 }
 
 .info-label {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 8px; letter-spacing: 0.05em;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 0; letter-spacing: 0.5px;
 }
 
 .info-value {
-  font-size: 28px; font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 28px; font-weight: 600; font-feature-settings: 'tnum';
 }
 
-.info-value.price { color: var(--blue); }
+.info-value.price { color: var(--diamond); }
 .info-value.profit { color: var(--green); }
 
-/* Time Badge - Shown below profit */
+/* Time Badge - Shown inline with profit */
 .profit-with-time {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: baseline;
+  gap: 10px;
+}
   gap: 6px;
 }
 
 .time-badge {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 99px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 0;
+  border-radius: 0;
+  text-transform: none;
+  letter-spacing: 0;
   white-space: nowrap;
-  transition: all 0.3s ease;
+  transition: none;
+  background: none;
+  border: none;
+  color: var(--orange);
 }
 
 .time-badge.fast {
-  background: rgba(52,211,153,0.2);
-  color: var(--green);
-  border: 1px solid rgba(52,211,153,0.3);
+  background: none;
+  color: var(--orange);
+  border: none;
 }
 
 .time-badge.medium {
-  background: rgba(251,191,36,0.2);
-  color: var(--yellow);
-  border: 1px solid rgba(251,191,36,0.3);
+  background: none;
+  color: var(--orange);
+  border: none;
 }
 
 .time-badge.slow {
-  background: rgba(248,113,113,0.2);
-  color: var(--red);
-  border: 1px solid rgba(248,113,113,0.3);
+  background: none;
+  color: var(--orange);
+  border: none;
 }
 
 /* Collapsible Sections */
@@ -731,6 +760,36 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 }
 .signal-text p {
   font-size: 10px; color: var(--muted); line-height: 1.3; margin: 0;
+}
+
+/* Buy Box Narrative */
+.bb-narrative {
+  background: rgba(34, 211, 238, 0.08);
+  border-left: 3px solid var(--diamond);
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.bb-narrative-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--diamond);
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bb-narrative-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
 }
 
 
@@ -843,54 +902,66 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 
 /* === DECISION TRACKING === */
 .decision-section {
-  background: rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.1);
-  border-radius: 12px; padding: 12px; margin-top: 12px;
+  padding: 16px;
+  margin: 10px;
+  background: none;
+  border: none;
+  border-radius: 0;
 }
 
 .decision-prompt {
-  text-align: center; font-size: 11px; font-weight: 700;
-  color: rgba(255,255,255,0.9); margin-bottom: 10px;
-  text-transform: uppercase; letter-spacing: 0.05em;
+  display: none; /* Removed per mockup */
 }
 
 .decision-buttons {
-  display: flex; gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .decision-btn {
-  flex: 1; padding: 10px 16px; border-radius: 10px;
-  font-size: 13px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s;
-  border: 2px solid; display: flex; align-items: center;
-  justify-content: center; gap: 6px; background: transparent;
+  font-family: 'Inter', sans-serif;
+  height: 54px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
 }
 
 .decision-btn.buy {
-  background: rgba(16,185,129,0.2); color: var(--green);
-  border-color: rgba(16,185,129,0.5);
+  background: var(--green);
+  color: #000;
+  box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
 }
 
 .decision-btn.buy:hover {
-  background: rgba(16,185,129,0.3); border-color: var(--green);
-  transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+  transform: scale(1.02);
 }
 
 .decision-btn.buy:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
 }
 
 .decision-btn.pass {
-  background: rgba(239,68,68,0.2); color: var(--red);
-  border-color: rgba(239,68,68,0.5);
+  background: #2a2a2a;
+  color: var(--red);
+  border: 1.5px solid var(--red);
 }
 
 .decision-btn.pass:hover {
-  background: rgba(239,68,68,0.3); border-color: var(--red);
-  transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239,68,68,0.3);
+  transform: scale(1.02);
 }
 
 .decision-btn.pass:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
 }
 
 .decision-btn.selected {
@@ -1271,14 +1342,14 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
       <div class="key-info">
         <div class="price-profit-grid">
           <div class="info-box price-box">
-            <div class="info-label">List at This Price</div>
+            <div class="info-label">Sell For</div>
             <div class="info-value price" id="recommendedPrice">$0.00</div>
           </div>
           <div class="info-box profit-box">
-            <div class="info-label">Your Profit</div>
+            <div class="info-label">Net Profit</div>
             <div class="profit-with-time">
+              <div class="time-badge hidden" id="timeBadge">~8 Days</div>
               <div class="info-value profit" id="profitValue">$0.00</div>
-              <div class="time-badge hidden" id="timeBadge">-- WAIT</div>
             </div>
           </div>
         </div>
@@ -1295,13 +1366,24 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
       <div class="collapsible-section score-section" id="whyScoreSection">
         <div class="collapsible-header" onclick="toggleSection('whyScoreSection')">
           <div class="collapsible-title score-title">
-            <span>💡</span>
-            <span>Why This Score?</span>
+            <span><i class="fas fa-sliders-h"></i></span>
+            <span>Advanced Details</span>
           </div>
           <i class="fas fa-chevron-down chevron" id="whyScoreChevron"></i>
         </div>
         <div class="collapsible-body" id="whyScoreBody">
-          <div id="bbSummaryBox" style="background:rgba(96,165,250,0.1); border:1px solid var(--blue); padding:10px; border-radius:6px; margin-bottom:10px;">
+          <!-- Buy Box Narrative -->
+          <div class="bb-narrative">
+            <div class="bb-narrative-title">
+              <span>📦</span>
+              <span>Buy Box Analysis</span>
+            </div>
+            <div class="bb-narrative-text" id="bbNarrativeText">
+              Loading Buy Box analysis...
+            </div>
+          </div>
+          
+          <div id="bbSummaryBox" style="background:rgba(96,165,250,0.1); border:1px solid var(--blue); padding:10px; border-radius:6px; margin-bottom:10px; display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; color:var(--blue); margin-bottom:4px;">
               <span>CURRENT BUY BOX PRICE (<span id="bbCond">--</span>)</span>
               <span style="font-weight:800;" id="bbPriceVal">--</span>
@@ -3034,7 +3116,7 @@ function render(res, data) {
     }
     
     // Update score ring
-    const offset = 283 - (283 * res.score / 100);
+    const offset = 440 - (440 * res.score / 100);
     const ring = document.getElementById('scoreRing');
     if(ring) {
         ring.style.strokeDashoffset = offset;
@@ -3080,34 +3162,9 @@ function render(res, data) {
     // Update time badge based on estimated days to sale
     const timeBadge = document.getElementById('timeBadge');
     if(timeBadge && res.estimatedDaysToSale !== undefined) {
-        let badgeText = '';
-        let badgeClass = '';
-        
-        if (res.estimatedDaysToSale <= 7) {
-            badgeText = '1 WEEK';
-            badgeClass = 'fast';
-        } else if (res.estimatedDaysToSale <= 14) {
-            badgeText = '2 WEEKS';
-            badgeClass = 'fast';
-        } else if (res.estimatedDaysToSale <= 30) {
-            badgeText = '1 MONTH';
-            badgeClass = 'medium';
-        } else if (res.estimatedDaysToSale <= 60) {
-            badgeText = '2 MONTHS';
-            badgeClass = 'medium';
-        } else if (res.estimatedDaysToSale <= 90) {
-            badgeText = '3 MONTHS';
-            badgeClass = 'medium';
-        } else if (res.estimatedDaysToSale <= 180) {
-            badgeText = Math.round(res.estimatedDaysToSale / 30) + ' MONTHS';
-            badgeClass = 'slow';
-        } else {
-            badgeText = Math.round(res.estimatedDaysToSale / 30) + ' MONTHS';
-            badgeClass = 'slow';
-        }
-        
+        let badgeText = `~${Math.round(res.estimatedDaysToSale)} Days`;
         timeBadge.textContent = badgeText;
-        timeBadge.className = 'time-badge ' + badgeClass;
+        timeBadge.className = 'time-badge';
         timeBadge.classList.remove('hidden');
     }
     
@@ -3294,6 +3351,95 @@ function render(res, data) {
       bbPriceValEl.style.color = bbColor;
     }
     // --- End Buy Box Status Update ---
+    
+    // --- Generate Buy Box Narrative ---
+    const bbNarrativeEl = document.getElementById('bbNarrativeText');
+    if (bbNarrativeEl) {
+        let narrative = '';
+        
+        // Determine Buy Box ownership pattern
+        const fbaCount = data.fbaCount || 0;
+        const totalOffers = data.totalOffers || 0;
+        const amzActive = data.amzPrice > 0;
+        const currentBbPrice = bbPrice > 0 ? bbPrice : res.market;
+        
+        // Build narrative based on Buy Box dynamics
+        if (bbOwner === 'ROTATING_FBA' && fbaCount > 1) {
+            narrative = `The Buy Box rotates cleanly among ${fbaCount} FBA sellers at $${currentBbPrice.toFixed(2)}. `;
+            
+            if (!amzActive) {
+                narrative += `Amazon hasn't touched this listing in ${data.lastAmzDays || 90}+ days. `;
+            } else {
+                narrative += `Amazon occasionally appears (last seen at $${data.amzPrice.toFixed(2)}), but isn't dominating. `;
+            }
+            
+            // Add price stability context
+            if (data.avgUsed && Math.abs(currentBbPrice - data.avgUsed) < 2) {
+                narrative += `The price has held steady at $${(data.avgUsed - 1).toFixed(0)}-${(data.avgUsed + 1).toFixed(0)} for the past month with only brief dips when new sellers undercut. `;
+            } else if (currentBbPrice < data.avgUsed * 0.85) {
+                narrative += `Price has dropped ${Math.round((1 - currentBbPrice/data.avgUsed) * 100)}% recently - likely temporary dump from a weak seller. `;
+            }
+            
+            narrative += `Your recommended price puts you in the rotation immediately. Expect to win the BB ${Math.round(100 / fbaCount)}-${Math.round(100 / (fbaCount + 1))}% of the time.`;
+            
+        } else if (bbOwner === 'FBM_PRICE_DRIVEN' || (fbaCount === 0 && totalOffers > 0)) {
+            narrative = `The Buy Box is currently controlled by MFN sellers at $${currentBbPrice.toFixed(2)}`;
+            
+            if (data.avgUsed && currentBbPrice < data.avgUsed * 0.9) {
+                narrative += `, but it was FBA-dominated at $${(data.avgUsed - 2).toFixed(0)}-${(data.avgUsed + 2).toFixed(0)} just recently. `;
+            } else {
+                narrative += `. `;
+            }
+            
+            if (amzActive) {
+                narrative += `Amazon pops in occasionally (last seen ${data.lastAmzDays || 12} days ago at $${data.amzPrice.toFixed(2)}). `;
+            }
+            
+            if (fbaCount === 0) {
+                narrative += `No FBA sellers are active. List at $${res.market.toFixed(2)} and you'll capture the Prime premium - historically this book sells for $2-3 above MFN when FBA is available. You'll own 100% of Prime customer sales.`;
+            } else {
+                narrative += `This is a temporary race to the bottom - wait 2-3 weeks for weak sellers to exit before listing.`;
+            }
+            
+        } else if (amzActive && Math.abs(data.amzPrice - currentBbPrice) < 0.50) {
+            narrative = `Amazon currently holds the Buy Box at $${data.amzPrice.toFixed(2)}. `;
+            
+            if (data.lastAmzDays && data.lastAmzDays < 7) {
+                narrative += `They've been consistently active (seen ${data.lastAmzDays} days ago). `;
+            }
+            
+            if (res.verdict === 'BUY') {
+                narrative += `Despite Amazon's presence, the profit margin ($${res.profit.toFixed(2)}) and velocity justify buying. You'll capture sales when Amazon goes out of stock or raises prices.`;
+            } else {
+                narrative += `Their presence is suppressing third-party sales. Consider passing unless you can wait for them to exit.`;
+            }
+            
+        } else if (bbPrice > 0) {
+            narrative = `The Buy Box is held by a single seller at $${currentBbPrice.toFixed(2)}. `;
+            
+            if (totalOffers < 5) {
+                narrative += `Low competition (${totalOffers} total sellers) means you can likely match or undercut to win. `;
+            }
+            
+            if (data.drops30 > 10) {
+                narrative += `Strong velocity (${data.drops30} sales/month) means sales will come quickly once you win the BB.`;
+            } else if (data.drops30 > 0) {
+                narrative += `Moderate velocity (${data.drops30} sales/month) means patient sellers will eventually convert.`;
+            }
+            
+        } else {
+            narrative = `No active Buy Box or offers detected. `;
+            
+            if (res.verdict === 'BUY') {
+                narrative += `This creates an opportunity - historical data shows this book sold for $${res.market.toFixed(2)} at ${CONFIG.condition.toLowerCase()} condition. List at that price and you'll have zero FBA competition.`;
+            } else {
+                narrative += `Pricing is based on historical averages, which may not reflect current demand. Proceed with caution.`;
+            }
+        }
+        
+        bbNarrativeEl.innerHTML = narrative;
+    }
+    // --- End Buy Box Narrative ---
 
 
     // Render the new score explanation panel
