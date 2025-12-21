@@ -15,7 +15,7 @@
 :root {
   --bg: #050505; --panel: #121212; --card: #1e1e1e; --border: #2a2a2a;
   --text: #ffffff; --muted: #888; --green: #34d399; --red: #f87171;
-  --yellow: #fbbf24; --blue: #60a5fa; --purple: #a78bfa; --diamond: #22d3ee;
+  --yellow: #fbbf24; --amber: #f59e0b; --blue: #60a5fa; --purple: #a78bfa; --diamond: #22d3ee;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 120px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
@@ -240,11 +240,7 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
 .score-container { position: relative; width: 140px; height: 140px; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; }
 .score-svg { position: absolute; top:0; left:0; width:100%; height:100%; transform: rotate(-90deg); }
 .score-circle-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 5; }
-.score-circle-fg { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 1s; stroke-dasharray: 440; stroke-dashoffset: 440; animation: pulse-ring 2s ease-in-out infinite; }
-@keyframes pulse-ring {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
-}
+.score-circle-fg { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 1s; stroke-dasharray: 440; stroke-dashoffset: 440; }
 .score-num { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 64px; font-weight: 700; color: #fff; letter-spacing: -0.04em; z-index: 2; background: linear-gradient(135deg, var(--green), var(--diamond)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-feature-settings: 'tnum'; }
 
 /* REPOSITIONED GEM ICON (FIXED) */
@@ -340,40 +336,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 .tag.bad { background: rgba(239,68,68,0.2); color: var(--red); }
 .tag.warn { background: rgba(251,191,36,0.2); color: var(--yellow); }
 .tag.gem { background: rgba(34, 211, 238, 0.15); color: var(--diamond); border: 1px solid rgba(34,211,238,0.3); box-shadow: 0 0 5px rgba(34,211,238,0.2); }
-
-/* Plain English Trigger Signal Badges */
-.signals-container {
-  display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0;
-  padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
-}
-.signal-badge {
-  font-size: 10px; font-weight: 700; padding: 5px 10px;
-  border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;
-  text-transform: uppercase; letter-spacing: 0.03em;
-  cursor: help; transition: all 0.2s;
-  border: 1.5px solid;
-}
-.signal-badge:hover {
-  transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-.signal-badge.signal-good {
-  background: rgba(52, 211, 153, 0.15); color: var(--green);
-  border-color: rgba(52, 211, 153, 0.4);
-}
-.signal-badge.signal-warn {
-  background: rgba(251, 191, 36, 0.15); color: var(--yellow);
-  border-color: rgba(251, 191, 36, 0.4);
-}
-.signal-badge.signal-bad {
-  background: rgba(248, 113, 113, 0.15); color: var(--red);
-  border-color: rgba(248, 113, 113, 0.4);
-}
-.signals-title {
-  font-size: 10px; font-weight: 700; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 0.05em;
-  margin-bottom: 6px;
-}
 
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; margin-top: 12px; }
 .metric { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; text-align: center; }
@@ -495,89 +457,80 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 }
 
 /* Gemini Second Opinion */
-.gemini-opinion {
-  background: rgba(16,185,129,0.08);
-  border-top: 2px solid rgba(16,185,129,0.4);
-  border-bottom: 2px solid rgba(16,185,129,0.4);
-  border-left: none;
-  border-right: none;
-  border-radius: 0;
-  padding: 20px;
-  margin: 0;
+/* Gemini Second Opinion - Mockup Format */
+.gemini-section {
+  padding: 16px;
+  background: rgba(0,0,0,0.25);
+  border-top: 1px solid var(--border);
 }
-.gemini-opinion.loading {
-  background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.3);
-}
-.gemini-opinion.upgrade {
-  background: rgba(16,185,129,0.08); 
-  border-top-color: rgba(16,185,129,0.4);
-  border-bottom-color: rgba(16,185,129,0.4);
-}
-.gemini-opinion.downgrade {
-  background: rgba(239,68,68,0.08); 
-  border-top-color: rgba(239,68,68,0.4);
-  border-bottom-color: rgba(239,68,68,0.4);
+.gemini-box {
+  background: rgba(168, 85, 247, 0.08);
+  border-left: 3px solid var(--purple);
+  padding: 12px;
+  border-radius: 8px;
 }
 .gemini-header {
-  display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
-  padding-bottom: 0; border-bottom: none;
-}
-.collapse-icon {
-  color: rgba(255,255,255,0.5); cursor: pointer; font-size: 18px; font-weight: 800;
-  padding: 4px 8px; transition: all 0.2s;
-}
-.collapse-icon:hover {
-  color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.1); border-radius: 4px;
-}
-.gemini-content.hidden {
-  display: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
 }
 .gemini-title {
   font-family: 'Inter', sans-serif;
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-  color: var(--green); display: flex; align-items: center; gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--purple);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.gemini-title.upgrade { color: var(--green); }
-.gemini-title.downgrade { color: var(--red); }
-.score-comparison {
-  display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;
+.gemini-score {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--purple);
+  font-feature-settings: 'tnum';
 }
-.score-box { text-align: center; }
-.score-box-label {
+.gemini-recommendation {
   font-family: 'Inter', sans-serif;
-  font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.5px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.score-box-value {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 32px; font-weight: 700; line-height: 1; font-feature-settings: 'tnum';
+.recommend-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.score-box-value.amber { color: var(--yellow); }
-.score-box-value.green { color: var(--green); }
-.score-box-value.red { color: var(--red); }
-.score-arrow { font-size: 28px; font-weight: 800; }
-.score-arrow.up { color: var(--green); }
-.score-arrow.down { color: var(--red); }
-.gemini-verdict {
-  text-align: center; font-size: 11px; font-weight: 800; padding: 6px 14px; border-radius: 99px;
-  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+.recommend-value {
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.gemini-verdict.upgrade {
-  background: rgba(16,185,129,0.2); color: var(--green); border: 2px solid rgba(16,185,129,0.4);
+.recommend-value.buy {
+  color: var(--green);
 }
-.gemini-verdict.downgrade {
-  background: rgba(239,68,68,0.2); color: var(--red); border: 2px solid rgba(239,68,68,0.4);
+.recommend-value.consider {
+  color: var(--amber);
+}
+.recommend-value.reject {
+  color: var(--red);
+}
+.recommend-value.unclear {
+  color: var(--yellow);
 }
 .gemini-text {
   font-family: 'Inter', sans-serif;
-  font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.9); text-align: left;
-  background: rgba(0,0,0,0.3);
-  padding: 14px;
-  border-radius: 8px;
-  border-left: 3px solid var(--green);
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.85);
   font-weight: 500;
-}
-.gemini-text strong {
-  font-weight: 700;
 }
 
 /* Key Info Section - Simplified for mockup */
@@ -735,6 +688,14 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 }
 
 /* Controls Section */
+.condition-section {
+  padding: 14px 16px;
+  background: rgba(0,0,0,0.15);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
 .controls-section {
   padding: 16px; background: rgba(0,0,0,0.2);
   border-top: 1px solid var(--border);
@@ -763,12 +724,18 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 }
 
 /* Buy Box Narrative */
+.bb-narrative-section {
+  padding: 16px;
+  background: rgba(0,0,0,0.2);
+  border-top: 1px solid var(--border);
+}
+
 .bb-narrative {
   background: rgba(34, 211, 238, 0.08);
   border-left: 3px solid var(--diamond);
   padding: 14px;
   border-radius: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .bb-narrative-title {
@@ -1355,10 +1322,17 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
         </div>
       </div>
       
-      <!-- Plain English Signals (2025 Strategy) -->
-      <div id="signalsContainer" class="signals-container hidden">
-        <div class="signals-title">⚡ Strategy Signals</div>
-        <div id="signalsBadges" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+      <!-- Buy Box Narrative (Always Visible for REJECT) -->
+      <div id="bbNarrativeSection" class="bb-narrative-section">
+        <div class="bb-narrative">
+          <div class="bb-narrative-title">
+            <span>📦</span>
+            <span>Buy Box Analysis</span>
+          </div>
+          <div class="bb-narrative-text" id="bbNarrativeText">
+            Loading Buy Box analysis...
+          </div>
+        </div>
       </div>
       
       <div id="geminiOpinion" class="hidden"></div>
@@ -1367,21 +1341,11 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
         <div class="collapsible-header" onclick="toggleSection('whyScoreSection')">
           <div class="collapsible-title score-title">
             <span><i class="fas fa-sliders-h"></i></span>
-            <span>Advanced Details</span>
+            <span>Why This Score?</span>
           </div>
           <i class="fas fa-chevron-down chevron" id="whyScoreChevron"></i>
         </div>
         <div class="collapsible-body" id="whyScoreBody">
-          <!-- Buy Box Narrative -->
-          <div class="bb-narrative">
-            <div class="bb-narrative-title">
-              <span>📦</span>
-              <span>Buy Box Analysis</span>
-            </div>
-            <div class="bb-narrative-text" id="bbNarrativeText">
-              Loading Buy Box analysis...
-            </div>
-          </div>
           
           <div id="bbSummaryBox" style="background:rgba(96,165,250,0.1); border:1px solid var(--blue); padding:10px; border-radius:6px; margin-bottom:10px; display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; color:var(--blue); margin-bottom:4px;">
@@ -1406,13 +1370,15 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           </div>
       </div>
       
-      <div class="controls-section">
+      <div class="condition-section" id="conditionSection">
         <div class="condition-toggle">
           <div id="btnCondUsed" class="cond-btn active" onclick="setCondition('USED')">Used</div>
           <div id="btnCondNew" class="cond-btn" onclick="setCondition('NEW')">New</div>
         </div>
+      </div>
 
-        <div class="adjusters-compact">
+      <div class="controls-section" id="adjustersSection">
+        <div class="adjusters-compact" id="adjustersCompact">
           <div class="adjuster-row">
             <span class="adjuster-label">Cost</span>
             <div class="adjuster-slider">
@@ -3137,6 +3103,37 @@ function render(res, data) {
         categoryBadge.textContent = `${icon} ${cat}`;
     }
     
+    // === STREAMLINED LAYOUT FOR REJECT, CONSIDER, AND BUY ===
+    // For all verdict types, hide accordions and sliders - show only essentials
+    const isReject = res.verdict === 'REJECT';
+    const isConsider = res.verdict === 'CONSIDER';
+    const isBuy = res.verdict === 'BUY';
+    const isStreamlined = isReject || isConsider || isBuy; // All verdicts get clean layout
+    
+    // Hide/show elements based on verdict
+    const hideForStreamlined = [
+        'scoreExplanationPanel',
+        'linkRow',
+        'decisionSection',
+        'adjustersSection'  // Hide the entire adjusters section (contains sliders)
+    ];
+    
+    hideForStreamlined.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.classList.toggle('hidden', isStreamlined);
+    });
+    
+    // Hide all collapsible sections for all verdicts
+    const collapsibleSections = document.querySelectorAll('.collapsible-section');
+    collapsibleSections.forEach(section => {
+        section.classList.toggle('hidden', isStreamlined);
+    });
+    
+    // Category badge - hide for all verdicts (redundant with title)
+    if(categoryBadge) {
+        categoryBadge.classList.toggle('hidden', isStreamlined);
+    }
+    
     // Update price and profit boxes WITH FLASH ANIMATION
     const priceBox = document.querySelector('.info-box.price-box');
     const profitBox = document.querySelector('.info-box.profit-box');
@@ -3168,111 +3165,8 @@ function render(res, data) {
         timeBadge.classList.remove('hidden');
     }
     
-    // Render Plain English Signals (2025 Strategy)
-    const signalsContainer = document.getElementById('signalsContainer');
-    const signalsBadges = document.getElementById('signalsBadges');
-    if (signalsContainer && signalsBadges && res.signals && res.signals.length > 0) {
-        signalsContainer.classList.remove('hidden');
-        signalsBadges.innerHTML = '';
-        
-        res.signals.forEach(signal => {
-            const badge = document.createElement('div');
-            badge.className = `signal-badge ${signal.type}`;
-            badge.textContent = signal.text;
-            badge.title = signal.tooltip || signal.text;
-            signalsBadges.appendChild(badge);
-        });
-    } else if (signalsContainer) {
-        signalsContainer.classList.add('hidden');
-    }
-
-    // --- MARVEL BADGE RENDERING ---
-    if (res.marvelData && res.marvelData.isMarvel) {
-        const marvelBadges = [];
-        
-        if (res.score >= 90) marvelBadges.push('<div class="badge-marvel knockout">TOTAL KNOCKOUT</div>');
-        if (data.fbaCount === 0) marvelBadges.push('<div class="badge-marvel solo">SOLO MISSION</div>');
-        if (CONFIG.condition === 'NEW') marvelBadges.push('<div class="badge-marvel mint">MINT</div>');
-        if (data.drops30 >= 10) marvelBadges.push('<div class="badge-marvel fast-turn">SALES BEAST</div>');
-        
-        if (data.weight > 4) {
-            if (res.profit >= 12) {
-                marvelBadges.push('<div class="badge-marvel big-margin">✓ HEAVY BUT PROFITABLE</div>');
-            } else {
-                marvelBadges.push('<div class="badge-marvel reject-marvel">⚠️ WEIGHT KILLS MARGIN</div>');
-            }
-        }
-        
-        if (CONFIG.condition !== 'NEW' && res.marvelData.returnRate >= 25) {
-            marvelBadges.push(`<div class="badge-marvel collector-warn">⚠️ ${res.marvelData.returnRate}% RETURN RISK</div>`);
-        }
-        
-        if (res.marvelData.universeMatch) {
-            marvelBadges.push(`<div class="badge-marvel ${res.marvelData.universeMatch.config.color}">${res.marvelData.universeMatch.config.badge}</div>`);
-        }
-        
-        if (res.marvelData.seriesMatch) {
-            marvelBadges.push(`<div class="badge-marvel knockout">📚 BUNDLE: ${res.marvelData.seriesMatch.adjacentVolumes.length} VOL IN STOCK</div>`);
-        }
-        
-        if (data.drops30 === 0 && res.market > 30) {
-            marvelBadges.push('<div class="badge-marvel collector-warn">⚠️ COLLECTOR RISK</div>');
-        }
-        
-        if (res.profit >= 40) marvelBadges.push('<div class="badge-marvel big-margin">HIGH PROFIT</div>');
-        
-        if (marvelBadges.length > 0 && signalsContainer && signalsBadges) {
-            signalsContainer.classList.remove('hidden');
-            signalsBadges.innerHTML += marvelBadges.join('');
-        }
-        
-        // Marvel Math Breakdown
-        if (res.score >= 60) {
-            let mathHTML = `<div class="marvel-math">
-                <div><span>List Price</span><span>$${res.market.toFixed(2)}</span></div>
-                <div><span>- Amazon (15%)</span><span>-$${res.marvelData.referralFee.toFixed(2)}</span></div>
-                <div><span>- FBA Fee (${data.weight.toFixed(1)}lb)</span><span>-$${res.marvelData.fbaFee.toFixed(2)}</span></div>
-                <div><span>- Closing Fee</span><span>-$1.80</span></div>
-                <div><span>- Buy Cost</span><span>-$${CONFIG.buyCost.toFixed(2)}</span></div>`;
-            
-            if (res.marvelData.returnRate > 0) {
-                const returnCost = res.profit - res.marvelData.returnAdjustedProfit;
-                mathHTML += `<div><span>- Return Risk (${res.marvelData.returnRate}%)</span><span>-$${returnCost.toFixed(2)}</span></div>`;
-            }
-            
-            mathHTML += `<div><span>= Net Profit</span><span>$${(res.marvelData.returnRate > 0 ? res.marvelData.returnAdjustedProfit : res.profit).toFixed(2)}</span></div>`;
-            
-            if (res.marvelData.seriesMatch) {
-                const bundleBonus = res.profit * 0.30;
-                mathHTML += `<div class="bundle-bonus"><span>+ Bundle Bonus (30%)</span><span>+$${bundleBonus.toFixed(2)}</span></div>`;
-            }
-            
-            mathHTML += `</div>`;
-            
-            // Insert after signals container
-            if (signalsContainer.nextSibling) {
-                signalsContainer.parentNode.insertBefore(
-                    document.createRange().createContextualFragment(mathHTML),
-                    signalsContainer.nextSibling
-                );
-            } else {
-                signalsContainer.parentNode.appendChild(
-                    document.createRange().createContextualFragment(mathHTML)
-                );
-            }
-        }
-        
-        // Trigger superhero animation for 90+ scores
-        if (res.score >= 90) {
-            triggerMarvelAnimation();
-        }
-        
-        // Update profit display with return-adjusted value
-        const profitValue = document.getElementById('profitValue');
-        if (profitValue && CONFIG.condition !== 'NEW' && res.marvelData.returnRate > 0) {
-            profitValue.textContent = '$' + res.marvelData.returnAdjustedProfit.toFixed(2);
-        }
-    }
+    // --- MARVEL BADGE RENDERING (removed - no longer displayed) ---
+    // Marvel badges functionality removed as part of streamlined REJECT layout
 
     // Update slider displays
     updateSliderDisplays();
@@ -3357,83 +3251,153 @@ function render(res, data) {
     if (bbNarrativeEl) {
         let narrative = '';
         
-        // Determine Buy Box ownership pattern
+        // Declare common variables used in both branches (bbPrice already declared at line 3180)
         const fbaCount = data.fbaCount || 0;
         const totalOffers = data.totalOffers || 0;
-        const amzActive = data.amzPrice > 0;
-        const currentBbPrice = bbPrice > 0 ? bbPrice : res.market;
+        const currentBbPrice = bbPrice > 0 ? bbPrice : res.market;  // Use existing bbPrice variable
         
-        // Build narrative based on Buy Box dynamics
-        if (bbOwner === 'ROTATING_FBA' && fbaCount > 1) {
-            narrative = `The Buy Box rotates cleanly among ${fbaCount} FBA sellers at $${currentBbPrice.toFixed(2)}. `;
+        // === SPECIAL CASE: REJECT VERDICT - COMPREHENSIVE REJECTION NARRATIVE ===
+        if (res.verdict === 'REJECT') {
+            const reasons = [];
             
-            if (!amzActive) {
-                narrative += `Amazon hasn't touched this listing in ${data.lastAmzDays || 90}+ days. `;
+            // Profit issues
+            if (res.profit < 0) {
+                reasons.push(`🚫 LOSING MONEY: Net profit is ${res.profit < 0 ? '-' : ''}$${Math.abs(res.profit).toFixed(2)} after fees. You'd lose money on every sale.`);
+            } else if (res.profit < CONFIG.profitFloor) {
+                reasons.push(`💸 INSUFFICIENT PROFIT: Net profit of $${res.profit.toFixed(2)} is below your $${CONFIG.profitFloor.toFixed(2)} floor. Not worth the effort and risk.`);
+            }
+            
+            // Velocity issues
+            if (data.drops30 === 0 && data.drops90 === 0) {
+                reasons.push(`📉 DEAD VELOCITY: Zero sales in 90 days. This is dead inventory that could sit for months or never sell.`);
+            } else if (res.estimatedDaysToSale > 180) {
+                reasons.push(`⏱️ GLACIAL TURNOVER: Estimated ${Math.round(res.estimatedDaysToSale)} days to sale (~${Math.round(res.estimatedDaysToSale/30)} months). Capital will be tied up too long.`);
+            } else if (data.drops30 === 0 && data.drops90 > 0) {
+                reasons.push(`⚠️ RECENT STALL: ${data.drops90} sales in 90 days but none in the last 30. Market may be cooling or seasonal.`);
+            }
+            
+            // Market price issues
+            if (res.market < 10) {
+                reasons.push(`💵 TOO CHEAP: Selling for under $10 means tiny profits after fees. Not worth storage space or shipping hassle.`);
+            }
+            
+            // Competition issues
+            if (totalOffers > 50 && res.profit < 3) {
+                reasons.push(`🏪 OVERCROWDED: ${totalOffers} sellers competing for thin margins. Race to the bottom.`);
+            }
+            
+            // Rank issues  
+            if (data.avgRank > 2000000) {
+                reasons.push(`📊 TERRIBLE RANK: Average rank over 2M indicates extremely slow sales. High risk of never selling.`);
+            }
+            
+            // Amazon competition
+            if (data.amzPrice > 0 && data.amzPrice <= res.market * 1.1) {
+                reasons.push(`👑 AMAZON ACTIVE: Amazon currently selling at $${data.amzPrice.toFixed(2)}, suppressing third-party sales.`);
+            }
+            
+            // FBM saturation (too many cheap FBM sellers)
+            const fbmCount = totalOffers - fbaCount;
+            if (fbmCount > 10 && fbaCount <= 2) {
+                reasons.push(`📦 FBM FLOODED: ${fbmCount} FBM sellers dragging price down. FBA premium insufficient to overcome.`);
+            }
+            
+            // Condition-specific issues
+            if (CONFIG.condition === 'USED' && data.usedPrice > 0 && data.usedPrice < 8) {
+                reasons.push(`📚 WORTHLESS USED: Used copies selling for under $8. After fees and shipping, essentially no profit possible.`);
+            }
+            
+            // Build the comprehensive narrative
+            if (reasons.length > 0) {
+                narrative = reasons.join(' ');
             } else {
-                narrative += `Amazon occasionally appears (last seen at $${data.amzPrice.toFixed(2)}), but isn't dominating. `;
+                // Fallback if no specific reasons (shouldn't happen)
+                narrative = `🚫 HARD REJECT: Score of ${res.score}/100 indicates this item fails multiple profitability criteria. Combination of poor profit ($${res.profit.toFixed(2)}), weak velocity (${data.drops30} sales/30d), and market conditions make this a poor investment.`;
             }
             
-            // Add price stability context
-            if (data.avgUsed && Math.abs(currentBbPrice - data.avgUsed) < 2) {
-                narrative += `The price has held steady at $${(data.avgUsed - 1).toFixed(0)}-${(data.avgUsed + 1).toFixed(0)} for the past month with only brief dips when new sellers undercut. `;
-            } else if (currentBbPrice < data.avgUsed * 0.85) {
-                narrative += `Price has dropped ${Math.round((1 - currentBbPrice/data.avgUsed) * 100)}% recently - likely temporary dump from a weak seller. `;
-            }
-            
-            narrative += `Your recommended price puts you in the rotation immediately. Expect to win the BB ${Math.round(100 / fbaCount)}-${Math.round(100 / (fbaCount + 1))}% of the time.`;
-            
-        } else if (bbOwner === 'FBM_PRICE_DRIVEN' || (fbaCount === 0 && totalOffers > 0)) {
-            narrative = `The Buy Box is currently controlled by MFN sellers at $${currentBbPrice.toFixed(2)}`;
-            
-            if (data.avgUsed && currentBbPrice < data.avgUsed * 0.9) {
-                narrative += `, but it was FBA-dominated at $${(data.avgUsed - 2).toFixed(0)}-${(data.avgUsed + 2).toFixed(0)} just recently. `;
-            } else {
-                narrative += `. `;
-            }
-            
-            if (amzActive) {
-                narrative += `Amazon pops in occasionally (last seen ${data.lastAmzDays || 12} days ago at $${data.amzPrice.toFixed(2)}). `;
-            }
-            
-            if (fbaCount === 0) {
-                narrative += `No FBA sellers are active. List at $${res.market.toFixed(2)} and you'll capture the Prime premium - historically this book sells for $2-3 above MFN when FBA is available. You'll own 100% of Prime customer sales.`;
-            } else {
-                narrative += `This is a temporary race to the bottom - wait 2-3 weeks for weak sellers to exit before listing.`;
-            }
-            
-        } else if (amzActive && Math.abs(data.amzPrice - currentBbPrice) < 0.50) {
-            narrative = `Amazon currently holds the Buy Box at $${data.amzPrice.toFixed(2)}. `;
-            
-            if (data.lastAmzDays && data.lastAmzDays < 7) {
-                narrative += `They've been consistently active (seen ${data.lastAmzDays} days ago). `;
-            }
-            
-            if (res.verdict === 'BUY') {
-                narrative += `Despite Amazon's presence, the profit margin ($${res.profit.toFixed(2)}) and velocity justify buying. You'll capture sales when Amazon goes out of stock or raises prices.`;
-            } else {
-                narrative += `Their presence is suppressing third-party sales. Consider passing unless you can wait for them to exit.`;
-            }
-            
-        } else if (bbPrice > 0) {
-            narrative = `The Buy Box is held by a single seller at $${currentBbPrice.toFixed(2)}. `;
-            
-            if (totalOffers < 5) {
-                narrative += `Low competition (${totalOffers} total sellers) means you can likely match or undercut to win. `;
-            }
-            
-            if (data.drops30 > 10) {
-                narrative += `Strong velocity (${data.drops30} sales/month) means sales will come quickly once you win the BB.`;
-            } else if (data.drops30 > 0) {
-                narrative += `Moderate velocity (${data.drops30} sales/month) means patient sellers will eventually convert.`;
+            // Add Buy Box context at the end
+            if (totalOffers > 0) {
+                narrative += ` BUY BOX: ${fbaCount} FBA seller(s), ${totalOffers - fbaCount} FBM, current BB at $${currentBbPrice.toFixed(2)}.`;
             }
             
         } else {
-            narrative = `No active Buy Box or offers detected. `;
+            // === ORIGINAL BUY/CONSIDER NARRATIVE (unchanged) ===
+            // Determine Buy Box ownership pattern
+            const amzActive = data.amzPrice > 0;
+            // currentBbPrice already declared at top of this block
             
-            if (res.verdict === 'BUY') {
-                narrative += `This creates an opportunity - historical data shows this book sold for $${res.market.toFixed(2)} at ${CONFIG.condition.toLowerCase()} condition. List at that price and you'll have zero FBA competition.`;
+            // Build narrative based on Buy Box dynamics
+            if (bbOwner === 'ROTATING_FBA' && fbaCount > 1) {
+                narrative = `The Buy Box rotates cleanly among ${fbaCount} FBA sellers at $${currentBbPrice.toFixed(2)}. `;
+                
+                if (!amzActive) {
+                    narrative += `Amazon hasn't touched this listing in ${data.lastAmzDays || 90}+ days. `;
+                } else {
+                    narrative += `Amazon occasionally appears (last seen at $${data.amzPrice.toFixed(2)}), but isn't dominating. `;
+                }
+                
+                // Add price stability context
+                if (data.avgUsed && Math.abs(currentBbPrice - data.avgUsed) < 2) {
+                    narrative += `The price has held steady at $${(data.avgUsed - 1).toFixed(0)}-${(data.avgUsed + 1).toFixed(0)} for the past month with only brief dips when new sellers undercut. `;
+                } else if (currentBbPrice < data.avgUsed * 0.85) {
+                    narrative += `Price has dropped ${Math.round((1 - currentBbPrice/data.avgUsed) * 100)}% recently - likely temporary dump from a weak seller. `;
+                }
+                
+                narrative += `Your recommended price puts you in the rotation immediately. Expect to win the BB ${Math.round(100 / fbaCount)}-${Math.round(100 / (fbaCount + 1))}% of the time.`;
+                
+            } else if (bbOwner === 'FBM_PRICE_DRIVEN' || (fbaCount === 0 && totalOffers > 0)) {
+                narrative = `The Buy Box is currently controlled by MFN sellers at $${currentBbPrice.toFixed(2)}`;
+                
+                if (data.avgUsed && currentBbPrice < data.avgUsed * 0.9) {
+                    narrative += `, but it was FBA-dominated at $${(data.avgUsed - 2).toFixed(0)}-${(data.avgUsed + 2).toFixed(0)} just recently. `;
+                } else {
+                    narrative += `. `;
+                }
+                
+                if (amzActive) {
+                    narrative += `Amazon pops in occasionally (last seen ${data.lastAmzDays || 12} days ago at $${data.amzPrice.toFixed(2)}). `;
+                }
+                
+                if (fbaCount === 0) {
+                    narrative += `No FBA sellers are active. List at $${res.market.toFixed(2)} and you'll capture the Prime premium - historically this book sells for $2-3 above MFN when FBA is available. You'll own 100% of Prime customer sales.`;
+                } else {
+                    narrative += `This is a temporary race to the bottom - wait 2-3 weeks for weak sellers to exit before listing.`;
+                }
+                
+            } else if (amzActive && Math.abs(data.amzPrice - currentBbPrice) < 0.50) {
+                narrative = `Amazon currently holds the Buy Box at $${data.amzPrice.toFixed(2)}. `;
+                
+                if (data.lastAmzDays && data.lastAmzDays < 7) {
+                    narrative += `They've been consistently active (seen ${data.lastAmzDays} days ago). `;
+                }
+                
+                if (res.verdict === 'BUY') {
+                    narrative += `Despite Amazon's presence, the profit margin ($${res.profit.toFixed(2)}) and velocity justify buying. You'll capture sales when Amazon goes out of stock or raises prices.`;
+                } else {
+                    narrative += `Their presence is suppressing third-party sales. Consider passing unless you can wait for them to exit.`;
+                }
+                
+            } else if (bbPrice > 0) {
+                narrative = `The Buy Box is held by a single seller at $${currentBbPrice.toFixed(2)}. `;
+                
+                if (totalOffers < 5) {
+                    narrative += `Low competition (${totalOffers} total sellers) means you can likely match or undercut to win. `;
+                }
+                
+                if (data.drops30 > 10) {
+                    narrative += `Strong velocity (${data.drops30} sales/month) means sales will come quickly once you win the BB.`;
+                } else if (data.drops30 > 0) {
+                    narrative += `Moderate velocity (${data.drops30} sales/month) means patient sellers will eventually convert.`;
+                }
+                
             } else {
-                narrative += `Pricing is based on historical averages, which may not reflect current demand. Proceed with caution.`;
+                narrative = `No active Buy Box or offers detected. `;
+                
+                if (res.verdict === 'BUY') {
+                    narrative += `This creates an opportunity - historical data shows this book sold for $${res.market.toFixed(2)} at ${CONFIG.condition.toLowerCase()} condition. List at that price and you'll have zero FBA competition.`;
+                } else {
+                    narrative += `Pricing is based on historical averages, which may not reflect current demand. Proceed with caution.`;
+                }
             }
         }
         
@@ -3642,16 +3606,41 @@ function render(res, data) {
     // --- Render Pricing Strategy Section ---
     renderPricingStrategy(data, res.market, res.profit);
     
-    // --- Auto-load Gemini Opinion (No Badge Needed) ---
+    // --- Auto-load Gemini Opinion (All verdicts with smart display logic) ---
     const geminiOpinion = document.getElementById('geminiOpinion');
     
-    // Check if Gemini API key exists AND the verdict is 'CONSIDER'
-    // BUT: Don't re-run if we already have a Gemini response (from condition toggle)
-    if(CONFIG.geminiKey && res.verdict === 'CONSIDER' && currentScan && !currentScan.geminiScore) {
-        // Auto-load Gemini opinion for CONSIDER items (only once)
+    // Determine if Gemini should be shown based on verdict and Gemini's opinion
+    const shouldAutoLoadGemini = CONFIG.geminiKey && currentScan && !currentScan.geminiScore;
+    const hasGeminiData = currentScan && currentScan.geminiScore && currentScan.geminiVerdict;
+    
+    // Display logic by verdict type:
+    // REJECT: Show Gemini if it UPGRADES (BUY or CONSIDER)
+    // CONSIDER: Always show Gemini (can be BUY, REJECT, or UNCLEAR)
+    // BUY: Show Gemini only if it DOWNGRADES (CONSIDER or REJECT)
+    
+    let shouldShowGemini = false;
+    
+    if(hasGeminiData) {
+        const scoutVerdict = res.verdict;
+        const geminiVerdict = currentScan.geminiVerdict;
+        
+        if(scoutVerdict === 'REJECT') {
+            // Show if Gemini upgrades (anything except REJECT)
+            shouldShowGemini = geminiVerdict !== 'REJECT';
+        } else if(scoutVerdict === 'CONSIDER') {
+            // Always show for CONSIDER (can be BUY, REJECT, UNCLEAR, or CONSIDER)
+            shouldShowGemini = true;
+        } else if(scoutVerdict === 'BUY') {
+            // Only show if Gemini downgrades (CONSIDER or REJECT)
+            shouldShowGemini = geminiVerdict !== 'BUY';
+        }
+    }
+    
+    // Auto-load Gemini for all verdicts (if API key present)
+    if(shouldAutoLoadGemini) {
         loadGeminiOpinion(); 
-    } else if(currentScan && currentScan.geminiScore && res.verdict === 'CONSIDER') {
-        // If we already have Gemini data and verdict is still CONSIDER, just render it
+    } else if(shouldShowGemini && hasGeminiData) {
+        // Render existing Gemini data
         renderGeminiOpinion(currentScan.geminiVerdict, currentScan.geminiScore, currentScan.geminiReasoning);
         geminiOpinion.classList.remove('hidden');
     } else {
@@ -4100,22 +4089,43 @@ async function loadGeminiOpinion() {
     const result = analyze(lastData);
     const baseScore = result.score;
     
-    geminiOpinion.className = 'gemini-opinion loading';
+    geminiOpinion.className = 'gemini-section';
     geminiOpinion.innerHTML = `
-        <div class="gemini-header">
-            <div class="gemini-title">
-                <span>🤖</span>
-                <span>GEMINI SECOND OPINION</span>
+        <div class="gemini-box">
+            <div class="gemini-header">
+                <div class="gemini-title">
+                    <i class="fas fa-brain"></i>
+                    Second Opinion (Gemini AI)
+                </div>
             </div>
-        </div>
-        <div style="text-align:center; padding:30px; color:var(--muted);">
-            <i class="fas fa-circle-notch fa-spin" style="font-size:24px; margin-bottom:10px;"></i>
-            <div>Analyzing item...</div>
+            <div style="text-align:center; padding:30px; color:var(--muted);">
+                <i class="fas fa-circle-notch fa-spin" style="font-size:24px; margin-bottom:10px;"></i>
+                <div>Analyzing item...</div>
+            </div>
         </div>
     `;
     geminiOpinion.classList.remove('hidden');
     
     const itemType = lastData.category || 'item';
+    const fbaCount = lastData.fbaCount || 0;
+    const totalOffers = lastData.totalOffers || 0;
+    const fbmCount = totalOffers - fbaCount;
+    const bbOwnerType = lastData.bbOwnerType || 'UNKNOWN';
+    
+    // Build Buy Box ownership description
+    let bbOwnershipDesc = '';
+    if (bbOwnerType === 'ROTATING_FBA' && fbaCount > 1) {
+        bbOwnershipDesc = `Clean FBA rotation among ${fbaCount} sellers`;
+    } else if (bbOwnerType === 'FBM_PRICE_DRIVEN' || fbaCount === 0) {
+        bbOwnershipDesc = `FBM-controlled (${fbmCount} FBM sellers, ${fbaCount} FBA)`;
+    } else if (lastData.amzPrice > 0 && Math.abs(lastData.amzPrice - lastData.inferredBbPrice) < 0.50) {
+        bbOwnershipDesc = `Amazon-dominated (holding BB at $${lastData.amzPrice.toFixed(2)})`;
+    } else if (totalOffers > 0) {
+        bbOwnershipDesc = `Single seller (${fbaCount} FBA, ${fbmCount} FBM total)`;
+    } else {
+        bbOwnershipDesc = 'No active sellers';
+    }
+    
     const prompt = `Analyze this ${itemType} for Amazon FBA resale:
 
 ITEM DETAILS:
@@ -4132,32 +4142,37 @@ CALCULATED NET PROFIT: $${result.profit.toFixed(2)}
 MARKET DATA:
 Sales Velocity (30 days): ${lastData.drops30} drops
 Sales Velocity (180 days): ${lastData.drops180} drops
-Total Competition: ${lastData.totalOffers} sellers
+Total Competition: ${totalOffers} sellers (${fbaCount} FBA, ${fbmCount} FBM)
 Current Buy Box: $${lastData.inferredBbPrice > 0 ? lastData.inferredBbPrice.toFixed(2) : 'N/A'}
+Buy Box Ownership: ${bbOwnershipDesc}
+${lastData.amzPrice > 0 ? `Amazon Active: Yes (last seen at $${lastData.amzPrice.toFixed(2)}, ${lastData.lastAmzDays || 'unknown'} days ago)` : 'Amazon Active: No'}
 
 INITIAL ASSESSMENT:
-Your Algorithm Score: ${baseScore}/100 (CONSIDER tier - needs second opinion)
+Your Algorithm Score: ${baseScore}/100 (${result.verdict} tier - needs second opinion)
 
-YOUR TASK: Provide a decisive second opinion. Refine the algorithm's score based on the qualitative data (title, profit-to-wait ratio, and competition).
+YOUR TASK: Provide a decisive second opinion. Refine the algorithm's score based on the qualitative data (title, profit-to-wait ratio, Buy Box dynamics, and competition structure).
 
 BUSINESS CONTEXT:
 - Inventory with 3-6 month sell-through is acceptable if profit is solid
 - Books don't expire or go out of style quickly
 - Storage costs are already factored into the profit calculation
 - Higher profit can justify slower velocity
+- FBA rotation is ideal; FBM control can still work with patience
+- Amazon dominance is a red flag but not always a dealbreaker
 
 EVALUATION CRITERIA:
 1. Refine the algorithm's score (0-100 scale).
 2. Use the $${result.profit.toFixed(2)} profit figure provided above. Do NOT recalculate fees or profit.
 3. Focus on whether the profit justifies the wait time, not just velocity alone.
-4. Slower sales are acceptable if profit margin is solid relative to effort.
+4. Consider Buy Box dynamics: FBA rotation = good, FBM control = caution, Amazon dominance = risk
+5. Slower sales are acceptable if profit margin is solid relative to effort.
 
 SCORE RANGES:
 - 75-100: BUY (Highly recommended)
 - 50-74: CONSIDER (Marginal/Needs caution)
 - 0-49: REJECT (High risk/Low reward)
 
-Provide a brief explanation (2-3 sentences) focusing on the profit-to-wait-time value proposition.
+Provide a brief explanation (2-3 sentences) focusing on the profit-to-wait-time value proposition and Buy Box dynamics.
 
 Respond EXACTLY in this format:
 VERDICT: [BUY, CONSIDER, or REJECT]
@@ -4232,22 +4247,33 @@ function renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseSc
     const geminiOpinion = document.getElementById('geminiOpinion');
     const result = analyze(lastData);
     const baseScore = baseScoreOverride !== undefined ? baseScoreOverride : result.score;
+    const scoutVerdict = result.verdict;
     
-    // Determine the Trend (Upgrade, Downgrade, Refined)
-    const isUpgrade = geminiScore > baseScore;
-    const isDowngrade = geminiScore < baseScore;
-    const trendIcon = isUpgrade ? '↑' : isDowngrade ? '↓' : '→';
-    const trendText = isUpgrade ? 'UPGRADED' : isDowngrade ? 'DOWNGRADED' : 'REFINED';
-    const trendClass = isUpgrade ? 'up' : isDowngrade ? 'down' : '';
-
-    // Determine the Visual Tier (Color Coding based on destination)
-    let tierClass = 'downgrade'; // Default REJECT (Red)
-    if (geminiScore >= 75) {
-        tierClass = 'upgrade'; // BUY (Green)
+    // Determine recommendation class and label
+    let recommendClass = 'consider'; // Default CONSIDER (Amber)
+    let recommendLabel = 'CONSIDER';
+    
+    // Check for UNCLEAR first - when Gemini genuinely can't decide
+    // UNCLEAR = Scout says CONSIDER, Gemini score in CONSIDER range (50-74), and scores are close (±8)
+    const isUnclear = scoutVerdict === 'CONSIDER' && 
+                      geminiScore >= 50 && geminiScore < 75 && 
+                      Math.abs(geminiScore - baseScore) <= 8;
+    
+    if (isUnclear) {
+        recommendClass = 'unclear';
+        recommendLabel = 'UNCLEAR';
+    } else if (geminiScore >= 75) {
+        recommendClass = 'buy';
+        recommendLabel = 'BUY';
     } else if (geminiScore >= 50) {
-        tierClass = 'loading'; // CONSIDER (Amber/Blue)
+        recommendClass = 'consider';
+        recommendLabel = 'CONSIDER';
+    } else {
+        recommendClass = 'reject';
+        recommendLabel = 'REJECT';
     }
 
+    // Show gem icon if Gemini upgrades to BUY
     if (geminiScore >= 75) {
         const hasGemTags = result.posTags.concat(result.negTags).some(tag => tag.type === 'gem');
         if (hasGemTags) {
@@ -4256,49 +4282,25 @@ function renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseSc
         }
     }
 
-    geminiOpinion.className = 'gemini-opinion ' + tierClass;
+    geminiOpinion.className = 'gemini-section';
     geminiOpinion.innerHTML = `
-        <div class="gemini-header">
-            <div class="gemini-title ${tierClass}">
-                <span>🤖</span>
-                <span>GEMINI ${trendText}</span>
-            </div>
-            <div class="collapse-icon" onclick="toggleGeminiCollapse()">−</div>
-        </div>
-
-        <div class="gemini-content" id="geminiContent">
-            <div class="score-comparison">
-                <div class="score-box">
-                    <div class="score-box-label">Algo Score</div>
-                    <div class="score-box-value amber">${baseScore}</div>
+        <div class="gemini-box">
+            <div class="gemini-header">
+                <div class="gemini-title">
+                    <i class="fas fa-brain"></i>
+                    Second Opinion (Gemini AI)
                 </div>
-
-                <div class="score-arrow ${trendClass}">${trendIcon}</div>
-
-                <div class="score-box">
-                    <div class="score-box-label">Gemini Score</div>
-                    <div class="score-box-value ${tierClass}">${geminiScore}</div>
-                </div>
+                <div class="gemini-score">${geminiScore}</div>
             </div>
-
-            <div class="gemini-verdict ${tierClass}">
-                ${geminiVerdict} Tier
+            <div class="gemini-recommendation">
+                <span class="recommend-label">Recommend:</span>
+                <span class="recommend-value ${recommendClass}">${recommendLabel}</span>
             </div>
-
             <div class="gemini-text">${geminiReasoning}</div>
         </div>
     `;
 
     geminiOpinion.classList.remove('hidden');
-}
-
-function toggleGeminiCollapse() {
-    const content = document.getElementById('geminiContent');
-    const icon = document.querySelector('.collapse-icon');
-    if(content && icon) {
-        content.classList.toggle('hidden');
-        icon.textContent = content.classList.contains('hidden') ? '+' : '−';
-    }
 }
 
 /* ================= SETTINGS ================= */
@@ -4671,7 +4673,15 @@ function setCondition(c) {
         }
     }
     
-    // 3. Re-run Analysis if we have data
+    // 3. Clear Gemini data when condition changes (need fresh analysis for new condition)
+    if(currentScan) {
+        console.log('Clearing Gemini data for condition change');
+        currentScan.geminiScore = null;
+        currentScan.geminiVerdict = null;
+        currentScan.geminiReasoning = null;
+    }
+    
+    // 4. Re-run Analysis if we have data
     if(lastData) {
         console.log('Re-analyzing with condition:', c);
         const result = analyze(lastData);
