@@ -4327,10 +4327,8 @@ SCORE RANGES:
 
 Provide a brief explanation (2-3 sentences) focusing on the profit-to-wait-time value proposition and Buy Box dynamics.
 
-Respond EXACTLY in this format:
-VERDICT: [BUY, CONSIDER, or REJECT]
-SCORE: [0-100]
-REASONING: [Your explanation]`;
+Respond ONLY with STRICT JSON (no markdown, no code block, no extra text) in this exact shape:
+{"verdict":"BUY|CONSIDER|REJECT","score":0-100,"usedSellFor":"13.99","usedNetProfit":"4.35","usedFloor":"5.00","reasoning":"3-4 sentences. Mention ONLY the provided Sell For / Net Profit / Floor and the Buy Box/Amazon facts below. DO NOT invent any other profit number, fees, or math."}`;
 
     const model = 'gemini-2.0-flash-exp';
     const cleanKey = CONFIG.geminiKey.trim();
@@ -4355,15 +4353,76 @@ REASONING: [Your explanation]`;
         if(json.error) throw new Error(json.error.message);
 
         if(json.candidates && json.candidates[0] && json.candidates[0].content) {
-            const text = json.candidates[0].content.parts[0].text;
-            
-            const verdictMatch = text.match(/VERDICT:\s*(BUY|CONSIDER|REJECT)/i);
-            const scoreMatch = text.match(/SCORE:\s*(\d+)/);
-            const reasoningMatch = text.match(/REASONING:\s*(.+)/s);
+            const rawText = (json && json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts && json.candidates[0].content.parts[0] && json.candidates[0].content.parts[0].text) ? json.candidates[0].content.parts[0].text : '';
+            const text = stripGeminiFormatting(rawText);
 
-            const geminiVerdict = verdictMatch ? verdictMatch[1].toUpperCase() : 'CONSIDER';
-            const geminiScore = scoreMatch ? parseInt(scoreMatch[1]) : 50;
-            const geminiReasoning = reasoningMatch ? reasoningMatch[1].trim() : text;
+            // --- Gemini safety gate: prefer strict JSON + validate it uses the app's computed numbers (no re-math) ---
+            const expectedSellFor = result.market.toFixed(2);
+            const expectedNetProfit = result.profit.toFixed(2);
+            const expectedFloor = CONFIG.profitFloor.toFixed(2);
+
+            function stripGeminiFormatting(text) {
+  return String(text || "")
+    .replace(/```json|```/gi, "")
+    .trim();
+}
+
+function sanitizeReasoning(r) {
+                let s = String(r || '').trim();
+                // Fix common "net profit $X" hallucination
+                s = s.replace(/(net\s*profit[^\$]{0,40}\$)\s*\d+(?:\.\d{1,2})?/ig, `$1${expectedNetProfit}`);
+                // Fix common "floor $X" hallucination
+                s = s.replace(/(floor[^\$]{0,20}\$)\s*\d+(?:\.\d{1,2})?/ig, `$1${expectedFloor}`);
+                // If Gemini mentions net profit but not the correct one, prepend a canonical line
+                if (/(net\s*profit)/i.test(s) && !s.includes(`$${expectedNetProfit}`)) {
+                    s = `Using Sell For $${expectedSellFor} • Net Profit $${expectedNetProfit} (floor $${expectedFloor}). ` + s;
+                }
+                return s;
+            }
+
+            let geminiVerdict = 'CONSIDER';
+            let geminiScore = 50;
+            let geminiReasoning = text;
+
+            let parsed = null;
+            try { parsed = JSON.parse(text); } catch(_) {}
+
+            if (parsed && typeof parsed === 'object') {
+                const v = String(parsed.verdict || '').toUpperCase();
+                const sc = Number(parsed.score);
+                const usf = String(parsed.usedSellFor || '').trim();
+                const unp = String(parsed.usedNetProfit || '').trim();
+                const ufl = String(parsed.usedFloor || '').trim();
+                const r = parsed.reasoning;
+
+                const okVerdict = (v === 'BUY' || v === 'CONSIDER' || v === 'REJECT');
+                const okScore = Number.isFinite(sc) && sc >= 0 && sc <= 100;
+                const okNumbers = (usf === expectedSellFor && unp === expectedNetProfit && ufl === expectedFloor);
+
+                if (okVerdict && okScore && okNumbers) {
+                    geminiVerdict = result.decision; // HARD LOCK to engine decision
+                    geminiScore = Math.round(sc);
+                    geminiReasoning = sanitizeReasoning(r);
+                } else {
+                    // Safety fallback: discard Gemini content on math mismatch
+                    geminiVerdict = result.decision;
+                    geminiScore = 50;
+                    geminiReasoning = "Using system-calculated values only. AI response contained inconsistent pricing data.";
+                    
+                    geminiVerdict = 'CONSIDER';
+                    geminiScore = 50;
+                    geminiReasoning = `Gemini response contained inconsistent math. Using app-calculated values: Sell For $${expectedSellFor} • Net Profit $${expectedNetProfit} (floor $${expectedFloor}).`;
+                }
+            } else {
+                // Legacy fallback: parse the old text format
+                const verdictMatch = text.match(/VERDICT:\s*(BUY|CONSIDER|REJECT)/i);
+                const scoreMatch = text.match(/SCORE:\s*(\d+)/);
+                const reasoningMatch = text.match(/REASONING:\s*(.+)/s);
+
+                geminiVerdict = verdictMatch ? verdictMatch[1].toUpperCase() : 'CONSIDER';
+                geminiScore = scoreMatch ? parseInt(scoreMatch[1]) : 50;
+                geminiReasoning = sanitizeReasoning(reasoningMatch ? reasoningMatch[1].trim() : text);
+            }
 
             if(currentScan) {
                 currentScan.geminiVerdict = geminiVerdict;
