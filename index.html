@@ -1183,6 +1183,28 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
     padding-top: 4px;
 }
 </style>
+
+<style>
+/* === ITEM TYPE BADGE === */
+.type-badge {
+  display:inline-block;
+  margin-top:6px;
+  padding:3px 9px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  border-radius:999px;
+  text-transform:uppercase;
+}
+
+.type-book { background:rgba(0,255,200,.15); color:#33ffd6; }
+.type-dvd { background:rgba(255,170,60,.18); color:#ffb347; }
+.type-bluray { background:rgba(90,180,255,.18); color:#6fb7ff; }
+.type-cd { background:rgba(200,120,255,.18); color:#d7a6ff; }
+.type-game { background:rgba(80,255,255,.18); color:#6fffff; }
+.type-board { background:rgba(255,220,120,.18); color:#ffe08a; }
+</style>
+
 </head>
 <body>
 
@@ -1500,6 +1522,27 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
 </div>
 
 <script>
+
+// === Item type helpers (display-only) ===
+function cleanTitle(title) {
+  if (!title) return '';
+  return title
+    .replace(/\[(dvd|blu-ray|bluray|cd|video game|board game)\]/gi, '')
+    .replace(/\((dvd|blu-ray|bluray|cd|video game|board game)\)/gi, '')
+    .replace(/\s+-\s+(dvd|blu-ray|bluray)/gi, '')
+    .trim();
+}
+
+function getItemTypeLabel(data) {
+  const c = (data.category || data.productGroup || data.binding || '').toLowerCase();
+  if (c.includes('blu')) return { label:'BLU-RAY', cls:'type-bluray' };
+  if (c.includes('dvd') || c.includes('video')) return { label:'DVD', cls:'type-dvd' };
+  if (c.includes('cd') || c.includes('music')) return { label:'CD', cls:'type-cd' };
+  if (c.includes('video game') || c.includes('game')) return { label:'VIDEO GAME', cls:'type-game' };
+  if (c.includes('board')) return { label:'BOARD GAME', cls:'type-board' };
+  return { label:'BOOK', cls:'type-book' };
+}
+
 /* ================= CONFIG ================= */
 let CONFIG = {
   keepaKey: localStorage.getItem('keepaKey') || '',
@@ -3331,6 +3374,12 @@ function render(res, data) {
         profitValue.textContent = '$' + res.profit.toFixed(2);
         profitValue.style.color = res.profit >= 0 ? 'var(--green)' : 'var(--red)';
     }
+
+    // SELL FOR — final, safe render (no recursion, no side effects)
+    const sellForEl = document.getElementById('recommendedPrice');
+    if (sellForEl && typeof res.market === 'number') {
+        sellForEl.textContent = '$' + res.market.toFixed(2);
+    }
     
     // Update time badge based on estimated days to sale (gated)
     const timeBadge = document.getElementById('timeBadge');
@@ -3544,7 +3593,7 @@ function render(res, data) {
                 }
                 
                 if (fbaCount === 0) {
-                    narrative += `No FBA sellers are active. List at $${res.market.toFixed(2)} and you'll capture the Prime premium - historically this book sells for $2-3 above MFN when FBA is available. You'll own 100% of Prime customer sales.`;
+                    narrative += `No FBA sellers are active. List at $${res.market.toFixed(2)} and you'll capture the Prime premium - historically this item sells for $2-3 above MFN when FBA is available. You'll own 100% of Prime customer sales.`;
                 } else {
                     narrative += `This is a temporary race to the bottom - wait 2-3 weeks for weak sellers to exit before listing.`;
                 }
@@ -3579,7 +3628,7 @@ function render(res, data) {
                 narrative = `No active Buy Box or offers detected. `;
                 
                 if (res.verdict === 'BUY') {
-                    narrative += `This creates an opportunity - historical data shows this book sold for $${res.market.toFixed(2)} at ${CONFIG.condition.toLowerCase()} condition. List at that price and you'll have zero FBA competition.`;
+                    narrative += `This creates an opportunity - historical data shows this item sold for $${res.market.toFixed(2)} at ${CONFIG.condition.toLowerCase()} condition. List at that price and you'll have zero FBA competition.`;
                 } else {
                     narrative += `Pricing is based on historical averages, which may not reflect current demand. Proceed with caution.`;
                 }
@@ -5198,6 +5247,68 @@ function showSourceSettings() {
     var back = document.querySelector('#historyPage .btn-back');
     if (back){ back.addEventListener('click', closeHistoryPage); }
   });
+})();
+
+// === SAFE OVERRIDE: improved title cleanup (last definition wins) ===
+function cleanTitle(title) {
+  if (!title) return '';
+
+  return title
+    // Normalize unicode hyphens
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212]/g, '-')
+    // Remove bracketed or parenthesized media descriptors
+    .replace(/[\[\(]\s*(dvd|blu\s*-\s*ray|blu\s*ray|bluray|cd|video\s*game|board\s*game)[^\]\)]*[\]\)]/gi, '')
+    // Remove trailing media descriptors
+    .replace(/\s+-\s*(dvd|blu\s*-\s*ray|blu\s*ray|bluray)/gi, '')
+    // Collapse whitespace
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+</script>
+
+
+<script>
+/* === SAFE BADGE FIX (display-only, non-recursive) === */
+(function(){
+  function ensureBadge(data){
+    if (!data) return;
+
+    var titleEl = document.getElementById('titleText');
+    if (!titleEl) return;
+
+    var badge = document.getElementById('itemTypeBadge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'itemTypeBadge';
+      badge.className = 'type-badge';
+      titleEl.insertAdjacentElement('afterend', badge);
+    }
+
+    var c = ((data.category || data.productGroup || data.binding || '') + '').toLowerCase();
+    var label = 'BOOK', cls = 'type-book';
+
+    if (c.indexOf('blu') !== -1) { label='BLU-RAY'; cls='type-bluray'; }
+    else if (c.indexOf('dvd') !== -1 || c.indexOf('video') !== -1) { label='DVD'; cls='type-dvd'; }
+    else if (c.indexOf('cd') !== -1 || c.indexOf('music') !== -1) { label='CD'; cls='type-cd'; }
+    else if (c.indexOf('video game') !== -1 || c.indexOf('game') !== -1) { label='VIDEO GAME'; cls='type-game'; }
+    else if (c.indexOf('board') !== -1) { label='BOARD GAME'; cls='type-board'; }
+
+    badge.textContent = label;
+    badge.className = 'type-badge ' + cls;
+  }
+
+  // Run after each render cycle if data is present
+  var last = null;
+  function tick(){
+    var data = window.lastKeepaData || window.lastData || null;
+    if (data && data !== last) {
+      last = data;
+      ensureBadge(data);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 })();
 </script>
 
