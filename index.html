@@ -3171,6 +3171,54 @@ function analyze(data) {
 }
 
 /* ================= RENDER (SAFE MODE) ================= */
+/* ================= PRICING GATE =================
+   canPriceItem() decides if we should show a concrete list price + time-to-sale.
+   This prevents misleading pricing when Buy Box / velocity signals are weak or distorted.
+================================================= */
+function formatTimeEstimate(days) {
+  const d = Number(days);
+  if (!isFinite(d) || d <= 0) return null;
+  if (d <= 14) return "~1–2 weeks";
+  if (d <= 30) return "~2–4 weeks";
+  if (d <= 90) return "~1–3 months";
+  if (d <= 180) return "~3–6 months";
+  return "6+ months";
+}
+
+function canPriceItem(res, data) {
+  try {
+    if (!res || !data) return false;
+
+    // Never price REJECTs (prevents “$x sell for” on items we would not touch)
+    if (String(res.verdict || "").toUpperCase() === "REJECT") return false;
+
+    // Must meet your hard profit floor
+    if (typeof res.profit === "number" && res.profit < CONFIG.profitFloor) return false;
+
+    // Need at least SOME reliable market anchor
+    const bb = Number(data.inferredBbPrice || 0);
+    const fba = Number(data.fbaPrice || 0);
+    const fbm = Number(data.fbmPrice || 0);
+    const anchor = (bb > 0 ? bb : (fba > 0 ? fba : (fbm > 0 ? fbm : 0)));
+    if (!(anchor > 0)) return false;
+
+    // Velocity must be non-zero or explicitly implied by salesPerMonth
+    const drops = Number(data.drops30 || 0) + Number(data.drops90 || 0) + Number(data.drops180 || 0);
+    const spm = Number(res.salesPerMonth || 0);
+    if (drops <= 0 && spm < 0.25) return false; // effectively “no recent movement”
+
+    // If BB confidence is very low AND Amazon is undercutting, don't publish a list price
+    const bbConf = Number(res.bbConfidence || 0);
+    const amz = Number(data.amzPrice || 0);
+    if (bbConf < 0.15 && amz > 0 && anchor > 0 && amz <= anchor) return false;
+
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+/* ================= END PRICING GATE ================= */
+
 function render(res, data) {
     // FAIL-SAFE HELPER
     const setText = (id, val) => {
@@ -3266,7 +3314,17 @@ function render(res, data) {
         setTimeout(() => { profitBox.style.animation = 'flashGreen 0.5s ease-out'; }, 10);
     }
     
-    setText('recommendedPrice', '$' + res.market.toFixed(2));
+    const priceable = canPriceItem(res, data);
+
+    if (priceable && typeof res.market === 'number' && isFinite(res.market) && res.market > 0) {
+        setText('recommendedPrice', '$' + res.market.toFixed(2));
+        const rpEl = document.getElementById('recommendedPrice');
+        if (rpEl) rpEl.style.opacity = '1';
+    } else {
+        setText('recommendedPrice', '—');
+        const rpEl = document.getElementById('recommendedPrice');
+        if (rpEl) rpEl.style.opacity = '0.6';
+    }
 
     const profitValue = document.getElementById('profitValue');
     if(profitValue) {
@@ -3274,13 +3332,22 @@ function render(res, data) {
         profitValue.style.color = res.profit >= 0 ? 'var(--green)' : 'var(--red)';
     }
     
-    // Update time badge based on estimated days to sale
+    // Update time badge based on estimated days to sale (gated)
     const timeBadge = document.getElementById('timeBadge');
-    if(timeBadge && res.estimatedDaysToSale !== undefined) {
-        let badgeText = `~${Math.round(res.estimatedDaysToSale)} Days`;
-        timeBadge.textContent = badgeText;
-        timeBadge.className = 'time-badge';
-        timeBadge.classList.remove('hidden');
+    if (timeBadge) {
+        if (priceable) {
+            const friendly = formatTimeEstimate(res.estimatedDaysToSale);
+            if (friendly) {
+                timeBadge.textContent = friendly;
+                timeBadge.className = 'time-badge';
+                timeBadge.classList.remove('hidden');
+            } else {
+                timeBadge.classList.add('hidden');
+            }
+        } else {
+            // If we shouldn't price it, we also hide time-to-sale to avoid false confidence
+            timeBadge.classList.add('hidden');
+        }
     }
     
     // --- MARVEL BADGE RENDERING (removed - no longer displayed) ---
@@ -4327,8 +4394,10 @@ SCORE RANGES:
 
 Provide a brief explanation (2-3 sentences) focusing on the profit-to-wait-time value proposition and Buy Box dynamics.
 
-Respond ONLY with STRICT JSON (no markdown, no code block, no extra text) in this exact shape:
-{"verdict":"BUY|CONSIDER|REJECT","score":0-100,"usedSellFor":"13.99","usedNetProfit":"4.35","usedFloor":"5.00","reasoning":"3-4 sentences. Mention ONLY the provided Sell For / Net Profit / Floor and the Buy Box/Amazon facts below. DO NOT invent any other profit number, fees, or math."}`;
+Respond EXACTLY in this format:
+VERDICT: [BUY, CONSIDER, or REJECT]
+SCORE: [0-100]
+REASONING: [Your explanation]`;
 
     const model = 'gemini-2.0-flash-exp';
     const cleanKey = CONFIG.geminiKey.trim();
@@ -4353,76 +4422,15 @@ Respond ONLY with STRICT JSON (no markdown, no code block, no extra text) in thi
         if(json.error) throw new Error(json.error.message);
 
         if(json.candidates && json.candidates[0] && json.candidates[0].content) {
-            const rawText = (json && json.candidates && json.candidates[0] && json.candidates[0].content && json.candidates[0].content.parts && json.candidates[0].content.parts[0] && json.candidates[0].content.parts[0].text) ? json.candidates[0].content.parts[0].text : '';
-            const text = stripGeminiFormatting(rawText);
+            const text = json.candidates[0].content.parts[0].text;
+            
+            const verdictMatch = text.match(/VERDICT:\s*(BUY|CONSIDER|REJECT)/i);
+            const scoreMatch = text.match(/SCORE:\s*(\d+)/);
+            const reasoningMatch = text.match(/REASONING:\s*(.+)/s);
 
-            // --- Gemini safety gate: prefer strict JSON + validate it uses the app's computed numbers (no re-math) ---
-            const expectedSellFor = result.market.toFixed(2);
-            const expectedNetProfit = result.profit.toFixed(2);
-            const expectedFloor = CONFIG.profitFloor.toFixed(2);
-
-            function stripGeminiFormatting(text) {
-  return String(text || "")
-    .replace(/```json|```/gi, "")
-    .trim();
-}
-
-function sanitizeReasoning(r) {
-                let s = String(r || '').trim();
-                // Fix common "net profit $X" hallucination
-                s = s.replace(/(net\s*profit[^\$]{0,40}\$)\s*\d+(?:\.\d{1,2})?/ig, `$1${expectedNetProfit}`);
-                // Fix common "floor $X" hallucination
-                s = s.replace(/(floor[^\$]{0,20}\$)\s*\d+(?:\.\d{1,2})?/ig, `$1${expectedFloor}`);
-                // If Gemini mentions net profit but not the correct one, prepend a canonical line
-                if (/(net\s*profit)/i.test(s) && !s.includes(`$${expectedNetProfit}`)) {
-                    s = `Using Sell For $${expectedSellFor} • Net Profit $${expectedNetProfit} (floor $${expectedFloor}). ` + s;
-                }
-                return s;
-            }
-
-            let geminiVerdict = 'CONSIDER';
-            let geminiScore = 50;
-            let geminiReasoning = text;
-
-            let parsed = null;
-            try { parsed = JSON.parse(text); } catch(_) {}
-
-            if (parsed && typeof parsed === 'object') {
-                const v = String(parsed.verdict || '').toUpperCase();
-                const sc = Number(parsed.score);
-                const usf = String(parsed.usedSellFor || '').trim();
-                const unp = String(parsed.usedNetProfit || '').trim();
-                const ufl = String(parsed.usedFloor || '').trim();
-                const r = parsed.reasoning;
-
-                const okVerdict = (v === 'BUY' || v === 'CONSIDER' || v === 'REJECT');
-                const okScore = Number.isFinite(sc) && sc >= 0 && sc <= 100;
-                const okNumbers = (usf === expectedSellFor && unp === expectedNetProfit && ufl === expectedFloor);
-
-                if (okVerdict && okScore && okNumbers) {
-                    geminiVerdict = result.decision; // HARD LOCK to engine decision
-                    geminiScore = Math.round(sc);
-                    geminiReasoning = sanitizeReasoning(r);
-                } else {
-                    // Safety fallback: discard Gemini content on math mismatch
-                    geminiVerdict = result.decision;
-                    geminiScore = 50;
-                    geminiReasoning = "Using system-calculated values only. AI response contained inconsistent pricing data.";
-                    
-                    geminiVerdict = 'CONSIDER';
-                    geminiScore = 50;
-                    geminiReasoning = `Gemini response contained inconsistent math. Using app-calculated values: Sell For $${expectedSellFor} • Net Profit $${expectedNetProfit} (floor $${expectedFloor}).`;
-                }
-            } else {
-                // Legacy fallback: parse the old text format
-                const verdictMatch = text.match(/VERDICT:\s*(BUY|CONSIDER|REJECT)/i);
-                const scoreMatch = text.match(/SCORE:\s*(\d+)/);
-                const reasoningMatch = text.match(/REASONING:\s*(.+)/s);
-
-                geminiVerdict = verdictMatch ? verdictMatch[1].toUpperCase() : 'CONSIDER';
-                geminiScore = scoreMatch ? parseInt(scoreMatch[1]) : 50;
-                geminiReasoning = sanitizeReasoning(reasoningMatch ? reasoningMatch[1].trim() : text);
-            }
+            const geminiVerdict = verdictMatch ? verdictMatch[1].toUpperCase() : 'CONSIDER';
+            const geminiScore = scoreMatch ? parseInt(scoreMatch[1]) : 50;
+            const geminiReasoning = reasoningMatch ? reasoningMatch[1].trim() : text;
 
             if(currentScan) {
                 currentScan.geminiVerdict = geminiVerdict;
@@ -5163,6 +5171,32 @@ function showSourceSettings() {
       tries++;
       if(apply() || tries > 20) clearInterval(iv);
     }, 150);
+  });
+})();
+</script>
+
+
+<script>
+// === History Navigation Patch ===
+(function(){
+  function showHistoryPage(){
+    var h = document.getElementById('historyPage');
+    var m = document.getElementById('mainView');
+    if (h && m){ h.classList.remove('hidden'); m.classList.add('hidden'); }
+  }
+  function closeHistoryPage(){
+    var h = document.getElementById('historyPage');
+    var m = document.getElementById('mainView');
+    if (h && m){ h.classList.add('hidden'); m.classList.remove('hidden'); }
+  }
+  window.showHistoryPage = showHistoryPage;
+  window.closeHistoryPage = closeHistoryPage;
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var btn = document.getElementById('btnHistory') || document.querySelector('.btn-hist');
+    if (btn){ btn.addEventListener('click', showHistoryPage); }
+    var back = document.querySelector('#historyPage .btn-back');
+    if (back){ back.addEventListener('click', closeHistoryPage); }
   });
 })();
 </script>
