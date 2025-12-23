@@ -251,7 +251,6 @@ input[type="text"]:focus { border-color: var(--blue); background: #161616; }
     margin-left: 80px; /* Positions it next to the 140px score ring */
     font-size: 28px; 
     filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.8)); 
-    animation: float 3s ease-in-out infinite; 
     display: none; 
 }
 .gem-icon.visible { display: block; }
@@ -1182,6 +1181,77 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
     margin-top: 4px;
     padding-top: 4px;
 }
+
+.gemini-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+.gemini-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  color: var(--purple);
+}
+.gemini-buy {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: var(--green);
+  color: var(--green);
+}
+.gemini-consider {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+.gemini-reject {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: var(--red);
+  color: var(--red);
+}
+.gemini-unclear {
+  background: rgba(167, 139, 250, 0.15);
+  border-color: var(--purple);
+  color: var(--purple);
+}
+
+
+.pricing-confidence {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-top:6px;
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.pricing-confidence .dot {
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#888;
+}
+.pricing-confidence.green .dot { background: var(--green); }
+.pricing-confidence.yellow .dot { background: var(--yellow); }
+.pricing-confidence.red .dot { background: var(--red); }
+.pricing-confidence.green .label { color: var(--green); }
+.pricing-confidence.yellow .label { color: var(--yellow); }
+.pricing-confidence.red .label { color: var(--red); }
+
+.pricing-diff {
+  font-size:11px;
+  color:#888;
+  margin-top:4px;
+}
+
 </style>
 
 <style>
@@ -1315,8 +1385,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
       <div id="banner" class="banner buy">
         <div id="keepaRestricted" class="keepa-restricted hidden">⚠️ RESTRICTED</div>
         
-        <div id="gemIcon" class="gem-icon">💎</div>
-        
         <div style="text-align: center; margin-bottom: 6px;">
           <div id="categoryBadge" class="category-badge">📚 Category Loading...</div>
         </div>
@@ -1332,6 +1400,13 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
         </div>
         
         <div id="decision" class="decision-label">--</div>
+
+        <!-- Gemini quick verdict (centered under decision) -->
+        <div class="gemini-row hidden" id="geminiQuickRow">
+          <div class="gemini-badge" id="geminiQuickBadge" onclick="scrollToGeminiExplanation()" style="cursor:pointer;">
+            🤖 Gemini: -- · --
+          </div>
+        </div>
       </div>
       
       <div class="key-info">
@@ -1339,6 +1414,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           <div class="info-box price-box">
             <div class="info-label">Sell For</div>
             <div class="info-value price" id="recommendedPrice">$0.00</div>
+        
           </div>
           <div class="info-box profit-box">
             <div class="info-label">Net Profit</div>
@@ -1349,8 +1425,10 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
           </div>
         </div>
       </div>
-      
-      <!-- Buy Box Narrative (Always Visible for REJECT) -->
+
+        
+
+<!-- Buy Box Narrative (Always Visible for REJECT) -->
       <div id="bbNarrativeSection" class="bb-narrative-section">
         <div class="bb-narrative">
           <div class="bb-narrative-title">
@@ -1688,15 +1766,26 @@ floorSlider.addEventListener('input', onSliderChange);
 let titleResults = [];
 
 async function submitSearch() {
-    const val = input.value.trim();
-    if(!val) return;
+  const scanEl = document.getElementById('scanInput');
+  const val = scanEl?.value?.trim() || '';
+  if(!val) return;
+
+  // Only normalize if it looks like it could be an ISBN (mostly numeric/hyphens)
+  // Don't normalize if it has letters mixed with spaces (likely a title)
+  const looksLikeISBN = /^[\d\s-xX]+$/.test(val);
+  if (looksLikeISBN && scanEl) {
+    scanEl.value = normalizeISBN(val);
+  }
+
+  const processedVal = scanEl.value.trim();
+  if(!processedVal) return;
 
     // --- ENHANCED ID CHECK ---
     // Check if original has spaces - if so, likely a title unless it's a formatted ISBN
-    const hasSpaces = /\s/.test(val);
+    const hasSpaces = /\s/.test(processedVal);
     
     // Remove hyphens and spaces for validation
-    const cleaned = val.replace(/[-\s]/g, '');
+    const cleaned = processedVal.replace(/[-\s]/g, '');
     const upper = cleaned.toUpperCase();
     
     // UPC/EAN/GTIN: numeric codes (non-ISBN) for CDs/DVDs/Games/etc
@@ -1724,21 +1813,21 @@ async function submitSearch() {
     // SAFETY: If it had spaces and isn't a valid ISBN/ASIN, treat as title
     const shouldSearchByTitle = hasSpaces && !isISBN && !isASIN && !isProductCode;
     
-    console.log('submitSearch:', { val, cleaned, upper, hasSpaces, isISBN13, isISBN10WithX, is10DigitNumeric, isISBN, isASIN, shouldSearchByTitle });
+    console.log('submitSearch:', { val: processedVal, cleaned, upper, hasSpaces, isISBN13, isISBN10WithX, is10DigitNumeric, isISBN, isASIN, shouldSearchByTitle });
     
     if(shouldSearchByTitle) {
-        console.log('Has spaces and not valid ID, searching as title:', val);
-        input.value = ''; 
-        await searchByTitle(val);
+        console.log('Has spaces and not valid ID, searching as title:', processedVal);
+        scanEl.value = ''; 
+        await searchByTitle(processedVal);
     } else if(isASIN || isISBN || isProductCode) {
         console.log('Detected as ID, adding to queue:', upper);
         closeTitlePicker(); 
         addToQueue(upper);
-        input.value = '';
+        scanEl.value = '';
     } else {
-        console.log('Detected as title, searching:', val);
-        input.value = ''; 
-        await searchByTitle(val);
+        console.log('Detected as title, searching:', processedVal);
+        scanEl.value = ''; 
+        await searchByTitle(processedVal);
     }
 }
 
@@ -1895,72 +1984,75 @@ async function searchByTitle(title) {
         document.getElementById('processing').classList.remove('hidden');
         showTitlePickerLoading(title);
 
-        const url = `https://api.keepa.com/search?key=${CONFIG.keepaKey}&domain=1&type=product&term=${encodeURIComponent(title)}`;
-        console.log('searchByTitle: Fetching from Keepa...', { useProxy: CONFIG.useProxy });
+        // Manually build URL with + for spaces (Keepa requirement)
+        const cleanTitle = title.trim();
+        const encodedTitle = encodeURIComponent(cleanTitle).replace(/%20/g, '+');
+        const baseUrl = `https://api.keepa.com/search?key=${CONFIG.keepaKey}&domain=1&type=product&term=${encodedTitle}`;
         
-        const fetchKeepaSearch = async (u) => {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 9000);
-            try {
-                let finalUrl = u;
-                
-                // Try with proxy if enabled
-                if(CONFIG.useProxy) {
-                    try {
-                        finalUrl = `https://corsproxy.io/?${encodeURIComponent(u)}`;
-                        console.log('Trying primary proxy...');
-                        const res = await fetch(finalUrl, { signal: controller.signal });
-                        if(res.ok) {
-                            const json = await res.json();
-                            if(!json.error) {
-                                console.log('Primary proxy success, got', json.products?.length, 'results');
-                                return json;
-                            }
+        console.log('=== SEARCH DEBUG ===');
+        console.log('Original title:', title);
+        console.log('Clean title:', cleanTitle);
+        console.log('Encoded title:', encodedTitle);
+        console.log('Full URL (key hidden):', baseUrl.replace(CONFIG.keepaKey, 'HIDDEN'));
+        console.log('===================');
+
+        
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000); // Increased timeout
+        let data = null;
+        
+        try {
+            
+            // Try proxy first if enabled
+            if(CONFIG.useProxy) {
+                try {
+                    console.log('Trying with corsproxy.io...');
+                    // For proxy: use %20 instead of + to avoid double-encoding issues
+                    const proxyEncodedTitle = encodeURIComponent(cleanTitle); // This uses %20
+                    const proxyBaseUrl = `https://api.keepa.com/search?key=${CONFIG.keepaKey}&domain=1&type=product&term=${proxyEncodedTitle}`;
+                    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(proxyBaseUrl)}`;
+                    console.log('Proxy URL term:', proxyEncodedTitle);
+                    const res = await fetch(proxyUrl, { signal: controller.signal });
+                    if(res.ok) {
+                        data = await res.json();
+                        if(!data.error && data.products) {
+                            console.log('Proxy success, got', data.products.length, 'results');
+                        } else {
+                            data = null;
                         }
-                        // If proxy fails, try backup
-                        console.log("Primary proxy failed for search, trying backup...");
-                        finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`;
-                        const res2 = await fetch(finalUrl, { signal: controller.signal });
-                        if(res2.ok) {
-                            const json = await res2.json();
-                            if(!json.error) {
-                                console.log('Backup proxy success, got', json.products?.length, 'results');
-                                return json;
-                            }
-                        }
-                    } catch(proxyErr) {
-                        console.log("Proxies failed, trying direct...", proxyErr);
                     }
-                    // Fall through to direct if proxies fail
-                    finalUrl = u;
+                } catch(proxyErr) {
+                    console.log("Proxy failed:", proxyErr.message);
                 }
-                
-                // Direct fetch (or fallback from proxy failure)
-                console.log('Trying direct fetch...');
-                const res = await fetch(finalUrl, { signal: controller.signal });
-                if(!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
-                
-                if (json.error) throw new Error(json.error.message);
-                console.log('Direct fetch success, got', json.products?.length, 'results');
-                return json;
-                
-            } finally {
-                clearTimeout(timeout);
             }
-        };
+            
+            // Try direct if proxy failed or disabled
+            if(!data) {
+                console.log('Trying direct fetch...');
+                console.log('Direct URL term:', encodedTitle);
+                const res = await fetch(baseUrl, { signal: controller.signal });
+                if(!res.ok) throw new Error(`HTTP ${res.status}`);
+                data = await res.json();
+                if(data.error) throw new Error(data.error.message);
+                console.log('Direct fetch success, got', data.products?.length, 'results');
+            }
+            
+            clearTimeout(timeout);
+            
+            if(!data.products || data.products.length === 0) {
+                console.log('No products found');
+                closeTitlePicker();
+                document.getElementById('processing').classList.add('hidden');
+                alert(`No products found for: "${title}" on Keepa.`);
+                return;
+            }
 
-        const data = await fetchKeepaSearch(url);
+            console.log('Processing', data.products.length, 'products...');
         
-        if(!data.products || data.products.length === 0) {
-            console.log('No products found');
-            closeTitlePicker();
-            document.getElementById('processing').classList.add('hidden');
-            alert(`No products found for: "${title}" on Keepa.`);
-            return;
+        } catch(fetchErr) {
+            clearTimeout(timeout);
+            throw fetchErr; // Re-throw to outer catch
         }
-
-        console.log('Processing', data.products.length, 'products...');
         
         // --- Adapt Keepa results for Title Picker UI ---
         let results = data.products.map(p => {
@@ -3281,8 +3373,9 @@ function render(res, data) {
         decisionEl.className = `decision-label ${res.verdict.toLowerCase()}`;
     }
     
-    // Show/hide gem icon
-    document.getElementById('gemIcon').classList.toggle('visible', res.isGem);
+    // Hide Gemini badge initially (will show when Gemini completes)
+    const geminiQuickRow = document.getElementById('geminiQuickRow');
+    if(geminiQuickRow) geminiQuickRow.classList.add('hidden');
     
     // Show/hide Keepa restricted badge
     const restrictedBadge = document.getElementById('keepaRestricted');
@@ -3503,7 +3596,7 @@ function render(res, data) {
             
             // Velocity issues
             if (data.drops30 === 0 && data.drops90 === 0) {
-                reasons.push(`📉 DEAD VELOCITY: Zero sales in 90 days. This is dead inventory that could sit for months or never sell.`);
+                reasons.push(`📉 DEAD VELOCITY: No sales in the last 90 days. This is dead inventory that could sit for months or never sell.`);
             } else if (res.estimatedDaysToSale > 180) {
                 reasons.push(`⏱️ GLACIAL TURNOVER: Estimated ${Math.round(res.estimatedDaysToSale)} days to sale (~${Math.round(res.estimatedDaysToSale/30)} months). Capital will be tied up too long.`);
             } else if (data.drops30 === 0 && data.drops90 > 0) {
@@ -3577,6 +3670,15 @@ function render(res, data) {
                     narrative += `Price has dropped ${Math.round((1 - currentBbPrice/data.avgUsed) * 100)}% recently - likely temporary dump from a weak seller. `;
                 }
                 
+                // Add sales velocity warning if applicable
+                if (data.drops180 === 0) {
+                    narrative += `⚠️ WARNING: No sales in the last 180 days despite competitive Buy Box. This suggests extremely weak demand - inventory could sit indefinitely. `;
+                } else if (data.drops30 === 0 && data.drops90 === 0) {
+                    narrative += `⚠️ WARNING: No sales in 90 days despite active sellers. Market may be dead or seasonal. `;
+                } else if (data.drops30 === 0 && data.drops90 > 0) {
+                    narrative += `⚠️ NOTE: ${data.drops90} sales over 90 days but none in last 30 days. Recent slowdown may indicate cooling demand. `;
+                }
+                
                 narrative += `Your recommended price puts you in the rotation immediately. Expect to win the BB ${Math.round(100 / fbaCount)}-${Math.round(100 / (fbaCount + 1))}% of the time.`;
                 
             } else if (bbOwner === 'FBM_PRICE_DRIVEN' || (fbaCount === 0 && totalOffers > 0)) {
@@ -3592,6 +3694,13 @@ function render(res, data) {
                     narrative += `Amazon pops in occasionally (last seen ${data.lastAmzDays || 12} days ago at $${data.amzPrice.toFixed(2)}). `;
                 }
                 
+                // Add sales velocity warning if applicable
+                if (data.drops180 === 0) {
+                    narrative += `⚠️ WARNING: No sales in the last 180 days. Extremely weak demand - high risk of dead inventory. `;
+                } else if (data.drops30 === 0 && data.drops90 === 0) {
+                    narrative += `⚠️ WARNING: No sales in 90 days. Market appears dead or seasonal. `;
+                }
+                
                 if (fbaCount === 0) {
                     narrative += `No FBA sellers are active. List at $${res.market.toFixed(2)} and you'll capture the Prime premium - historically this item sells for $2-3 above MFN when FBA is available. You'll own 100% of Prime customer sales.`;
                 } else {
@@ -3603,6 +3712,13 @@ function render(res, data) {
                 
                 if (data.lastAmzDays && data.lastAmzDays < 7) {
                     narrative += `They've been consistently active (seen ${data.lastAmzDays} days ago). `;
+                }
+                
+                // Add sales velocity warning if applicable
+                if (data.drops180 === 0) {
+                    narrative += `⚠️ WARNING: No sales in the last 180 days - even Amazon couldn't move this item. `;
+                } else if (data.drops30 === 0 && data.drops90 === 0) {
+                    narrative += `⚠️ WARNING: No sales in 90 days despite Amazon's presence. Very weak demand. `;
                 }
                 
                 if (res.verdict === 'BUY') {
@@ -3618,7 +3734,12 @@ function render(res, data) {
                     narrative += `Low competition (${totalOffers} total sellers) means you can likely match or undercut to win. `;
                 }
                 
-                if (data.drops30 > 10) {
+                // Add sales velocity context
+                if (data.drops180 === 0) {
+                    narrative += `⚠️ WARNING: No sales in the last 180 days. Low competition may indicate dead market rather than opportunity. `;
+                } else if (data.drops30 === 0 && data.drops90 === 0) {
+                    narrative += `⚠️ WARNING: No sales in 90 days. Proceed with extreme caution. `;
+                } else if (data.drops30 > 10) {
                     narrative += `Strong velocity (${data.drops30} sales/month) means sales will come quickly once you win the BB.`;
                 } else if (data.drops30 > 0) {
                     narrative += `Moderate velocity (${data.drops30} sales/month) means patient sellers will eventually convert.`;
@@ -3626,6 +3747,13 @@ function render(res, data) {
                 
             } else {
                 narrative = `No active Buy Box or offers detected. `;
+                
+                // Add sales velocity warning if applicable
+                if (data.drops180 === 0) {
+                    narrative += `⚠️ WARNING: No sales in the last 180 days and no active sellers. This listing may be completely dead. `;
+                } else if (data.drops30 === 0 && data.drops90 === 0) {
+                    narrative += `⚠️ WARNING: No sales in 90 days. No active competition may mean no demand. `;
+                }
                 
                 if (res.verdict === 'BUY') {
                     narrative += `This creates an opportunity - historical data shows this item sold for $${res.market.toFixed(2)} at ${CONFIG.condition.toLowerCase()} condition. List at that price and you'll have zero FBA competition.`;
@@ -3718,7 +3846,7 @@ function render(res, data) {
             };
             if(tag.includes('0 sales')) return {
                 icon: '📉',
-                desc: `Zero sales in 180 days. Dead inventory risk is very high. Could sit for months or years.`
+                desc: `No sales in the last 180 days. Dead inventory risk is very high. Could sit for months or years.`
             };
             if(tag.includes('high rank')) return {
                 icon: '📈',
@@ -4328,9 +4456,13 @@ async function loadGeminiOpinion() {
     if (typeof result.profit === 'number' && typeof CONFIG.profitFloor === 'number' && result.profit < CONFIG.profitFloor) {
         currentScan.geminiSuppressed = true;
         const geminiOpinion = document.getElementById('geminiOpinion');
+        const geminiQuickRow = document.getElementById('geminiQuickRow');
         if (geminiOpinion) {
             geminiOpinion.classList.add('hidden');
             geminiOpinion.innerHTML = '';
+        }
+        if (geminiQuickRow) {
+            geminiQuickRow.classList.add('hidden');
         }
         return;
     }
@@ -4542,15 +4674,6 @@ function renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseSc
         recommendLabel = 'REJECT';
     }
 
-    // Show gem icon if Gemini upgrades to BUY
-    if (geminiScore >= 75) {
-        const hasGemTags = result.posTags.concat(result.negTags).some(tag => tag.type === 'gem');
-        if (hasGemTags) {
-            const gemIcon = document.getElementById('gemIcon');
-            if (gemIcon) gemIcon.classList.add('visible');
-        }
-    }
-
     geminiOpinion.className = 'gemini-section';
     geminiOpinion.innerHTML = `
         <div class="gemini-box">
@@ -4571,6 +4694,9 @@ function renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseSc
     `;
 
     geminiOpinion.classList.remove('hidden');
+    
+    // Update the quick badge at the top with Gemini's recommendation
+    updateGeminiQuickBadge(recommendLabel, geminiScore);
 }
 
 /* ================= SETTINGS ================= */
@@ -5314,3 +5440,216 @@ function cleanTitle(title) {
 
 </body>
 </html>
+<script>
+
+function updateGeminiQuickBadge(recommendation, score) {
+  const row = document.getElementById('geminiQuickRow');
+  const badge = document.getElementById('geminiQuickBadge');
+  if (!row || !badge) return;
+
+  if (!recommendation || score == null) {
+    row.classList.add('hidden');
+    return;
+  }
+  badge.classList.remove('gemini-buy','gemini-consider','gemini-reject','gemini-unclear');
+  const rec = recommendation.toUpperCase();
+  if (rec === 'BUY') badge.classList.add('gemini-buy');
+  else if (rec === 'CONSIDER') badge.classList.add('gemini-consider');
+  else if (rec === 'UNCLEAR') badge.classList.add('gemini-unclear');
+  else badge.classList.add('gemini-reject');
+
+  badge.textContent = `🤖 Gemini: ${rec} · ${score}`;
+  row.classList.remove('hidden');
+}
+
+</script>
+<script>
+
+function scrollToGeminiExplanation() {
+  const target =
+    document.getElementById('geminiOpinion') ||
+    document.querySelector('.gemini-section') ||
+    document.querySelector('[id*="gemini"]');
+
+  if (!target) return;
+
+  target.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
+
+  // brief highlight flash
+  target.classList.add('flashBlue');
+  setTimeout(() => target.classList.remove('flashBlue'), 1200);
+}
+
+</script>
+<script>
+
+function normalizeISBN(input) {
+  if (!input) return input;
+  // Trim, remove spaces/hyphens, uppercase X for ISBN-10
+  let cleaned = input.trim().replace(/[\s-]/g, '');
+  // If ends with x, force uppercase X
+  if (/^[0-9]{9}x$/i.test(cleaned)) {
+    cleaned = cleaned.slice(0, 9) + 'X';
+  }
+  return cleaned;
+}
+
+</script>
+<script>
+
+function computeSalesWindows(keepaStats) {
+  // Expects Keepa stats with drop counts; safe defaults
+  const s180 = keepaStats?.sales180 ?? 0;
+  const s365 = keepaStats?.sales365 ?? 0;
+  return { sales180: s180, sales365: s365 };
+}
+
+</script>
+<script>
+
+function applyLongTailBookGates(score, category, sales180, sales365) {
+  if (category !== 'BOOK') return score;
+
+  // Hard stop: no sales in 365 days
+  if (sales365 === 0) {
+    return Math.min(score, 40);
+  }
+
+  // 180-day drought: cap at CONSIDER max
+  if (sales180 === 0 && sales365 >= 1) {
+    return Math.min(score, 74);
+  }
+
+  return score;
+}
+
+</script>
+<script>
+
+function formatSalesNarrative(sales180, sales365) {
+  return `Sales activity: ${sales180} sale(s) in last 180 days; ${sales365} sale(s) in last 365 days.`;
+}
+
+</script>
+<script>
+
+function enforceGeminiBookGates(rec, category, sales180, sales365) {
+  if (category !== 'BOOK') return rec;
+  if (sales365 === 0) return 'REJECT';
+  if (sales180 === 0) return 'CONSIDER';
+  return rec;
+}
+
+</script>
+<script>
+
+function applyPricingGuardrails(calcPrice, anchors, context) {
+  // anchors: { lowestFBA, buyBox, lowestMFN }
+  // context: { sales180, sales365, isLongTail }
+
+  let price = calcPrice;
+  let reasons = [];
+
+  // choose anchor priority
+  const anchor =
+    anchors.buyBox ??
+    anchors.lowestFBA ??
+    anchors.lowestMFN ??
+    null;
+
+  if (!anchor) {
+    return { price: null, capped: true, reason: "No market anchor available" };
+  }
+
+  // base clamps
+  let maxPremium = 0.25; // +25%
+  let maxDiscount = 0.15; // -15%
+
+  // tighten for long-tail / low liquidity
+  if (context.sales180 === 0) {
+    maxPremium = 0.10;
+    maxDiscount = 0.10;
+    reasons.push("Tightened due to low liquidity (180d sales = 0)");
+  }
+
+  const maxPrice = anchor * (1 + maxPremium);
+  const minPrice = anchor * (1 - maxDiscount);
+
+  if (price > maxPrice) {
+    reasons.push(`Capped above market (+${Math.round(maxPremium*100)}%)`);
+    price = maxPrice;
+  }
+  if (price < minPrice) {
+    reasons.push(`Capped below market (-${Math.round(maxDiscount*100)}%)`);
+    price = minPrice;
+  }
+
+  return {
+    price: Math.round(price * 100) / 100,
+    capped: reasons.length > 0,
+    reason: reasons.join("; ")
+  };
+}
+
+</script>
+<script>
+
+function updatePricingConfidence({ capped, sales180, anchorUsed }) {
+  const el = document.getElementById('pricingConfidence');
+  if (!el) return;
+
+  el.classList.remove('green','yellow','red','neutral');
+
+  if (!capped && sales180 > 0) {
+    el.classList.add('green');
+    el.querySelector('.label').textContent = 'Pricing confidence: high';
+  } else if (capped) {
+    el.classList.add('yellow');
+    el.querySelector('.label').textContent = 'Pricing confidence: capped';
+  } else {
+    el.classList.add('red');
+    el.querySelector('.label').textContent = 'Pricing confidence: low';
+  }
+}
+
+function showPricingDiff(original, final) {
+  const el = document.getElementById('pricingDiff');
+  if (!el) return;
+
+  if (original && final && Math.abs(original - final) > 0.01) {
+    const diff = (final - original).toFixed(2);
+    const sign = diff > 0 ? '+' : '';
+    el.textContent = `Adjusted from $${original.toFixed(2)} → $${final.toFixed(2)} (${sign}$${diff})`;
+  } else {
+    el.textContent = '';
+  }
+}
+
+</script>
+<script>
+
+function applyFeeFloor(price, fees) {
+  // fees: { referral, fba, inbound, storage, misc, minProfit }
+  const referral = fees.referral ?? 0;
+  const fba = fees.fba ?? 0;
+  const inbound = fees.inbound ?? 0;
+  const storage = fees.storage ?? 0;
+  const misc = fees.misc ?? 0;
+  const minProfit = fees.minProfit ?? 0;
+
+  const floor = referral + fba + inbound + storage + misc + minProfit;
+
+  if (price < floor) {
+    return {
+      price: Math.round(floor * 100) / 100,
+      floored: true,
+      floor: Math.round(floor * 100) / 100
+    };
+  }
+  return { price, floored: false, floor: Math.round(floor * 100) / 100 };
+}
+
+</script>
