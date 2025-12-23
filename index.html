@@ -455,8 +455,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
   font-size: 10px; color: var(--muted); line-height: 1.3; margin: 0;
 }
 
-/* Gemini Second Opinion */
-/* Gemini Second Opinion - Mockup Format */
+/* Gemini Second Opinion (Long-Tail Review • Triggered by 180-day demand risk) */
+/* Gemini Second Opinion (Long-Tail Review • Triggered by 180-day demand risk) - Mockup Format */
 .gemini-section {
   padding: 16px;
   background: rgba(0,0,0,0.25);
@@ -615,6 +615,76 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
   background: none;
   color: var(--orange);
   border: none;
+}
+
+/* === FBA PREMIUM SUPPORTED BADGE === */
+.fba-premium-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fba-premium-badge.hidden {
+  display: none;
+}
+
+.fba-premium-badge .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+}
+
+.fba-premium-badge.supported {
+  color: var(--green);
+}
+
+.fba-premium-badge.medium {
+  color: var(--yellow);
+}
+
+.fba-premium-badge .meta {
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Tooltip (tiny, inline, non-shifting) */
+.fba-tooltip {
+  position: relative;
+  cursor: help;
+  font-size: 10px;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.fba-tooltip-text {
+  display: none;
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  width: 220px;
+  line-height: 1.4;
+  text-transform: none;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.fba-tooltip:hover .fba-tooltip-text {
+  display: block;
 }
 
 /* Collapsible Sections */
@@ -1412,9 +1482,25 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cur
       <div class="key-info">
         <div class="price-profit-grid">
           <div class="info-box price-box">
-            <div class="info-label">Sell For</div>
-            <div class="info-value price" id="recommendedPrice">$0.00</div>
-        
+            <div>
+              <div class="info-label">Sell For</div>
+              <div class="info-value price" id="recommendedPrice">$0.00</div>
+              
+              <!-- FBA Premium badge (conditionally rendered) -->
+              <div id="fbaPremiumBadge" class="fba-premium-badge hidden">
+                <span class="dot"></span>
+                <span class="label"></span>
+                <span class="meta"></span>
+                
+                <!-- Inline tooltip (edge-case clarification only) -->
+                <span class="fba-tooltip">ⓘ
+                  <span class="fba-tooltip-text">
+                    This appears because recent buyers paid an FBA premium despite MF competition.
+                    Buy Box entry can still be price-driven.
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
           <div class="info-box profit-box">
             <div class="info-label">Net Profit</div>
@@ -1747,6 +1833,45 @@ function updateToggleUI(id, state) {
 function toggleSetting(key) {
     CONFIG[key] = !CONFIG[key];
     updateToggleUI(key === 'useProxy' ? 'toggleProxy' : 'toggleFastScan', CONFIG[key]);
+}
+
+/* ================= FBA PREMIUM BADGE LOGIC ================= */
+function shouldShowFbaPremium(evidence, bbDecision, geminiDecision) {
+  if (
+    !evidence ||
+    !evidence.supported ||
+    evidence.premium < 0.25 ||
+    CONFIG.condition !== 'USED'
+  ) return false;
+
+  // Hide ONLY if both BB and Gemini say REJECT
+  if (bbDecision === 'REJECT' && geminiDecision === 'REJECT') {
+    return false;
+  }
+
+  return true;
+}
+
+function renderFbaPremiumBadge(evidence, bbDecision, geminiDecision) {
+  const badge = document.getElementById('fbaPremiumBadge');
+  if (!badge) return;
+
+  if (!shouldShowFbaPremium(evidence, bbDecision, geminiDecision)) {
+    badge.classList.add('hidden');
+    return;
+  }
+
+  const confidenceClass =
+    evidence.confidence === 'medium' ? 'medium' : 'supported';
+
+  badge.className = `fba-premium-badge ${confidenceClass}`;
+  badge.querySelector('.label').innerHTML =
+    `FBA premium supported · <strong>+$${evidence.premium.toFixed(2)}</strong>`;
+
+  badge.querySelector('.meta').textContent =
+    `(${evidence.windowDays}d · ${evidence.confidence} confidence)`;
+
+  badge.classList.remove('hidden');
 }
 
 /* ================= SLIDERS ================= */
@@ -2372,6 +2497,170 @@ function calculatePriceRange(priceHistory, daysBack = 90) {
     };
 }
 
+/* ================= FBA PREMIUM EVIDENCE CALCULATOR (180 DAYS) ================= */
+function computeFbaPremiumEvidence180d(p) {
+    // Purpose: Determine if FBA offers have historically sold at a premium over MF offers
+    // based on 180-day price history comparison
+    
+    if (!p || !p.csv) {
+        return { supported: false, premium: 0, windowDays: 180, confidence: 'none' };
+    }
+    
+    const fbaHistory = p.csv[10] || []; // FBA price history
+    const usedHistory = p.csv[2] || []; // Used/MF price history
+    
+    // Need both histories to compare
+    if (fbaHistory.length < 2 || usedHistory.length < 2) {
+        return { supported: false, premium: 0, windowDays: 180, confidence: 'none' };
+    }
+    
+    const now = Date.now();
+    const cutoffTime = now - (180 * 24 * 60 * 60 * 1000); // 180 days back
+    const keepaEpoch = new Date('2011-01-01').getTime();
+    
+    // Convert histories to sorted arrays of {timestamp, price}
+    const fbaPoints = [];
+    for (let i = 0; i < fbaHistory.length; i += 2) {
+        const keepaTime = fbaHistory[i];
+        const priceValue = fbaHistory[i + 1];
+        const timestamp = keepaEpoch + (keepaTime * 60 * 1000);
+        
+        if (timestamp >= cutoffTime && priceValue > 0) {
+            fbaPoints.push({ timestamp, price: priceValue / 100 });
+        }
+    }
+    
+    const usedPoints = [];
+    for (let i = 0; i < usedHistory.length; i += 2) {
+        const keepaTime = usedHistory[i];
+        const priceValue = usedHistory[i + 1];
+        const timestamp = keepaEpoch + (keepaTime * 60 * 1000);
+        
+        if (timestamp >= cutoffTime && priceValue > 0) {
+            usedPoints.push({ timestamp, price: priceValue / 100 });
+        }
+    }
+    
+    if (fbaPoints.length === 0 || usedPoints.length === 0) {
+        return { supported: false, premium: 0, windowDays: 180, confidence: 'none' };
+    }
+    
+    // Sort by timestamp
+    fbaPoints.sort((a, b) => a.timestamp - b.timestamp);
+    usedPoints.sort((a, b) => a.timestamp - b.timestamp);
+    
+    // Sample premiums: For each FBA point, find the closest MF point in time
+    const premiums = [];
+    const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+    let recentPremiumCount = 0;
+    
+    for (const fbaPoint of fbaPoints) {
+        // Find closest used/MF price point (within 7 days)
+        let closestUsed = null;
+        let minTimeDiff = Infinity;
+        
+        for (const usedPoint of usedPoints) {
+            const timeDiff = Math.abs(fbaPoint.timestamp - usedPoint.timestamp);
+            if (timeDiff < minTimeDiff && timeDiff < (7 * 24 * 60 * 60 * 1000)) {
+                minTimeDiff = timeDiff;
+                closestUsed = usedPoint;
+            }
+        }
+        
+        if (closestUsed) {
+            const premium = fbaPoint.price - closestUsed.price;
+            
+            // Only count meaningful premiums (FBA >= $0.25 above MF)
+            // And sanity cap at $5.00
+            if (premium >= 0.25 && premium <= 5.00) {
+                // Additional check: FBA shouldn't be more than 10% above MF
+                // (filters out anomalies where MF temporarily crashed)
+                if (fbaPoint.price <= closestUsed.price * 1.10 || closestUsed.price < 8) {
+                    premiums.push(premium);
+                    
+                    // Track recent premiums (last 30 days)
+                    if (fbaPoint.timestamp >= thirtyDaysAgo) {
+                        recentPremiumCount++;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Evidence thresholds (for 180-day window)
+    const minObservations = 4;
+    const minRecentObservations = 2; // At least 2 in last 30 days
+    
+    if (premiums.length < minObservations) {
+        return { supported: false, premium: 0, windowDays: 180, confidence: 'weak' };
+    }
+    
+    // Calculate statistics
+    premiums.sort((a, b) => a - b);
+    const median = premiums[Math.floor(premiums.length / 2)];
+    const p25 = premiums[Math.floor(premiums.length * 0.25)];
+    const p75 = premiums[Math.floor(premiums.length * 0.75)];
+    const iqr = p75 - p25;
+    
+    // Consistency check: 65% of premiums should be within ±$0.75 of median
+    const withinRange = premiums.filter(p => Math.abs(p - median) <= 0.75).length;
+    const consistencyRatio = withinRange / premiums.length;
+    
+    // Determine confidence
+    let confidence = 'weak';
+    if (premiums.length >= 7 && 
+        median >= 1.25 && 
+        iqr <= 1.00 && 
+        recentPremiumCount >= minRecentObservations) {
+        confidence = 'high';
+    } else if (premiums.length >= 4 && 
+               median >= 0.75 && 
+               iqr <= 1.50 && 
+               recentPremiumCount >= 1) {
+        confidence = 'medium';
+    }
+    
+    // Final gating: need minimum consistency
+    if (consistencyRatio < 0.65) {
+        confidence = 'weak';
+    }
+    
+    // Calculate recommended premium (conservative)
+    const basePremium = Math.min(median, p75, 2.50);
+    
+    // Apply risk haircut based on confidence
+    const haircuts = { high: 0.25, medium: 0.50, weak: 1.00 };
+    const adjustedPremium = Math.max(basePremium - haircuts[confidence], 0.25);
+    
+    // Support decision
+    const supported = confidence !== 'weak' && 
+                     median >= 0.75 && 
+                     recentPremiumCount >= minRecentObservations;
+    
+    console.log('FBA Premium Analysis:', {
+        observations: premiums.length,
+        recentCount: recentPremiumCount,
+        median: median.toFixed(2),
+        p25: p25.toFixed(2),
+        p75: p75.toFixed(2),
+        iqr: iqr.toFixed(2),
+        consistency: (consistencyRatio * 100).toFixed(0) + '%',
+        confidence,
+        adjustedPremium: adjustedPremium.toFixed(2),
+        supported
+    });
+    
+    return {
+        supported,
+        premium: adjustedPremium,
+        windowDays: 180,
+        confidence,
+        observations: premiums.length,
+        recentCount: recentPremiumCount,
+        median: median
+    };
+}
+
 function parseProduct(p) {
     const s = p.stats.current;
     const avg = p.stats.avg90 || [];
@@ -2566,6 +2855,7 @@ function parseProduct(p) {
         strategyType: strategyType,
         pricingNotes: pricingNotes,
         fbaPremium: fbaPremium,
+        fbaPremiumEvidence: computeFbaPremiumEvidence180d(p), // 180-day historical analysis
         // -------------------------
         avgNew: toPrice(avg[1]),
         avgUsed: toPrice(avg[2]),
@@ -3679,6 +3969,13 @@ function render(res, data) {
                     narrative += `⚠️ NOTE: ${data.drops90} sales over 90 days but none in last 30 days. Recent slowdown may indicate cooling demand. `;
                 }
                 
+                // Add FBA premium evidence if supported
+                const fbaPremiumEvidence = data.fbaPremiumEvidence || {};
+                const geminiDecision = (currentScan && currentScan.geminiVerdict) || 'UNCLEAR';
+                if (shouldShowFbaPremium(fbaPremiumEvidence, res.verdict, geminiDecision)) {
+                    narrative += `📊 FBA buyers have historically paid +$${fbaPremiumEvidence.premium.toFixed(2)} above MF floor (${fbaPremiumEvidence.confidence} confidence, ${fbaPremiumEvidence.windowDays}d analysis). `;
+                }
+                
                 narrative += `Your recommended price puts you in the rotation immediately. Expect to win the BB ${Math.round(100 / fbaCount)}-${Math.round(100 / (fbaCount + 1))}% of the time.`;
                 
             } else if (bbOwner === 'FBM_PRICE_DRIVEN' || (fbaCount === 0 && totalOffers > 0)) {
@@ -3699,6 +3996,13 @@ function render(res, data) {
                     narrative += `⚠️ WARNING: No sales in the last 180 days. Extremely weak demand - high risk of dead inventory. `;
                 } else if (data.drops30 === 0 && data.drops90 === 0) {
                     narrative += `⚠️ WARNING: No sales in 90 days. Market appears dead or seasonal. `;
+                }
+                
+                // Add FBA premium evidence if supported
+                const fbaPremiumEvidence = data.fbaPremiumEvidence || {};
+                const geminiDecision = (currentScan && currentScan.geminiVerdict) || 'UNCLEAR';
+                if (shouldShowFbaPremium(fbaPremiumEvidence, res.verdict, geminiDecision)) {
+                    narrative += `📊 PRICING INSIGHT: Historical data shows FBA offers have converted at a modest premium (+$${fbaPremiumEvidence.premium.toFixed(2)}) above MF floor over the last ${fbaPremiumEvidence.windowDays} days, despite active MF competition. `;
                 }
                 
                 if (fbaCount === 0) {
@@ -4009,6 +4313,22 @@ function render(res, data) {
         geminiOpinion.classList.add('hidden');
     }
     // --- End Gemini Auto-load Logic ---
+
+    // === FBA PREMIUM BADGE LOGIC ===
+    // Get real evidence from Keepa 180-day analysis
+    const fbaPremiumEvidence = data.fbaPremiumEvidence || {
+        supported: false,
+        premium: 0,
+        windowDays: 180,
+        confidence: 'none'
+    };
+    
+    // Get Gemini decision from currentScan if available
+    const geminiDecision = (currentScan && currentScan.geminiVerdict) || 'UNCLEAR';
+    
+    // Render the badge (will be hidden if not supported or double-REJECT)
+    renderFbaPremiumBadge(fbaPremiumEvidence, res.verdict, geminiDecision);
+    // === END FBA PREMIUM BADGE ===
 
     card.classList.remove('hidden');
 }
@@ -4486,7 +4806,7 @@ async function loadGeminiOpinion() {
             <div class="gemini-header">
                 <div class="gemini-title">
                     <i class="fas fa-brain"></i>
-                    Second Opinion (Gemini AI)
+                    Second Opinion (Long-Tail Review • Triggered by 180-day demand risk) (Gemini AI)
                 </div>
             </div>
             <div style="text-align:center; padding:30px; color:var(--muted);">
@@ -4547,6 +4867,26 @@ Total Competition: ${totalOffers} sellers (${fbaCount} FBA, ${fbmCount} FBM)
 Current Buy Box: $${lastData.inferredBbPrice > 0 ? lastData.inferredBbPrice.toFixed(2) : 'N/A'}
 Buy Box Ownership: ${bbOwnershipDesc}
 ${lastData.amzPrice > 0 ? `Amazon Active: Yes (last seen at $${lastData.amzPrice.toFixed(2)}, ${lastData.lastAmzDays || 'unknown'} days ago)` : 'Amazon Active: No'}
+
+FBA PREMIUM ANALYSIS (180-day historical):
+${(() => {
+    const evidence = lastData.fbaPremiumEvidence || {};
+    const geminiVerd = (currentScan && currentScan.geminiVerdict) || 'UNCLEAR';
+    if (shouldShowFbaPremium(evidence, result.verdict, geminiVerd)) {
+        return `FBA Premium Supported: YES (+$${evidence.premium.toFixed(2)} suggested premium vs MF floor)
+Evidence: ${evidence.observations} qualifying observations, ${evidence.confidence} confidence
+Interpretation: FBA offers have historically converted at this premium despite MF competition. This is factored into the recommended price.`;
+    } else {
+        return `FBA Premium Supported: NO
+Interpretation: No consistent evidence that FBA can command a premium over MF floor for this item.`;
+    }
+})()}
+
+IMPORTANT PRICING RULES:
+- This is a one-off USED item. There is no repricing ladder.
+- Do NOT suggest future price increases or "after Buy Box rotation."
+- The FBA premium analysis (if supported) is already factored into the Recommended Sell Price.
+- Do NOT invent additional premiums or recalculate pricing.
 
 INITIAL ASSESSMENT:
 Your Algorithm Score: ${baseScore}/100 (${result.verdict} tier - needs second opinion)
@@ -4680,7 +5020,7 @@ function renderGeminiOpinion(geminiVerdict, geminiScore, geminiReasoning, baseSc
             <div class="gemini-header">
                 <div class="gemini-title">
                     <i class="fas fa-brain"></i>
-                    Second Opinion (Gemini AI)
+                    Second Opinion (Long-Tail Review • Triggered by 180-day demand risk) (Gemini AI)
                 </div>
                 <div class="gemini-score">${geminiScore}</div>
             </div>
@@ -5436,6 +5776,96 @@ function cleanTitle(title) {
   }
   requestAnimationFrame(tick);
 })();
+</script>
+
+
+<!-- ==================== HARD 180-DAY CLAMP (RENDER-LEVEL) ==================== -->
+<script>
+/*
+This patch enforces the rule EVEN IF earlier scoring logic is unchanged.
+It intercepts rendering and guarantees:
+- No BUY when sales180 == 0/null
+- Score <= 74
+- Decision = CONSIDER
+- Gemini forced when original score >= 75
+*/
+
+(function() {
+  function clampResult(result) {
+    const noSales180 =
+      result &&
+      (result.sales180 === 0 ||
+       result.sales180 === null ||
+       result.sales180 === undefined);
+
+    if (!noSales180) return result;
+
+    if (typeof result.originalScore !== 'number') {
+      result.originalScore = result.score;
+    }
+
+    result.score = Math.min(result.score, 74);
+    result.decision = 'CONSIDER';
+    result.forceGemini = result.originalScore >= 75;
+
+    return result;
+  }
+
+  // Intercept global render pipeline safely
+  if (window.renderResultCard) {
+    const _render = window.renderResultCard;
+    window.renderResultCard = function(result) {
+      return _render(clampResult(result));
+    };
+  }
+
+  // Fallback: intercept decision label directly
+  if (window.updateDecisionUI) {
+    const _update = window.updateDecisionUI;
+    window.updateDecisionUI = function(result) {
+      return _update(clampResult(result));
+    };
+  }
+
+  // Absolute last resort: mutation observer on BUY label
+  document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver(() => {
+      const decisionEl = document.getElementById('decision');
+      if (!decisionEl) return;
+
+      const text = decisionEl.textContent.trim();
+      const sales180 = window.currentResult && window.currentResult.sales180;
+
+      if (text === 'BUY' && (sales180 === 0 || sales180 == null)) {
+        decisionEl.textContent = 'CONSIDER';
+        decisionEl.classList.remove('buy');
+        decisionEl.classList.add('consider');
+
+        const scoreEl = document.getElementById('confidence');
+        if (scoreEl && parseInt(scoreEl.textContent, 10) > 74) {
+          scoreEl.textContent = '74';
+        }
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+})();
+</script>
+<!-- ================= END HARD 180-DAY CLAMP ================= -->
+
+
+<script>
+/* ===== Buy Box Narrative: Age-Aware Messaging ===== */
+function getDemandNarrative(sales180, sales365) {
+  if (sales180 === 0 && sales365 > 0) {
+    return "📘 Long-tail demand detected. This item sells infrequently but historically clears within 6–12 months at strong margins.";
+  }
+  if ((sales180 === 0 || sales180 == null) && (sales365 === 0 || sales365 == null)) {
+    return "🧭 Ultra-long-tail or collector behavior. Sales are rare, but price integrity can be strong when demand appears.";
+  }
+  return null;
+}
 </script>
 
 </body>
