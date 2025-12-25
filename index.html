@@ -3903,7 +3903,24 @@ function analyze(data) {
         verdict = 'REJECT';
         score = Math.round(Math.max(0, 40 - (CONFIG.profitFloor - profit)));
         isGem = false; // Cannot be a gem with low profit
-    } else {
+    } 
+    // A2. ZERO SALES IN 180 DAYS CHECK (CRITICAL)
+    else if (data.drops180 === 0) {
+        // Zero sales in 180 days is extremely risky
+        if (data.drops360 === 0) {
+            // Truly dead - no sales in a full year
+            verdict = 'REJECT';
+            score = Math.round(Math.max(0, 30 - Math.abs(profit))); // Max score 30 even with great profit
+            isGem = false;
+        } else {
+            // Has sales within 360 days - could be seasonal or very slow mover
+            // Cap at CONSIDER tier (50-65 range depending on profit)
+            verdict = 'CONSIDER';
+            score = Math.round(Math.min(65, 45 + (profit * 1.5))); // Score based on profit, capped at 65
+            isGem = false;
+        }
+    } 
+    else {
         // B. ESTIMATE TIME TO SALE (The Core Calculation)
         // This combines velocity (how often book sells) with competition (queue position)
         
@@ -4432,10 +4449,20 @@ function render(res, data) {
     let historicalContext = '';
     const recommended = res.market;
     
-    // NEW CLARIFICATION LOGIC
-    // Check if the recommended price is significantly higher than the live BB/inferred price.
-    // Use a $5 margin and a 50% ratio as threshold for a strong warning.
-    if (bbPrice > 0 && recommended > (bbPrice + 5.00) && recommended > (bbPrice * 1.5)) {
+    // CRITICAL: Zero sales in 180 days warning (highest priority)
+    if (data.drops180 === 0) {
+        historicalContext = `
+            <span style="color:var(--red); font-weight:800; display:block; margin-top: 8px; background: rgba(248, 113, 113, 0.15); padding: 8px; border-radius: 6px; border-left: 3px solid var(--red);">
+                💀 ZERO SALES IN 180 DAYS
+            </span>
+            <span style="font-size:11px; line-height:1.4; color:rgba(255,255,255,0.7); display:block; margin-top: 4px;">
+                This item has not sold once in half a year. Extreme risk of dead inventory. ${data.drops360 && data.drops360 > 0 ? 'Some sales within 360 days suggest seasonal or very slow mover.' : 'No sales in past year - truly dead.'}
+            </span>
+        `;
+    } else if (bbPrice > 0 && recommended > (bbPrice + 5.00) && recommended > (bbPrice * 1.5)) {
+        // NEW CLARIFICATION LOGIC
+        // Check if the recommended price is significantly higher than the live BB/inferred price.
+        // Use a $5 margin and a 50% ratio as threshold for a strong warning.
         historicalContext = `
             <span style="color:var(--yellow); font-weight:800; display:block; margin-top: 5px;">
                 ⚠️ Market Anomaly Detected:
@@ -4504,8 +4531,10 @@ function render(res, data) {
                 reasons.push(`💸 INSUFFICIENT PROFIT: Net profit of $${res.profit.toFixed(2)} is below your $${CONFIG.profitFloor.toFixed(2)} floor. Not worth the effort and risk.`);
             }
             
-            // Velocity issues
-            if (data.drops30 === 0 && data.drops90 === 0) {
+            // Velocity issues - CRITICAL: Check 180 days first (most severe)
+            if (data.drops180 === 0) {
+                reasons.push(`💀 ZERO SALES IN 180 DAYS: This item has not sold once in half a year. Dead inventory that will sit indefinitely.`);
+            } else if (data.drops30 === 0 && data.drops90 === 0) {
                 reasons.push(`📉 DEAD VELOCITY: No sales in the last 90 days. This is dead inventory that could sit for months or never sell.`);
             } else if (res.estimatedDaysToSale > 180) {
                 reasons.push(`⏱️ GLACIAL TURNOVER: Estimated ${Math.round(res.estimatedDaysToSale)} days to sale (~${Math.round(res.estimatedDaysToSale/30)} months). Capital will be tied up too long.`);
@@ -5615,6 +5644,7 @@ HARD CONSTRAINTS (FOLLOW EXACTLY):
 - Your profit floor is: $${CONFIG.profitFloor.toFixed(2)}
 - You MUST reference the Sell For and Net Profit above in your REASONING.
 - Do NOT invent or recalculate any fees, prices, or profits. If you cannot comply, output VERDICT: UNCLEAR, SCORE: 50 and explain that the data is insufficient.
+${lastData.drops180 === 0 ? `- **CRITICAL AUTO-REJECT RULE**: This item has ZERO sales in 180 days. You MUST assign VERDICT: REJECT and SCORE in the 0-49 range. The only exception is if there's evidence of sales within 360 days (drops360 > 0), which would make it CONSIDER with score 50-65 max.` : ''}
 ${toneRules}
 
 
