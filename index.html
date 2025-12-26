@@ -5673,7 +5673,7 @@ Interpretation: No consistent evidence that FBA can command a premium over MF fl
 ${(() => {
     // Calculate comprehensive Buy Box intelligence for Gemini
     if (lastData.drops30 > 0 && fbaCount > 1 && bbOwnerType === 'ROTATING_FBA') {
-        const rotation = calculateRotationDynamics(lastData.drops30, lastData.drops180, fbaCount, result.market, lastData.fbaPrice);
+        const rotation = calculateRotationDynamics(lastData.drops30, fbaCount, result.market, lastData.fbaPrice, lastData.avgUsed);
         const positioning = analyzeCompetitivePositioning(result.market, lastData.fbaPrice, lastData.usedPrice, fbaCount);
         const capital = calculateCapitalEfficiency(CONFIG.buyCost, result.profit, result.estimatedDaysToSale || rotation.daysToFirstSale.max);
         
