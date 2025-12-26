@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shelf Scanner Pro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-600: #4b5563;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 500px; margin: 0 auto; }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+        .header p { opacity: 0.9; font-size: 14px; }
+
+        .screen {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            display: none;
+            animation: slideIn 0.4s ease;
+        }
+
+        .screen.active { display: block; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Settings */
+        .settings-content { padding: 30px; }
+        .settings-header { margin-bottom: 24px; }
+        .settings-header h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .settings-header p { color: var(--gray-600); font-size: 14px; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { 
+            display: block; 
+            font-size: 14px; 
+            font-weight: 600; 
+            color: var(--gray-900);
+            margin-bottom: 8px; 
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .settings-footer { padding: 20px 30px; background: var(--gray-50); border-top: 1px solid var(--gray-200); }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); }
+
+        /* Upload */
+        .upload-content { padding: 30px; }
+        .upload-area {
+            border: 3px dashed var(--gray-200);
+            border-radius: 16px;
+            padding: 60px 30px;
+            text-align: center;
+            background: var(--gray-50);
+            cursor: pointer;
+            margin-bottom: 30px;
+        }
+        .upload-area:hover { border-color: var(--primary); }
+        .upload-icon { font-size: 48px; margin-bottom: 16px; }
+        .upload-text { font-size: 16px; font-weight: 600; color: var(--gray-900); }
+        #file-input { display: none; }
+
+        .photo-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .photo-preview-item {
+            position: relative;
+            aspect-ratio: 4/3;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .photo-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-preview-remove {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 16px;
+            background: var(--gray-100);
+            color: var(--gray-900);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+
+        .btn-scan {
+            width: 100%;
+            padding: 18px;
+            background: var(--success);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .btn-scan:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Scanning */
+        .scanning-content {
+            padding: 60px 30px;
+            text-align: center;
+        }
+
+        .scanning-spinner {
+            width: 64px;
+            height: 64px;
+            border: 4px solid var(--gray-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .scanning-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+        .scanning-status { font-size: 16px; color: var(--gray-600); margin-bottom: 30px; }
+        .scanning-progress {
+            background: var(--gray-200);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .scanning-progress-bar {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+            width: 0;
+        }
+
+        /* Results */
+        .results-header {
+            background: var(--primary);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .results-header h2 { font-size: 24px; font-weight: 700; margin-bottom: 20px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.15);
+            padding: 16px 8px;
+            border-radius: 12px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .results-content { padding: 20px; }
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .result-card {
+            border-radius: 12px;
+            background: white;
+            border: 2px solid var(--gray-200);
+            padding: 16px;
+            transition: all 0.2s;
+        }
+
+        .result-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(37,99,235,0.1);
+        }
+
+        .result-card.buy { border-color: var(--success); background: rgba(16,185,129,0.05); }
+        .result-card.consider { border-color: var(--warning); background: rgba(245,158,11,0.05); }
+        .result-card.reject { border-color: var(--gray-200); opacity: 0.6; }
+
+        .result-verdict {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .result-verdict.buy { background: var(--success); color: white; }
+        .result-verdict.consider { background: var(--warning); color: white; }
+        .result-verdict.reject { background: var(--gray-200); color: var(--gray-600); }
+
+        .result-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .result-author {
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--gray-600);
+            margin-top: 8px;
+        }
+
+        .result-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--success);
+            margin-top: 8px;
+        }
+
+        .result-profit {
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .result-profit.positive { color: var(--success); }
+        .result-profit.negative { color: var(--danger); }
+
+        .results-footer {
+            padding: 20px;
+            background: var(--gray-50);
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .no-isbn-note {
+            font-size: 12px;
+            color: var(--gray-600);
+            font-style: italic;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Shelf Scanner Pro</h1>
+            <p>FBA Book Scouting</p>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="screen active">
+            <div class="settings-content">
+                <div class="settings-header">
+                    <h2>Configuration</h2>
+                    <p>Scan shelves, get instant FBA scores</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="gemini-key">Gemini API Key</label>
+                    <input type="password" id="gemini-key" placeholder="Enter Gemini Key">
+                </div>
+
+                <div class="form-group">
+                    <label for="keepa-key">Keepa API Key</label>
+                    <input type="password" id="keepa-key" placeholder="Enter Keepa Key">
+                </div>
+
+                <div class="form-group">
+                    <label for="buy-cost">Buy Cost per Book ($)</label>
+                    <input type="number" id="buy-cost" step="0.01" value="1.00">
+                </div>
+
+                <div class="form-group">
+                    <label for="profit-floor">Profit Floor ($)</label>
+                    <input type="number" id="profit-floor" step="0.50" value="5.00">
+                </div>
+            </div>
+            <div class="settings-footer">
+                <button class="btn-primary" onclick="saveSettings()">Continue to Scanner</button>
+            </div>
+        </div>
+
+        <!-- Upload Screen -->
+        <div id="upload-screen" class="screen">
+            <div class="upload-content">
+                <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">Tap to select shelf photos</div>
+                </div>
+                <input type="file" id="file-input" accept="image/*" multiple>
+                <div id="photo-previews" class="photo-preview-grid"></div>
+                <button class="btn-secondary" onclick="showScreen('settings-screen')">← Settings</button>
+                <button class="btn-scan" id="scan-btn" onclick="startScanning()" disabled>🚀 Analyze Shelf</button>
+            </div>
+        </div>
+
+        <!-- Scanning Screen -->
+        <div id="scanning-screen" class="screen">
+            <div class="scanning-content">
+                <div class="scanning-spinner"></div>
+                <div class="scanning-title">Scanning Shelf...</div>
+                <div class="scanning-status" id="scanning-status">Starting...</div>
+                <div class="scanning-progress">
+                    <div class="scanning-progress-bar" id="scan-progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="screen">
+            <div class="results-header">
+                <h2>Scan Results</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-books">0</span>
+                        <span class="stat-label">Books</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-buy">0</span>
+                        <span class="stat-label">Buy</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-consider">0</span>
+                        <span class="stat-label">Consider</span>
+                    </div>
+                </div>
+            </div>
+            <div class="results-content">
+                <div class="results-grid" id="results-grid"></div>
+            </div>
+            <div class="results-footer">
+                <button class="btn-secondary" onclick="newScan()">🔄 New Scan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let CONFIG = {
+            geminiKey: '',
+            keepaKey: '',
+            buyCost: 1.00,
+            profitFloor: 5.00
+        };
+
+        let uploadedPhotos = [];
+        let scannedBooks = [];
+
+        function loadSettings() {
+            const saved = localStorage.getItem('shelf-scanner-config');
+            if (saved) {
+                CONFIG = JSON.parse(saved);
+                document.getElementById('gemini-key').value = CONFIG.geminiKey || '';
+                document.getElementById('keepa-key').value = CONFIG.keepaKey || '';
+                document.getElementById('buy-cost').value = CONFIG.buyCost || 1.00;
+                document.getElementById('profit-floor').value = CONFIG.profitFloor || 5.00;
+            }
+        }
+
+        function saveSettings() {
+            CONFIG.geminiKey = document.getElementById('gemini-key').value.trim();
+            CONFIG.keepaKey = document.getElementById('keepa-key').value.trim();
+            CONFIG.buyCost = parseFloat(document.getElementById('buy-cost').value) || 1.00;
+            CONFIG.profitFloor = parseFloat(document.getElementById('profit-floor').value) || 5.00;
+            
+            if (!CONFIG.geminiKey) {
+                alert('Gemini API Key is required');
+                return;
+            }
+            if (!CONFIG.keepaKey) {
+                alert('Keepa API Key is required');
+                return;
+            }
+            
+            localStorage.setItem('shelf-scanner-config', JSON.stringify(CONFIG));
+            showScreen('upload-screen');
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // File handling
+        document.getElementById('file-input').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    uploadedPhotos.push({ dataUrl: event.target.result });
+                    renderPreviews();
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function renderPreviews() {
+            const container = document.getElementById('photo-previews');
+            container.innerHTML = '';
+            uploadedPhotos.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'photo-preview-item';
+                div.innerHTML = `
+                    <img src="${p.dataUrl}">
+                    <button class="photo-preview-remove" onclick="uploadedPhotos.splice(${i},1);renderPreviews();">×</button>
+                `;
+                container.appendChild(div);
+            });
+            document.getElementById('scan-btn').disabled = uploadedPhotos.length === 0;
+        }
+
+        // MAIN SCANNING WORKFLOW
+        async function startScanning() {
+            showScreen('scanning-screen');
+            scannedBooks = [];
+            const bar = document.getElementById('scan-progress-bar');
+            
+            try {
+                // Phase 1: Gemini OCR - Extract titles + ISBNs from photos
+                for (let i = 0; i < uploadedPhotos.length; i++) {
+                    const progress = ((i + 1) / uploadedPhotos.length) * 50;
+                    document.getElementById('scanning-status').textContent = `Reading spines: Photo ${i+1}/${uploadedPhotos.length}`;
+                    bar.style.width = `${progress}%`;
+
+                    const books = await extractBooksFromPhoto(uploadedPhotos[i].dataUrl);
+                    scannedBooks.push(...books);
+                }
+                
+                // Phase 2: Keepa Lookup - Get USED FBA pricing for each ISBN
+                for (let i = 0; i < scannedBooks.length; i++) {
+                    const progress = 50 + ((i + 1) / scannedBooks.length) * 50;
+                    document.getElementById('scanning-status').textContent = `Scoring: ${i+1}/${scannedBooks.length}`;
+                    bar.style.width = `${progress}%`;
+                    
+                    let book = scannedBooks[i];
+                    
+                    if (book.isbn) {
+                        try {
+                            const keepaData = await fetchKeepa(book.isbn);
+                            if (keepaData) {
+                                Object.assign(book, keepaData);
+                                book.scored = true;
+                                
+                                // Calculate profit and verdict
+                                const profit = book.price - CONFIG.buyCost - (book.price * 0.15) - 4.30; // Est fees
+                                book.profit = profit;
+                                
+                                if (profit >= CONFIG.profitFloor && book.sales180 > 0) {
+                                    book.verdict = 'BUY';
+                                } else if (profit >= CONFIG.profitFloor * 0.6 || book.sales180 > 5) {
+                                    book.verdict = 'CONSIDER';
+                                } else {
+                                    book.verdict = 'REJECT';
+                                }
+                            }
+                        } catch (e) {
+                            console.error(`Keepa lookup failed for ${book.title}:`, e);
+                            book.scored = false;
+                        }
+                    } else {
+                        book.scored = false;
+                        book.verdict = 'REJECT';
+                    }
+                }
+                
+                displayResults();
+            } catch (err) {
+                alert("Scan failed: " + err.message);
+                showScreen('upload-screen');
+            }
+        }
+
+        // Gemini: Extract titles + ISBNs from shelf photo
+        async function extractBooksFromPhoto(base64Data) {
+            const base64 = base64Data.split(',')[1];
+            
+            const prompt = `You are a book scout analyzing a shelf photo.
+
+For each book spine visible, extract:
+1. Title (as it appears on spine)
+2. Author (if visible)
+3. ISBN-13 (look it up from your knowledge - provide the standard ISBN-13 for this book)
+
+Return ONLY a JSON array:
+[{"title": "Book Title", "author": "Author Name", "isbn": "9781234567890"}]
+
+If you cannot determine the ISBN for a book, omit the isbn field for that entry.
+Focus on books where you can confidently identify the title.`;
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { inline_data: { mime_type: "image/jpeg", data: base64 } }
+                        ]
+                    }]
+                })
+            });
+
+            if (!res.ok) throw new Error("Gemini API Error: " + res.status);
+            
+            const data = await res.json();
+            const text = data.candidates[0].content.parts[0].text;
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+            
+            return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+        }
+
+        // Keepa: Get USED FBA pricing by ISBN
+        async function fetchKeepa(isbn) {
+            const url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=1&code=${isbn}&stats=180&history=1`;
+            
+            try {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    console.error(`Keepa returned ${res.status} for ISBN ${isbn}`);
+                    return null;
+                }
+                
+                const json = await res.json();
+                
+                if (!json.products || json.products.length === 0) {
+                    console.warn(`Keepa found no product for ISBN ${isbn}`);
+                    return null;
+                }
+                
+                const p = json.products[0];
+                const stats = p.stats;
+                
+                if (!stats || !stats.current) {
+                    return null;
+                }
+                
+                // Get USED FBA price (index 10) or USED price (index 2)
+                const fbaPrice = stats.current[10] ? stats.current[10] / 100 : 0;
+                const usedPrice = stats.current[2] ? stats.current[2] / 100 : 0;
+                const price = fbaPrice || usedPrice || 0;
+                
+                // Get sales velocity
+                const sales180 = stats.salesRankDrops180 || 0;
+                const sales30 = stats.salesRankDrops30 || 0;
+                
+                return {
+                    price: price,
+                    rank: stats.current[3] || 0,
+                    sales180: sales180,
+                    sales30: sales30,
+                    asin: p.asin
+                };
+            } catch (e) {
+                console.error('Keepa fetch error:', e);
+                return null;
+            }
+        }
+
+        function displayResults() {
+            showScreen('results-screen');
+            
+            const buyBooks = scannedBooks.filter(b => b.verdict === 'BUY');
+            const considerBooks = scannedBooks.filter(b => b.verdict === 'CONSIDER');
+            
+            document.getElementById('total-books').textContent = scannedBooks.length;
+            document.getElementById('total-buy').textContent = buyBooks.length;
+            document.getElementById('total-consider').textContent = considerBooks.length;
+
+            const grid = document.getElementById('results-grid');
+            grid.innerHTML = '';
+
+            // Sort: BUY first, then CONSIDER, then REJECT
+            const sortedBooks = [
+                ...buyBooks,
+                ...considerBooks,
+                ...scannedBooks.filter(b => b.verdict === 'REJECT')
+            ];
+
+            sortedBooks.forEach(book => {
+                const card = document.createElement('div');
+                card.className = `result-card ${book.verdict.toLowerCase()}`;
+                
+                let content = `
+                    <div class="result-verdict ${book.verdict.toLowerCase()}">${book.verdict}</div>
+                    <div class="result-title">${book.title}</div>
+                    <div class="result-author">${book.author || 'Author Unknown'}</div>
+                `;
+                
+                if (book.scored) {
+                    const profitClass = book.profit >= 0 ? 'positive' : 'negative';
+                    content += `
+                        <div class="result-price">Sell: $${book.price.toFixed(2)}</div>
+                        <div class="result-profit ${profitClass}">Profit: $${book.profit.toFixed(2)}</div>
+                        <div class="result-meta">
+                            <span>Rank: ${book.rank.toLocaleString()}</span>
+                            <span>Sales: ${book.sales30}/mo</span>
+                        </div>
+                    `;
+                } else {
+                    content += `<div class="no-isbn-note">No ISBN found - cannot score</div>`;
+                }
+                
+                card.innerHTML = content;
+                grid.appendChild(card);
+            });
+        }
+
+        function newScan() {
+            uploadedPhotos = [];
+            scannedBooks = [];
+            renderPreviews();
+            showScreen('upload-screen');
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>
