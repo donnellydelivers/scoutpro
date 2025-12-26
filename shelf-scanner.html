@@ -528,9 +528,30 @@
                     scannedBooks.push(...books);
                 }
                 
-                // Phase 2: Keepa Lookup - Get USED FBA pricing for each ISBN
+                // Phase 2: Google Books - Convert titles to ISBNs
                 for (let i = 0; i < scannedBooks.length; i++) {
-                    const progress = 50 + ((i + 1) / scannedBooks.length) * 50;
+                    const progress = 50 + ((i + 1) / scannedBooks.length) * 25; // 50-75%
+                    document.getElementById('scanning-status').textContent = `Finding ISBNs: ${i+1}/${scannedBooks.length}`;
+                    bar.style.width = `${progress}%`;
+                    
+                    let book = scannedBooks[i];
+                    
+                    if (!book.isbn && book.title) {
+                        try {
+                            const isbn = await findISBNFromTitle(book.title, book.author);
+                            if (isbn) {
+                                book.isbn = isbn;
+                                book.isbnSource = 'google-books';
+                            }
+                        } catch (e) {
+                            console.error(`Google Books lookup failed for ${book.title}:`, e);
+                        }
+                    }
+                }
+                
+                // Phase 3: Keepa Lookup - Get USED FBA pricing for each ISBN
+                for (let i = 0; i < scannedBooks.length; i++) {
+                    const progress = 75 + ((i + 1) / scannedBooks.length) * 25; // 75-100%
                     document.getElementById('scanning-status').textContent = `Scoring: ${i+1}/${scannedBooks.length}`;
                     bar.style.width = `${progress}%`;
                     
@@ -658,6 +679,54 @@ Return the JSON array now:`;
                 }
                 
                 return [];
+            }
+        }
+
+        // Google Books: Convert title (+ optional author) to ISBN-13
+        async function findISBNFromTitle(title, author) {
+            // Build search query
+            let query = title;
+            if (author && author !== 'Author Unknown') {
+                query += ` ${author}`;
+            }
+            
+            const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=1`;
+            
+            try {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    console.error(`Google Books API returned ${res.status}`);
+                    return null;
+                }
+                
+                const data = await res.json();
+                
+                if (!data.items || data.items.length === 0) {
+                    console.warn(`No results from Google Books for: ${query}`);
+                    return null;
+                }
+                
+                const book = data.items[0];
+                const industryIds = book.volumeInfo?.industryIdentifiers;
+                
+                if (!industryIds) {
+                    return null;
+                }
+                
+                // Prefer ISBN-13, fall back to ISBN-10
+                const isbn13 = industryIds.find(id => id.type === 'ISBN_13');
+                const isbn10 = industryIds.find(id => id.type === 'ISBN_10');
+                
+                const isbn = isbn13?.identifier || isbn10?.identifier || null;
+                
+                if (isbn) {
+                    console.log(`Google Books: "${title}" → ISBN ${isbn}`);
+                }
+                
+                return isbn;
+            } catch (e) {
+                console.error('Google Books API error:', e);
+                return null;
             }
         }
 
