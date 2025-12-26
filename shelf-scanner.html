@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shelf Scanner - Pro (Option A)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #10b981;
+            --success-dark: #059669;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--gray-900);
+        }
+
+        .container { max-width: 500px; margin: 0 auto; }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            opacity: 0.95;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .screen {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: none;
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .screen.active { display: block; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Settings */
+        .settings-content { padding: 30px; }
+        .settings-header { margin-bottom: 30px; }
+        .settings-header h2 { font-size: 24px; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+        .settings-header p { color: var(--gray-600); font-size: 14px; }
+
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; }
+        .form-group input {
+            width: 100%; padding: 12px 16px; border: 2px solid var(--gray-200); border-radius: 10px; font-size: 15px;
+            font-family: 'Inter', sans-serif; transition: all 0.2s;
+        }
+        .form-group input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .form-group small { display: block; margin-top: 6px; color: var(--gray-600); font-size: 13px; }
+
+        .toggle-row { display: flex; align-items: center; gap: 12px; }
+        .toggle {
+            position: relative; width: 48px; height: 28px; background: var(--gray-300); border-radius: 14px;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .toggle.active { background: var(--success); }
+        .toggle-knob {
+            position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: white;
+            border-radius: 50%; transition: transform 0.2s;
+        }
+        .toggle.active .toggle-knob { transform: translateX(20px); }
+
+        .settings-footer { padding: 20px 30px; background: var(--gray-50); border-top: 1px solid var(--gray-200); }
+
+        .btn-primary {
+            width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
+
+        /* Upload */
+        .upload-content { padding: 30px; }
+        .upload-area {
+            border: 3px dashed var(--gray-300); border-radius: 16px; padding: 60px 30px; text-align: center;
+            background: var(--gray-50); cursor: pointer; transition: all 0.3s; margin-bottom: 30px;
+        }
+        .upload-area:hover { border-color: var(--primary); background: rgba(37, 99, 235, 0.03); }
+        .upload-icon { font-size: 48px; margin-bottom: 16px; }
+        .upload-text { font-size: 16px; font-weight: 600; color: var(--gray-900); margin-bottom: 8px; }
+        #file-input { display: none; }
+
+        .photo-preview-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
+        .photo-preview-item { position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 4/3; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+        .photo-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-preview-remove {
+            position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(0, 0, 0, 0.7);
+            color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        .btn-secondary {
+            width: 100%; padding: 16px; background: var(--gray-100); color: var(--gray-700); border: none;
+            border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 12px;
+        }
+
+        .btn-scan {
+            width: 100%; padding: 18px; background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+            color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); margin-top: 20px;
+        }
+        .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Scanning */
+        .scanning-content { padding: 60px 30px; text-align: center; }
+        .scanning-spinner {
+            width: 64px; height: 64px; border: 4px solid var(--gray-200); border-top-color: var(--primary);
+            border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 30px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .scanning-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+        .scanning-status { font-size: 16px; color: var(--gray-600); margin-bottom: 30px; }
+        .scanning-progress { background: var(--gray-200); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+        .scanning-progress-bar { height: 100%; background: var(--primary); transition: width 0.3s ease; width: 0; }
+
+        /* Results */
+        .results-header { background: var(--primary); color: white; padding: 30px; text-align: center; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .stat-card { background: rgba(255, 255, 255, 0.15); padding: 12px 8px; border-radius: 12px; }
+        .stat-value { font-size: 24px; font-weight: 700; display: block; }
+        .stat-label { font-size: 11px; text-transform: uppercase; opacity: 0.9; }
+
+        .results-grid { padding: 20px; display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .result-card { border-radius: 12px; background: white; border: 1px solid var(--gray-200); padding: 15px; display: flex; gap: 15px; align-items: center; }
+        .result-img { width: 60px; height: 80px; object-fit: cover; border-radius: 4px; background: var(--gray-100); }
+        .result-main { flex: 1; }
+        .result-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .result-author { font-size: 13px; color: var(--gray-600); }
+        .result-status { margin-top: 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .status-discovery { color: var(--gray-600); }
+        .status-buy { color: var(--success); }
+        
+        .error-message { background: rgba(239, 68, 68, 0.1); color: #dc2626; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        .error-message.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Shelf Scanner</h1>
+            <p>Discovery Mode (Option A)</p>
+        </div>
+
+        <div id="settings-screen" class="screen active">
+            <div class="settings-content">
+                <div class="settings-header">
+                    <h2>Settings</h2>
+                    <p>Option A: Keepa only fires on Identifiers</p>
+                </div>
+
+                <div id="settings-error" class="error-message"></div>
+
+                <div class="form-group">
+                    <label for="gemini-key">Gemini API Key</label>
+                    <input type="password" id="gemini-key" placeholder="Enter Gemini Key">
+                </div>
+
+                <div class="form-group">
+                    <label for="keepa-key">Keepa API Key</label>
+                    <input type="password" id="keepa-key" placeholder="Enter Keepa Key">
+                </div>
+
+                <div class="form-group">
+                    <label>Use Proxy Server</label>
+                    <div class="toggle-row">
+                        <div class="toggle" id="use-proxy-toggle" onclick="toggleProxy()">
+                            <div class="toggle-knob"></div>
+                        </div>
+                        <span id="proxy-label">Disabled</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="buy-cost">Buy Cost per Book ($)</label>
+                    <input type="number" id="buy-cost" step="0.01" value="1.00">
+                </div>
+            </div>
+            <div class="settings-footer">
+                <button class="btn-primary" onclick="saveSettings()">Continue to Scanner</button>
+            </div>
+        </div>
+
+        <div id="upload-screen" class="screen">
+            <div class="upload-content">
+                <div class="upload-area" onclick="document.getElementById('file-input').click()">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">Tap to select spine photos</div>
+                </div>
+                <input type="file" id="file-input" accept="image/*" multiple>
+                <div id="photo-previews" class="photo-preview-grid"></div>
+                <button class="btn-secondary" onclick="showScreen('settings-screen')">← Settings</button>
+                <button class="btn-scan" id="scan-btn" onclick="startScanning()" disabled>🚀 Analyze Shelf</button>
+            </div>
+        </div>
+
+        <div id="scanning-screen" class="screen">
+            <div class="scanning-content">
+                <div class="scanning-spinner"></div>
+                <div class="scanning-title">Extracting Spines...</div>
+                <div class="scanning-status" id="scanning-status">Starting OCR...</div>
+                <div class="scanning-progress">
+                    <div class="scanning-progress-bar" id="scan-progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="results-screen" class="screen">
+            <div class="results-header">
+                <h2>Discovery Results</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-books">0</span>
+                        <span class="stat-label">Detected</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="total-val">0</span>
+                        <span class="stat-label">Validated</span>
+                    </div>
+                </div>
+            </div>
+            <div class="results-grid" id="results-grid"></div>
+            <div class="results-footer">
+                <button class="btn-secondary" onclick="newScan()">🔄 New Scan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let CONFIG = {
+            geminiKey: '',
+            keepaKey: '',
+            useProxy: false,
+            buyCost: 1.00
+        };
+
+        let uploadedPhotos = [];
+        let discoveredBooks = [];
+
+        function loadSettings() {
+            const saved = localStorage.getItem('shelf-scanner-v2-config');
+            if (saved) {
+                CONFIG = JSON.parse(saved);
+                document.getElementById('gemini-key').value = CONFIG.geminiKey || '';
+                document.getElementById('keepa-key').value = CONFIG.keepaKey || '';
+                document.getElementById('buy-cost').value = CONFIG.buyCost || 1.00;
+                updateProxyUI();
+            }
+        }
+
+        function toggleProxy() {
+            CONFIG.useProxy = !CONFIG.useProxy;
+            updateProxyUI();
+        }
+
+        function updateProxyUI() {
+            const toggle = document.getElementById('use-proxy-toggle');
+            const label = document.getElementById('proxy-label');
+            if (CONFIG.useProxy) {
+                toggle.classList.add('active');
+                label.textContent = 'Enabled';
+            } else {
+                toggle.classList.remove('active');
+                label.textContent = 'Disabled';
+            }
+        }
+
+        function saveSettings() {
+            CONFIG.geminiKey = document.getElementById('gemini-key').value.trim();
+            CONFIG.keepaKey = document.getElementById('keepa-key').value.trim();
+            CONFIG.buyCost = parseFloat(document.getElementById('buy-cost').value) || 1.00;
+            
+            if (!CONFIG.geminiKey) { alert('Gemini Key is required for Discovery.'); return; }
+            
+            localStorage.setItem('shelf-scanner-v2-config', JSON.stringify(CONFIG));
+            showScreen('upload-screen');
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // File handling
+        document.getElementById('file-input').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    uploadedPhotos.push({ dataUrl: event.target.result });
+                    renderPreviews();
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function renderPreviews() {
+            const container = document.getElementById('photo-previews');
+            container.innerHTML = '';
+            uploadedPhotos.forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'photo-preview-item';
+                div.innerHTML = `<img src="${p.dataUrl}"><button class="photo-preview-remove" onclick="uploadedPhotos.splice(${i},1);renderPreviews();">×</button>`;
+                container.appendChild(div);
+            });
+            document.getElementById('scan-btn').disabled = uploadedPhotos.length === 0;
+        }
+
+        // THE SCANNING LOOP (Option A)
+        async function startScanning() {
+            showScreen('scanning-screen');
+            discoveredBooks = [];
+            const bar = document.getElementById('scan-progress-bar');
+            
+            try {
+                for (let i = 0; i < uploadedPhotos.length; i++) {
+                    const progress = ((i + 1) / uploadedPhotos.length) * 100;
+                    document.getElementById('scanning-status').textContent = `Discovery Phase: Photo ${i+1}/${uploadedPhotos.length}`;
+                    bar.style.width = `${progress}%`;
+
+                    const booksFromOCR = await analyzeSpines(uploadedPhotos[i].dataUrl);
+                    
+                    // Option A: Skip searchByTitle. Only validate if OCR finds an ISBN/ASIN.
+                    for (let book of booksFromOCR) {
+                        book.keepaValidated = false;
+                        
+                        // Check if Gemini found an ID on the spine
+                        const identifier = book.isbn || book.asin;
+                        if (identifier && CONFIG.keepaKey) {
+                            try {
+                                const data = await fetchKeepa(identifier);
+                                if (data) {
+                                    book = { ...book, ...data, keepaValidated: true };
+                                }
+                            } catch (e) { console.error("Validation failed", e); }
+                        }
+                        discoveredBooks.push(book);
+                    }
+                }
+                displayResults();
+            } catch (err) {
+                alert("Scan failed: " + err.message);
+                showScreen('upload-screen');
+            }
+        }
+
+        async function analyzeSpines(base64Data) {
+            const base64 = base64Data.split(',')[1];
+            const prompt = `Act as a book scout. List all books visible. 
+            Return ONLY a JSON array: [{"title": "...", "author": "...", "isbn": "if visible"}]`;
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64 } }] }]
+                })
+            });
+
+            if (!res.ok) throw new Error("Gemini Error");
+            const data = await res.json();
+            const text = data.candidates[0].content.parts[0].text;
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+            return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+        }
+
+        // Keepa Module (No Title Search)
+        async function fetchKeepa(id) {
+            const isFileMode = location.protocol === 'file:';
+            if (isFileMode && !CONFIG.useProxy) return null; // Safety Gate
+
+            let url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=1&asin=${id}&stats=180`;
+            if (CONFIG.useProxy) {
+                url = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            }
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                if (!json.products || !json.products.length) return null;
+                const p = json.products[0];
+                const s = p.stats.current;
+                return {
+                    price: (s[10] || s[2] || 0) / 100,
+                    rank: s[3] || 0,
+                    asin: p.asin
+                };
+            } catch (e) { return null; }
+        }
+
+        function displayResults() {
+            showScreen('results-screen');
+            document.getElementById('total-books').textContent = discoveredBooks.length;
+            document.getElementById('total-val').textContent = discoveredBooks.filter(b => b.keepaValidated).length;
+
+            const grid = document.getElementById('results-grid');
+            grid.innerHTML = '';
+
+            discoveredBooks.forEach(b => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `
+                    <div class="result-main">
+                        <div class="result-title">${b.title}</div>
+                        <div class="result-author">${b.author || 'Unknown Author'}</div>
+                        <div class="result-status ${b.keepaValidated ? 'status-buy' : 'status-discovery'}">
+                            ${b.keepaValidated ? `✓ Validated: $${b.price.toFixed(2)}` : '• Discovery Only'}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function newScan() {
+            uploadedPhotos = [];
+            renderPreviews();
+            showScreen('upload-screen');
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>
