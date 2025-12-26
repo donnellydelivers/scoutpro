@@ -576,18 +576,22 @@
         async function extractBooksFromPhoto(base64Data) {
             const base64 = base64Data.split(',')[1];
             
-            const prompt = `You are a book scout analyzing a shelf photo.
+            const prompt = `You are a book scout. Analyze this shelf photo and list every book spine you can see.
 
-For each book spine visible, extract:
-1. Title (as it appears on spine)
-2. Author (if visible)
-3. ISBN-13 (look it up from your knowledge - provide the standard ISBN-13 for this book)
+For each book, provide:
+- title: exact title as shown on spine
+- author: author name if visible (or null)
+- isbn: the ISBN-13 for this book from your knowledge (or null if unknown)
 
-Return ONLY a JSON array:
-[{"title": "Book Title", "author": "Author Name", "isbn": "9781234567890"}]
+CRITICAL: Return ONLY valid JSON. No markdown, no explanation, no code blocks.
 
-If you cannot determine the ISBN for a book, omit the isbn field for that entry.
-Focus on books where you can confidently identify the title.`;
+Format:
+[
+  {"title": "Book Title Here", "author": "Author Name", "isbn": "9781234567890"},
+  {"title": "Another Book", "author": null, "isbn": null}
+]
+
+Return the JSON array now:`;
 
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`, {
                 method: 'POST',
@@ -606,9 +610,55 @@ Focus on books where you can confidently identify the title.`;
             
             const data = await res.json();
             const text = data.candidates[0].content.parts[0].text;
-            const jsonMatch = text.match(/\[[\s\S]*\]/);
             
-            return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+            console.log('Gemini raw response:', text);
+            
+            // Extract JSON array from response
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+            if (!jsonMatch) {
+                console.warn('No JSON array found in Gemini response');
+                return [];
+            }
+            
+            try {
+                // Clean up common JSON issues
+                let cleanJson = jsonMatch[0];
+                
+                // Fix trailing commas before closing brackets
+                cleanJson = cleanJson.replace(/,(\s*[}\]])/g, '$1');
+                
+                // Fix single quotes to double quotes
+                cleanJson = cleanJson.replace(/'/g, '"');
+                
+                // Fix unquoted keys (common Gemini mistake)
+                cleanJson = cleanJson.replace(/(\{|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
+                
+                const parsed = JSON.parse(cleanJson);
+                console.log('Parsed books:', parsed);
+                return parsed;
+            } catch (e) {
+                console.error('JSON parse error:', e.message);
+                console.error('Failed to parse:', jsonMatch[0]);
+                
+                // Fallback: try to extract at least the titles manually
+                const titleMatches = text.matchAll(/"title"\s*:\s*"([^"]+)"/g);
+                const authorMatches = text.matchAll(/"author"\s*:\s*"([^"]+)"/g);
+                const isbnMatches = text.matchAll(/"isbn"\s*:\s*"([^"]+)"/g);
+                
+                const titles = Array.from(titleMatches).map(m => m[1]);
+                const authors = Array.from(authorMatches).map(m => m[1]);
+                const isbns = Array.from(isbnMatches).map(m => m[1]);
+                
+                if (titles.length > 0) {
+                    return titles.map((title, i) => ({
+                        title: title,
+                        author: authors[i] || null,
+                        isbn: isbns[i] || null
+                    }));
+                }
+                
+                return [];
+            }
         }
 
         // Keepa: Get USED FBA pricing by ISBN
