@@ -873,31 +873,69 @@
         }
 
         function parseKeepaJson(json) {
+            console.log('🔍 RAW KEEPA RESPONSE:', json);
+            
             if(json.error) throw new Error(json.error.message);
             if(!json.products || !json.products.length) {
                 throw new Error("Product Not Found");
             }
             const product = json.products[0];
             
-            const rank = product.salesRanks && product.salesRanks[0] && product.salesRanks[0].length > 1 
-                ? product.salesRanks[0][product.salesRanks[0].length - 1] 
-                : 999999;
-            
-            const fbaPrice = product.csv && product.csv[18] && product.csv[18].length > 1
-                ? product.csv[18][product.csv[18].length - 1] / 100
-                : 0;
-            
-            const fbaCount = product.fbaOffers?.length || 0;
-            
+            // Get current stats (Scout Pro method)
+            const s = product.stats.current;
             const stats = product.stats || {};
+            
+            console.log('📦 PRODUCT DATA:', {
+                title: product.title,
+                asin: product.asin,
+                stats_current: s,
+                packageWeight: product.packageWeight
+            });
+            
+            // Rank from stats.current[3]
+            const toVal = (v) => (v == -1 || v == null) ? 0 : v;
+            const rank = toVal(s[3]) || 999999;
+            
+            // BUY BOX INFERENCE - Extract ALL prices
+            const keepaBb = (s[18] > 0) ? s[18] / 100 : 0;
+            const newPrice = (s[1] > 0) ? s[1] / 100 : 0;
+            const fbaPrice = (s[10] > 0) ? s[10] / 100 : 0;
+            const usedPrice = (s[2] > 0) ? s[2] / 100 : 0;
+            
+            console.log('💰 ALL PRICES FROM KEEPA:', {
+                'BB (s[18])': keepaBb,
+                'New (s[1])': newPrice,
+                'FBA (s[10])': fbaPrice,
+                'Used (s[2])': usedPrice
+            });
+            
+            // Use inferred price hierarchy: BB > FBA > Used
+            const inferredPrice = keepaBb || fbaPrice || usedPrice || 10.00;
+            
+            const fbaCount = toVal(s[16]) || 0;
+            
             const drops30 = stats.salesRankDrops30 || 0;
             const drops90 = stats.salesRankDrops90 || 0;
             const drops180 = stats.salesRankDrops180 || 0;
             
+            // Get weight
+            const weight = product.packageWeight ? product.packageWeight / 100 : 1.2;
+            
+            console.log('📊 FINAL PARSED DATA:', {
+                asin: product.asin,
+                rank: rank,
+                selectedPrice: inferredPrice.toFixed(2),
+                weight: weight.toFixed(2),
+                fbaCount: fbaCount,
+                drops30: drops30,
+                drops180: drops180
+            });
+            
             return {
                 asin: product.asin,
-                rank: rank === -1 ? 999999 : rank,
-                price: fbaPrice || 10.00,
+                rank: rank,
+                price: inferredPrice,
+                weight: weight,
                 fbaCount: fbaCount,
                 drops30: drops30,
                 drops90: drops90,
