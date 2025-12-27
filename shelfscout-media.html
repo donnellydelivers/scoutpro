@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ShelfScout Media | DVDs • CDs • Blu-rays</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050505; --panel: #121212; --card: #1e1e1e; --border: #2a2a2a;
+            --text: #ffffff; --muted: #888; --green: #34d399; --red: #f87171;
+            --yellow: #fbbf24; --blue: #60a5fa; --purple: #a78bfa; --orange: #fb923c;
+        }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding-bottom: 20px; 
+            -webkit-font-smoothing: antialiased;
+        }
+        .container { max-width: 500px; margin: 0 auto; min-height: 100vh; position: relative; }
+        
+        /* Header */
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel);
+        }
+        .logo { font-weight: 900; font-size: 18px; color: var(--purple); }
+        .logo span { color: white; }
+        .logo-subtitle {
+            font-size: 10px;
+            color: var(--muted);
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+        .gear-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.2s;
+        }
+        .gear-btn:hover { color: var(--text); }
+        
+        /* Settings Panel */
+        .settings-panel {
+            padding: 20px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+        }
+        .settings-panel.hidden { display: none; }
+        .settings-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+        .settings-input {
+            width: 100%;
+            padding: 12px;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .settings-input:focus {
+            outline: none;
+            border-color: var(--purple);
+        }
+        .key-status {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--card);
+        }
+        .key-status.valid { color: var(--green); }
+        .key-status.invalid { color: var(--red); }
+        
+        /* Shelf Container */
+        .shelf-container {
+            position: relative;
+            width: 100%;
+            height: 450px;
+            background: #000;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border);
+        }
+        #shelfImage {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0.8;
+        }
+        
+        /* AR Pins */
+        .ar-pin {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 11px;
+            color: #000;
+            transform: translate(-50%, -50%);
+            border: 2px solid #000;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 10;
+            animation: pinDrop 0.3s ease-out;
+        }
+        @keyframes pinDrop {
+            from { transform: translate(-50%, -50%) scale(0); }
+            to { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Manifest Items */
+        .manifest-item {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .score-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 18px;
+            color: #000;
+            flex-shrink: 0;
+        }
+        .score-box.no-data {
+            background: var(--muted);
+            font-size: 20px;
+        }
+        .item-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .item-title {
+            font-weight: 800;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+        .item-meta {
+            font-size: 10px;
+            color: var(--muted);
+        }
+        .item-source {
+            font-size: 9px;
+            color: var(--purple);
+            margin-top: 2px;
+        }
+        .item-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 6px;
+            background: var(--card);
+        }
+        .badge-dvd { color: var(--blue); }
+        .badge-cd { color: var(--green); }
+        .badge-bluray { color: var(--purple); }
+
+        /* Loader Overlay */
+        .loader-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .loader-overlay.active { display: flex; }
+        .spinner {
+            border: 4px solid #333;
+            border-top-color: var(--purple);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text {
+            margin-top: 15px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--purple);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            padding: 0 20px;
+        }
+        .loader-progress {
+            margin-top: 8px;
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--purple);
+            color: #fff;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            width: calc(100% - 30px);
+            margin: 15px;
+            display: block;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-success {
+            background: var(--green);
+            color: #000;
+        }
+        .btn-export {
+            background: var(--blue);
+            margin-top: 0;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card);
+            color: var(--text);
+            padding: 16px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            max-width: 90%;
+            white-space: pre-line;
+            text-align: left;
+            line-height: 1.5;
+        }
+        .toast.show { opacity: 1; }
+        .toast.error { background: var(--red); color: #000; }
+        .toast.success { background: var(--green); color: #000; }
+        .toast.warning { background: var(--yellow); color: #000; }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--text);
+        }
+        .stat-label {
+            font-size: 10px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        /* Guide Section */
+        .guide {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px;
+        }
+        .guide-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--purple);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .guide-item {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 6px;
+            padding-left: 18px;
+            position: relative;
+        }
+        .guide-item:before {
+            content: "•";
+            position: absolute;
+            left: 6px;
+            color: var(--purple);
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <header class="header">
+        <div>
+            <div class="logo">SHELF<span>SCOUT</span></div>
+            <div class="logo-subtitle">DVDs • CDs • BLU-RAYS</div>
+        </div>
+        <button onclick="toggleSettings()" class="gear-btn">
+            <i class="fas fa-cog"></i>
+        </button>
+    </header>
+
+    <!-- Settings Panel -->
+    <div id="settings" class="settings-panel hidden">
+        <label class="settings-label">
+            GEMINI API KEY
+            <span id="geminiStatus" class="key-status"></span>
+        </label>
+        <input 
+            type="password" 
+            id="geminiKey" 
+            class="settings-input"
+            placeholder="Enter Gemini API Key"
+            onchange="validateKeys()">
+        
+        <label class="settings-label">
+            KEEPA API KEY
+            <span id="keepaStatus" class="key-status"></span>
+        </label>
+        <input 
+            type="password" 
+            id="keepaKey" 
+            class="settings-input"
+            placeholder="Enter Keepa API Key"
+            onchange="validateKeys()">
+        
+        <label class="settings-label">
+            DISCOGS TOKEN (Optional - improves CD detection)
+            <span id="discogsStatus" class="key-status"></span>
+        </label>
+        <input 
+            type="password" 
+            id="discogsToken" 
+            class="settings-input"
+            placeholder="Enter Discogs Personal Access Token (optional)"
+            onchange="validateKeys()">
+        <div style="font-size: 10px; color: var(--muted); margin-top: -10px; margin-bottom: 15px;">
+            Get free token at: <a href="https://www.discogs.com/settings/developers" target="_blank" style="color: var(--purple);">discogs.com/settings/developers</a>
+        </div>
+        
+        <button onclick="saveKeys()" class="btn-primary btn-success">
+            <i class="fas fa-save" style="margin-right:8px;"></i>
+            SAVE & CLOSE
+        </button>
+    </div>
+
+    <!-- Photo Guide -->
+    <div id="photoGuide" class="guide">
+        <div class="guide-title"><i class="fas fa-compact-disc" style="margin-right:6px;"></i>Media Scanning Tips</div>
+        <div class="guide-item">Works best with DVDs, CDs, and Blu-rays</div>
+        <div class="guide-item">Good lighting - avoid glare on plastic cases</div>
+        <div class="guide-item">Hold camera parallel to shelf</div>
+        <div class="guide-item">Get close enough to read titles clearly</div>
+        <div class="guide-item">Max 20 items per scan, images up to 20MB</div>
+    </div>
+
+    <!-- Shelf Image Container -->
+    <div class="shelf-container">
+        <img id="shelfImage" src="" alt="Shelf photo will appear here">
+        <div id="arPins"></div>
+        <div id="loader" class="loader-overlay">
+            <div class="spinner"></div>
+            <p id="loaderText" class="loader-text">Initializing...</p>
+            <p id="loaderProgress" class="loader-progress"></p>
+        </div>
+    </div>
+
+    <!-- Upload Button -->
+    <input type="file" id="upload" accept="image/*" class="hidden" onchange="startScan(this.files[0])">
+    <button id="uploadBtn" onclick="handleUploadClick()" class="btn-primary">
+        <i class="fas fa-camera" style="margin-right:10px;"></i> SCAN MEDIA SHELF
+    </button>
+
+    <!-- Stats Bar (hidden until results) -->
+    <div id="statsBar" class="stats-bar hidden">
+        <div class="stat">
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Detected</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="statBuy" style="color:var(--green)">0</div>
+            <div class="stat-label">Buy</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="statConsider" style="color:var(--yellow)">0</div>
+            <div class="stat-label">Consider</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="statReject" style="color:var(--red)">0</div>
+            <div class="stat-label">Reject</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="statNoData" style="color:var(--muted)">0</div>
+            <div class="stat-label">No Data</div>
+        </div>
+    </div>
+
+    <!-- Export Button (hidden until results) -->
+    <button id="exportBtn" onclick="exportResults()" class="btn-primary btn-export hidden">
+        <i class="fas fa-download" style="margin-right:10px;"></i> EXPORT RESULTS
+    </button>
+
+    <!-- Results List -->
+    <div id="manifestList"></div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast" class="toast"></div>
+
+<script>
+/** ============================================
+ * CONFIGURATION & STATE
+ * ============================================ */
+const CONFIG = {
+    MAX_IMAGE_SIZE: 20 * 1024 * 1024, // 20MB
+    MAX_SPINES_PER_SCAN: 20,
+    RETRY_ATTEMPTS: 3,
+    RATE_LIMIT_DELAY: 400, // ms between API calls
+    GEMINI_MODEL: 'gemini-2.0-flash-exp'
+};
+
+let scanResults = [];
+let currentImageData = null;
+
+/** ============================================
+ * SCOUT PRO ENGINE (Media-optimized)
+ * ============================================ */
+const ScoutPro = {
+    analyze(keepaData, title) {
+        let score = 50;
+        const rank = keepaData.rank || 9999999;
+        const drops180 = keepaData.drops180 || 0;
+        const price = keepaData.price || 0;
+
+        // If no price, this item has no active offers
+        if (price === 0) {
+            return {
+                score: 30,
+                profit: 0,
+                verdict: 'REJECT',
+                hasInvalidData: true,
+                noActiveOffers: true
+            };
+        }
+
+        // Base rank scoring (media sells faster than books)
+        if (rank > 0 && rank < 50000) score = 95;
+        else if (rank > 0 && rank < 150000) score = 85;
+        else if (rank > 0 && rank < 400000) score = 70;
+        else if (rank > 0 && rank < 800000) score = 55;
+        else if (rank > 0) score = 35;
+        else score = 50; // No rank data
+
+        // Sales velocity check
+        if (drops180 === 0 && score > 74) {
+            score = 74;
+        }
+
+        // Media has lower fees than books (no $1.80 closing fee)
+        const profit = price - (price * 0.15) - 2.50 - 1.00; // Est fees + $1 buy cost
+        const verdict = (score >= 75 && profit >= 3) ? 'BUY' : (score >= 50 ? 'CONSIDER' : 'REJECT');
+
+        return { 
+            score, 
+            profit, 
+            verdict,
+            hasInvalidData: rank === -1,
+            noActiveOffers: false
+        };
+    }
+};
+
+/** ============================================
+ * UTILITY FUNCTIONS
+ * ============================================ */
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+function toBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            currentImageData = reader.result;
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `toast ${type}`;
+    toast.classList.add('show');
+    
+    const duration = (type === 'warning' || type === 'error') && message.length > 100 ? 6000 : 3000;
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, duration);
+}
+
+function updateStats(results) {
+    const withData = results.filter(r => r.upc);
+    const noData = results.filter(r => !r.upc);
+    
+    const buy = withData.filter(r => r.verdict === 'BUY').length;
+    const consider = withData.filter(r => r.verdict === 'CONSIDER').length;
+    const reject = withData.filter(r => r.verdict === 'REJECT').length;
+
+    document.getElementById('statTotal').textContent = results.length;
+    document.getElementById('statBuy').textContent = buy;
+    document.getElementById('statConsider').textContent = consider;
+    document.getElementById('statReject').textContent = reject;
+    document.getElementById('statNoData').textContent = noData.length;
+    
+    document.getElementById('statsBar').classList.remove('hidden');
+}
+
+function detectMediaType(title) {
+    const lower = title.toLowerCase();
+    
+    // Check for explicit markers first
+    if (lower.includes('blu-ray') || lower.includes('bluray') || lower.includes('blu ray')) {
+        return 'bluray';
+    }
+    if (lower.includes('dvd')) {
+        return 'dvd';
+    }
+    if (lower.includes(' cd') || lower.includes('cd ') || lower.match(/\bcd\b/)) {
+        return 'cd';
+    }
+    
+    // Music indicators (classical, artists, composers)
+    const musicKeywords = [
+        'symphony', 'symphonies', 'concerto', 'sonata', 'quartet', 'quintet', 'orchestra',
+        'piano', 'violin', 'cello', 'viola', 'opera', 'suite', 'prelude', 'fugue',
+        'mozart', 'beethoven', 'bach', 'handel', 'tchaikovsky', 'haydn',
+        'chopin', 'brahms', 'vivaldi', 'wagner', 'mahler', 'schubert',
+        'debussy', 'ravel', 'stravinsky', 'prokofiev', 'shostakovich',
+        'verdi', 'puccini', 'rossini', 'bizet', 'strauss',
+        'album', 'greatest hits', 'collection', 'anthology', 'best of',
+        'christmas', 'holiday', 'carols', 'sacred', 'choral',
+        'philharmonic', 'chamber', 'ensemble', 'chorale', 'choir',
+        'requiem', 'mass', 'cantata', 'oratorio', 'messiah',
+        'nocturne', 'etude', 'waltz', 'mazurka', 'rhapsody',
+        'nutcracker', 'swan lake', 'firebird', 'bolero'
+    ];
+    
+    if (musicKeywords.some(kw => lower.includes(kw))) {
+        return 'cd';
+    }
+    
+    // Movie/TV indicators
+    const videoKeywords = [
+        'movie', 'film', 'season', 'episode', 'series',
+        'director', 'starring', 'special edition', 'extended',
+        'trilogy', 'collection'
+    ];
+    
+    if (videoKeywords.some(kw => lower.includes(kw))) {
+        return 'dvd';
+    }
+    
+    // Default: assume CD for unspecified media (library sales lean heavily CD)
+    return 'cd';
+}
+
+/** ============================================
+ * MEDIA DETECTION & UPC RESOLUTION
+ * ============================================ */
+
+// Step 1: Gemini Vision for spine detection (optimized for media)
+async function callGemini(b64) {
+    const key = document.getElementById('geminiKey').value || localStorage.getItem('shelfscout_geminiKey');
+    if (!key) throw new Error("Missing Gemini API Key");
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`;
+    
+    const prompt = `You are a DVD/CD/Blu-ray spine detector. Analyze this shelf image and identify every visible DVD, CD, Blu-ray, or video game case spine.
+
+CRITICAL: Return ONLY a valid JSON array. No markdown, no explanations, no code blocks.
+
+Format: [{"title":"Movie/Album Title","x":50,"y":30}]
+- title: The full visible title text (include "DVD", "Blu-ray", "CD" if visible)
+- x: horizontal position (0-100, left to right)
+- y: vertical position (0-100, top to bottom)
+
+Return empty array [] if no media spines are visible.`;
+    
+    const body = {
+        contents: [{
+            parts: [
+                { text: prompt },
+                { inline_data: { mime_type: "image/jpeg", data: b64 } }
+            ]
+        }],
+        generationConfig: {
+            temperature: 0.1,
+            topK: 1,
+            topP: 1
+        }
+    };
+    
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    
+    if (!response.ok) {
+        throw new Error(`Gemini API error (${response.status})`);
+    }
+    
+    const res = await response.json();
+    
+    if (!res?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        throw new Error("Invalid Gemini response");
+    }
+    
+    let rawText = res.candidates[0].content.parts[0].text.trim();
+    rawText = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+    
+    const jsonMatch = rawText.match(/\[\s*\{[\s\S]*\}\s*\]|\[\s*\]/);
+    if (!jsonMatch) {
+        throw new Error("No JSON array in response");
+    }
+    
+    const spines = JSON.parse(jsonMatch[0]);
+    
+    if (!Array.isArray(spines)) {
+        throw new Error("Response is not an array");
+    }
+    
+    const validSpines = spines.filter(s => {
+        if (!s.title || typeof s.x !== 'number' || typeof s.y !== 'number') {
+            return false;
+        }
+        s.x = Math.max(0, Math.min(100, s.x));
+        s.y = Math.max(0, Math.min(100, s.y));
+        return true;
+    });
+
+    if (validSpines.length > CONFIG.MAX_SPINES_PER_SCAN) {
+        showToast(`Found ${validSpines.length} items. Processing first ${CONFIG.MAX_SPINES_PER_SCAN}.`, 'info');
+        return validSpines.slice(0, CONFIG.MAX_SPINES_PER_SCAN);
+    }
+    
+    return validSpines;
+}
+
+// Step 2: UPC/EAN resolution via Open Library (works for DVDs/CDs)
+async function resolveUPC_OpenLibrary(title, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            // Clean title for better search
+            let cleanTitle = title
+                .replace(/\b(DVD|Blu-ray|Bluray|CD|Disc)\b/gi, '')
+                .trim();
+            
+            const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(cleanTitle)}&limit=3`;
+            const res = await fetch(url);
+            
+            if (!res.ok) return null;
+            
+            const data = await res.json();
+            
+            // Try to find UPC/EAN in the results
+            for (let book of (data.docs || []).slice(0, 3)) {
+                // Open Library sometimes has UPC in isbn field for media
+                const upc = book.isbn?.find(i => i.length === 12 || i.length === 13);
+                if (upc) {
+                    return {
+                        upc: upc,
+                        source: 'Open Library'
+                    };
+                }
+            }
+            
+            return null;
+        } catch (e) {
+            if (i === retries - 1) return null;
+            await delay(500);
+        }
+    }
+    return null;
+}
+
+// Step 3: Discogs API for CDs (EXCELLENT for classical music)
+async function resolveUPC_Discogs(title, retries = 2) {
+    const token = document.getElementById('discogsToken')?.value || localStorage.getItem('shelfscout_discogsToken');
+    
+    for (let i = 0; i < retries; i++) {
+        try {
+            // Clean title - remove CD/disc markers
+            const cleanTitle = title
+                .replace(/\b(CD|Disc|Album)\b/gi, '')
+                .trim();
+            
+            const url = `https://api.discogs.com/database/search?q=${encodeURIComponent(cleanTitle)}&type=release&format=CD&per_page=5`;
+            
+            const headers = {
+                'User-Agent': 'ShelfScout/1.0 +https://shelfscout.app'
+            };
+            
+            // Add authorization if token is available
+            if (token) {
+                headers['Authorization'] = `Discogs token=${token}`;
+            }
+            
+            const res = await fetch(url, { headers });
+            
+            if (!res.ok) {
+                if (res.status === 429) {
+                    await delay(1000 * (i + 1));
+                    continue;
+                }
+                return null;
+            }
+            
+            const data = await res.json();
+            
+            // Try to find a release with a barcode
+            for (let release of (data.results || []).slice(0, 5)) {
+                if (release.barcode && release.barcode.length >= 12) {
+                    // Clean barcode (remove spaces, dashes)
+                    const cleanBarcode = release.barcode.replace(/[\s-]/g, '');
+                    
+                    return {
+                        upc: cleanBarcode,
+                        source: 'Discogs',
+                        artist: release.artist || null,
+                        year: release.year || null
+                    };
+                }
+            }
+            
+            return null;
+        } catch (e) {
+            if (i === retries - 1) return null;
+            await delay(1000);
+        }
+    }
+    return null;
+}
+
+// Step 4: Try MusicBrainz API for CDs (fallback)
+async function resolveUPC_MusicBrainz(title, retries = 2) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const cleanTitle = title.replace(/\b(CD|Album|Music)\b/gi, '').trim();
+            const url = `https://musicbrainz.org/ws/2/release?query=${encodeURIComponent(cleanTitle)}&fmt=json&limit=1`;
+            
+            const res = await fetch(url, {
+                headers: {
+                    'User-Agent': 'ShelfScout/1.0 (media-scanner)'
+                }
+            });
+            
+            if (!res.ok) return null;
+            
+            const data = await res.json();
+            const release = data.releases?.[0];
+            
+            if (release?.barcode) {
+                return {
+                    upc: release.barcode,
+                    source: 'MusicBrainz'
+                };
+            }
+            
+            return null;
+        } catch (e) {
+            if (i === retries - 1) return null;
+            await delay(1000);
+        }
+    }
+    return null;
+}
+
+// Step 4: Direct Keepa product search by title (works surprisingly well for DVDs)
+async function resolveUPC_KeepaSearch(title, retries = 2) {
+    const key = document.getElementById('keepaKey').value || localStorage.getItem('shelfscout_keepaKey');
+    if (!key) return null;
+    
+    for (let i = 0; i < retries; i++) {
+        try {
+            // Clean title
+            const cleanTitle = title
+                .replace(/\b(DVD|Blu-ray|Bluray|CD|Disc)\b/gi, '')
+                .trim();
+            
+            const url = `https://api.keepa.com/search?key=${key}&domain=1&type=product&term=${encodeURIComponent(cleanTitle)}&stats=180`;
+            const proxiedUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            
+            const response = await fetch(proxiedUrl);
+            
+            if (!response.ok) return null;
+            
+            const data = await response.json();
+            
+            if (data.products && data.products.length > 0) {
+                const product = data.products[0];
+                return {
+                    upc: product.eanList?.[0] || product.upcList?.[0] || null,
+                    asin: product.asin,
+                    source: 'Keepa Search'
+                };
+            }
+            
+            return null;
+        } catch (e) {
+            if (i === retries - 1) return null;
+            await delay(1000);
+        }
+    }
+    return null;
+}
+
+// Master UPC resolution
+async function resolveUPC(title, mediaType) {
+    // For CDs, try Discogs first (best classical music coverage)
+    if (mediaType === 'cd') {
+        let result = await resolveUPC_Discogs(title);
+        if (result && result.upc) return result;
+        
+        // Fallback to MusicBrainz for CDs
+        result = await resolveUPC_MusicBrainz(title);
+        if (result && result.upc) return result;
+    }
+    
+    // Try Keepa direct search (works great for DVDs and popular CDs)
+    let result = await resolveUPC_KeepaSearch(title);
+    if (result && (result.upc || result.asin)) return result;
+    
+    // Fallback to Open Library
+    result = await resolveUPC_OpenLibrary(title);
+    if (result && result.upc) return result;
+    
+    return null;
+}
+
+// Fetch Keepa data by UPC or ASIN
+async function fetchKeepa(identifier, retries = CONFIG.RETRY_ATTEMPTS) {
+    const key = document.getElementById('keepaKey').value || localStorage.getItem('shelfscout_keepaKey');
+    if (!key) throw new Error("Missing Keepa API Key");
+
+    for (let i = 0; i < retries; i++) {
+        try {
+            const url = `https://api.keepa.com/product?key=${key}&domain=1&code=${identifier}&stats=180`;
+            const proxiedUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            
+            const response = await fetch(proxiedUrl);
+            
+            if (response.status === 429) {
+                await delay(2000 * (i + 1));
+                continue;
+            }
+            
+            if (!response.ok) return null;
+            
+            const data = await response.json();
+            
+            if (!data.products || data.products.length === 0) {
+                return null;
+            }
+            
+            const p = data.products[0];
+            
+            // Extract price data
+            const usedPrice = p.stats?.current?.[18];
+            const newPrice = p.stats?.current?.[2];
+            const currentRank = p.stats?.current?.[3];
+            const drops180 = p.stats?.salesRankDrops180 || 0;
+            
+            let price = 0;
+            if (usedPrice && usedPrice > 0) {
+                price = usedPrice / 100;
+            } else if (newPrice && newPrice > 0) {
+                price = newPrice / 100;
+            }
+            
+            const rank = (currentRank && currentRank > 0) ? currentRank : -1;
+            
+            if (price === 0 && rank === -1) {
+                return null;
+            }
+            
+            return {
+                price: price,
+                rank: rank,
+                drops180: drops180,
+                asin: p.asin,
+                upc: p.eanList?.[0] || p.upcList?.[0] || null
+            };
+        } catch (e) {
+            if (i === retries - 1) return null;
+            await delay(1000);
+        }
+    }
+    return null;
+}
+
+/** ============================================
+ * SCAN WORKFLOW
+ * ============================================ */
+async function startScan(file) {
+    if (!file) return;
+    
+    if (file.size > CONFIG.MAX_IMAGE_SIZE) {
+        showToast(`Image too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 20MB.`, 'error');
+        return;
+    }
+
+    const geminiKey = document.getElementById('geminiKey').value || localStorage.getItem('shelfscout_geminiKey');
+    const keepaKey = document.getElementById('keepaKey').value || localStorage.getItem('shelfscout_keepaKey');
+    
+    if (!geminiKey || !keepaKey) {
+        showToast('Please configure Gemini and Keepa API keys in Settings first.', 'error');
+        toggleSettings();
+        return;
+    }
+
+    const loader = document.getElementById('loader');
+    const loaderText = document.getElementById('loaderText');
+    const loaderProgress = document.getElementById('loaderProgress');
+    const arPins = document.getElementById('arPins');
+    const manifest = document.getElementById('manifestList');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    loader.classList.add('active');
+    arPins.innerHTML = '';
+    manifest.innerHTML = '';
+    scanResults = [];
+    document.getElementById('statsBar').classList.add('hidden');
+    document.getElementById('exportBtn').classList.add('hidden');
+    document.getElementById('photoGuide').classList.add('hidden');
+    uploadBtn.disabled = true;
+    
+    try {
+        loaderText.textContent = 'Loading image...';
+        const b64 = await toBase64(file);
+        
+        const imgElement = document.getElementById('shelfImage');
+        imgElement.src = currentImageData;
+
+        loaderText.textContent = '📀 Analyzing media shelf...';
+        loaderProgress.textContent = '';
+        
+        const spines = await callGemini(b64);
+
+        if (spines.length === 0) {
+            showToast('No media spines detected. Try a clearer photo.', 'error');
+            return;
+        }
+
+        loaderText.textContent = `Found ${spines.length} items`;
+        loaderProgress.textContent = 'Resolving UPC codes...';
+        await delay(500);
+
+        const results = [];
+        let processed = 0;
+
+        for (let spine of spines) {
+            processed++;
+            const mediaType = detectMediaType(spine.title);
+            
+            loaderText.textContent = `📀 ${processed}/${spines.length}: ${spine.title.substring(0, 20)}...`;
+            loaderProgress.textContent = `Detecting ${mediaType.toUpperCase()}...`;
+            
+            const upcData = await resolveUPC(spine.title, mediaType);
+            
+            if (upcData && (upcData.upc || upcData.asin)) {
+                loaderProgress.textContent = `Checking Keepa for market data...`;
+                
+                const identifier = upcData.upc || upcData.asin;
+                const market = await fetchKeepa(identifier);
+                
+                if (market && market.price > 0) {
+                    const eval = ScoutPro.analyze(market, spine.title);
+                    results.push({
+                        ...spine,
+                        ...eval,
+                        upc: market.upc || upcData.upc,
+                        asin: market.asin || upcData.asin,
+                        rank: market.rank,
+                        price: market.price,
+                        drops180: market.drops180,
+                        source: upcData.source,
+                        mediaType: mediaType
+                    });
+                } else {
+                    results.push({
+                        ...spine,
+                        upc: upcData.upc,
+                        asin: upcData.asin,
+                        source: upcData.source,
+                        mediaType: mediaType,
+                        noMarketData: true
+                    });
+                }
+            } else {
+                results.push({
+                    ...spine,
+                    mediaType: mediaType,
+                    noUPC: true
+                });
+            }
+            
+            await delay(CONFIG.RATE_LIMIT_DELAY);
+        }
+
+        scanResults = results;
+        renderResults(results);
+        updateStats(results);
+        
+        document.getElementById('exportBtn').classList.remove('hidden');
+        
+        const withData = results.filter(r => r.score !== undefined).length;
+        const msg = `✓ Scan complete! ${withData}/${results.length} items with market data.`;
+        
+        showToast(msg, 'success');
+        
+    } catch (e) {
+        console.error("Scan error:", e);
+        showToast(`Scan failed: ${e.message}`, 'error');
+    } finally {
+        loader.classList.remove('active');
+        uploadBtn.disabled = false;
+    }
+}
+
+/** ============================================
+ * UI RENDERING
+ * ============================================ */
+function renderResults(items) {
+    items.sort((a, b) => {
+        if (a.score !== undefined && b.score !== undefined) {
+            return b.score - a.score;
+        }
+        if (a.score !== undefined) return -1;
+        if (b.score !== undefined) return 1;
+        return 0;
+    });
+    
+    const pinBox = document.getElementById('arPins');
+    const list = document.getElementById('manifestList');
+
+    items.forEach((item, index) => {
+        // AR Pin (only for scored items)
+        if (item.score !== undefined) {
+            const color = item.verdict === 'BUY' ? 'var(--green)' : 
+                         (item.verdict === 'CONSIDER' ? 'var(--yellow)' : 'var(--red)');
+            
+            const pin = document.createElement('div');
+            pin.className = 'ar-pin';
+            pin.style.left = item.x + '%';
+            pin.style.top = item.y + '%';
+            pin.style.background = color;
+            pin.style.animationDelay = (index * 50) + 'ms';
+            pin.innerText = item.score;
+            pinBox.appendChild(pin);
+        }
+
+        // List Item
+        const row = document.createElement('div');
+        row.className = 'manifest-item';
+        
+        const mediaLabel = item.mediaType ? 
+            `<span class="item-badge badge-${item.mediaType}">${item.mediaType.toUpperCase()}</span>` : '';
+        
+        let scoreHTML, metaHTML, sourceHTML;
+        
+        if (item.score !== undefined) {
+            const color = item.verdict === 'BUY' ? 'var(--green)' : 
+                         (item.verdict === 'CONSIDER' ? 'var(--yellow)' : 'var(--red)');
+            const rankDisplay = item.rank === -1 ? 'N/A' : item.rank.toLocaleString();
+            
+            scoreHTML = `<div class="score-box" style="background:${color}">${item.score}</div>`;
+            metaHTML = `${mediaLabel}Price: $${item.price.toFixed(2)} • Profit: $${item.profit.toFixed(2)} • Rank: ${rankDisplay} • Sales: ${item.drops180}`;
+            sourceHTML = `<div class="item-source">UPC from ${item.source} • ASIN: ${item.asin}</div>`;
+        } else if (item.noUPC) {
+            scoreHTML = `<div class="score-box no-data">?</div>`;
+            metaHTML = `${mediaLabel}No UPC found`;
+            sourceHTML = `<div class="item-warning">⚠️ Could not resolve UPC code</div>`;
+        } else if (item.noMarketData) {
+            scoreHTML = `<div class="score-box no-data">?</div>`;
+            metaHTML = `${mediaLabel}${item.upc ? `UPC: ${item.upc}` : `ASIN: ${item.asin}`} • No market data`;
+            sourceHTML = `<div class="item-source">Found via ${item.source}</div>`;
+        }
+        
+        row.innerHTML = `
+            ${scoreHTML}
+            <div class="item-details">
+                <div class="item-title">${item.title}</div>
+                <div class="item-meta">${metaHTML}</div>
+                ${sourceHTML}
+            </div>
+        `;
+        list.appendChild(row);
+    });
+}
+
+/** ============================================
+ * SETTINGS
+ * ============================================ */
+function toggleSettings() {
+    const panel = document.getElementById('settings');
+    panel.classList.toggle('hidden');
+    
+    if (!panel.classList.contains('hidden')) {
+        validateKeys();
+    }
+}
+
+function validateKeys() {
+    const geminiKey = document.getElementById('geminiKey').value;
+    const keepaKey = document.getElementById('keepaKey').value;
+    const discogsToken = document.getElementById('discogsToken')?.value;
+    
+    const geminiStatus = document.getElementById('geminiStatus');
+    const keepaStatus = document.getElementById('keepaStatus');
+    const discogsStatus = document.getElementById('discogsStatus');
+    
+    if (geminiKey && geminiKey.length > 20) {
+        geminiStatus.textContent = '✓ Set';
+        geminiStatus.className = 'key-status valid';
+    } else if (geminiKey) {
+        geminiStatus.textContent = '⚠ Invalid';
+        geminiStatus.className = 'key-status invalid';
+    } else {
+        geminiStatus.textContent = '';
+    }
+    
+    if (keepaKey && keepaKey.length > 20) {
+        keepaStatus.textContent = '✓ Set';
+        keepaStatus.className = 'key-status valid';
+    } else if (keepaKey) {
+        keepaStatus.textContent = '⚠ Invalid';
+        keepaStatus.className = 'key-status invalid';
+    } else {
+        keepaStatus.textContent = '';
+    }
+    
+    if (discogsToken && discogsToken.length > 20) {
+        discogsStatus.textContent = '✓ Set';
+        discogsStatus.className = 'key-status valid';
+    } else if (discogsToken) {
+        discogsStatus.textContent = '⚠ Invalid';
+        discogsStatus.className = 'key-status invalid';
+    } else {
+        discogsStatus.textContent = 'Optional';
+        discogsStatus.className = 'key-status';
+    }
+}
+
+function saveKeys() {
+    const geminiKey = document.getElementById('geminiKey').value;
+    const keepaKey = document.getElementById('keepaKey').value;
+    const discogsToken = document.getElementById('discogsToken')?.value;
+    
+    if (!geminiKey || !keepaKey) {
+        showToast('Please enter at least Gemini and Keepa API keys', 'error');
+        return;
+    }
+    
+    localStorage.setItem('shelfscout_geminiKey', geminiKey);
+    localStorage.setItem('shelfscout_keepaKey', keepaKey);
+    
+    if (discogsToken) {
+        localStorage.setItem('shelfscout_discogsToken', discogsToken);
+    }
+    
+    const msg = discogsToken 
+        ? 'API keys saved! Discogs enabled for enhanced CD detection.'
+        : 'API keys saved! Add Discogs token for better classical music detection.';
+    
+    showToast(msg, 'success');
+    toggleSettings();
+}
+
+function handleUploadClick() {
+    const geminiKey = document.getElementById('geminiKey').value || localStorage.getItem('shelfscout_geminiKey');
+    const keepaKey = document.getElementById('keepaKey').value || localStorage.getItem('shelfscout_keepaKey');
+    
+    if (!geminiKey || !keepaKey) {
+        showToast('Please configure API keys in Settings first.', 'error');
+        toggleSettings();
+        return;
+    }
+    
+    document.getElementById('upload').click();
+}
+
+/** ============================================
+ * EXPORT
+ * ============================================ */
+function exportResults() {
+    if (scanResults.length === 0) {
+        showToast('No results to export', 'error');
+        return;
+    }
+
+    const csv = [
+        ['Title', 'Media_Type', 'UPC', 'ASIN', 'Source', 'Score', 'Verdict', 'Price', 'Profit', 'Rank', 'Sales_180d', 'Status'],
+        ...scanResults.map(r => [
+            r.title,
+            r.mediaType || 'N/A',
+            r.upc || 'N/A',
+            r.asin || 'N/A',
+            r.source || 'N/A',
+            r.score !== undefined ? r.score : 'N/A',
+            r.verdict || 'N/A',
+            r.price ? r.price.toFixed(2) : 'N/A',
+            r.profit !== undefined ? r.profit.toFixed(2) : 'N/A',
+            r.rank && r.rank !== -1 ? r.rank : 'N/A',
+            r.drops180 !== undefined ? r.drops180 : 'N/A',
+            r.noUPC ? 'No UPC' : (r.noMarketData ? 'No Market Data' : 'Complete')
+        ])
+    ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shelfscout-media-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showToast('Results exported!', 'success');
+}
+
+/** ============================================
+ * INITIALIZATION
+ * ============================================ */
+window.onload = () => {
+    const savedGemini = localStorage.getItem('shelfscout_geminiKey');
+    const savedKeepa = localStorage.getItem('shelfscout_keepaKey');
+    const savedDiscogs = localStorage.getItem('shelfscout_discogsToken');
+    
+    if (savedGemini) document.getElementById('geminiKey').value = savedGemini;
+    if (savedKeepa) document.getElementById('keepaKey').value = savedKeepa;
+    if (savedDiscogs && document.getElementById('discogsToken')) {
+        document.getElementById('discogsToken').value = savedDiscogs;
+    }
+    
+    validateKeys();
+    
+    if (!savedGemini || !savedKeepa) {
+        setTimeout(() => {
+            showToast('👋 ShelfScout Media Edition\n\nOptimized for DVDs, CDs, and Blu-rays!\n\nConfigure your API keys in Settings to get started.\n\nTip: Add a Discogs token for much better classical music detection.', 'info');
+        }, 500);
+    }
+};
+</script>
+</body>
+</html>
