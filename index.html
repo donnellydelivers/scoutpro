@@ -958,10 +958,11 @@ input[type="text"]:focus {
   <div class="header">
     <div class="header-left">
       <div class="app-title">Scout Pro v2</div>
-      <div class="app-subtitle">v3.3 - Focus Button</div>
+      <div class="app-subtitle">v3.4 - Camera Diagnostics</div>
     </div>
     <div class="header-buttons">
       <button class="header-btn" id="cameraBtn" title="Scan with Camera">📷</button>
+      <button class="header-btn" id="testCameraBtn" title="Test Camera Access">🔧</button>
       <button class="header-btn" id="settingsNavBtn" title="Settings">⚙️</button>
     </div>
   </div>
@@ -1306,6 +1307,50 @@ function init() {
     openScanner();
   });
   
+  // Test camera access button
+  const testCameraBtn = document.getElementById('testCameraBtn');
+  if (testCameraBtn) {
+    testCameraBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      try {
+        console.log('Testing camera access...');
+        const stream = await ensureCameraAccess();
+        
+        console.log('✓ Camera access granted!');
+        console.log('Stream:', stream);
+        console.log('Video tracks:', stream.getVideoTracks());
+        
+        const track = stream.getVideoTracks()[0];
+        const settings = track.getSettings();
+        const capabilities = track.getCapabilities();
+        
+        console.log('Camera settings:', settings);
+        console.log('Camera capabilities:', capabilities);
+        
+        // Stop the stream
+        stream.getTracks().forEach(t => t.stop());
+        
+        alert('✓ Camera access OK!\n\n' +
+              'Camera: ' + (settings.deviceId || 'Unknown') + '\n' +
+              'Resolution: ' + settings.width + 'x' + settings.height + '\n' +
+              'Focus modes: ' + (capabilities.focusMode || ['none']).join(', ') + '\n\n' +
+              'Scanner should work now!');
+        
+      } catch (err) {
+        console.error('Camera test failed:', err);
+        alert('✗ Camera test FAILED\n\n' +
+              'Error: ' + err.name + '\n' +
+              'Message: ' + err.message + '\n\n' +
+              'FIX:\n' +
+              '1. Check Chrome permissions\n' +
+              '2. Close other camera apps\n' +
+              '3. Try restarting Chrome');
+      }
+    });
+  }
+  
   // Settings modal
   settingsNavBtn.addEventListener('click', (e) => {
     console.log('SETTINGS BUTTON CLICKED');
@@ -1400,15 +1445,122 @@ function toggleWhy() {
 
 // Update "Add to List" button based on condition
 // Scanner functions
+function isProbablySecureOrigin() {
+  // getUserMedia requires a secure context (https or localhost). Some embedded webviews may also qualify.
+  const isLocalhost = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  return window.isSecureContext || location.protocol === 'https:' || isLocalhost;
+}
+
+async function ensureCameraAccess() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error('Camera API not available in this browser. Try a modern Chrome/Edge/Safari.');
+  }
+
+  if (!isProbablySecureOrigin()) {
+    // This is the #1 reason Chrome will not even prompt.
+    throw new Error(
+      'Camera requires HTTPS (secure origin).
+
+' +
+      'Open this app via https:// (or localhost).
+' +
+      'If you opened it as a file (file://) or over http://, Chrome will block camera without prompting.'
+    );
+  }
+
+  // If Permissions API is available, surface the state.
+  try {
+    if (navigator.permissions && navigator.permissions.query) {
+      const status = await navigator.permissions.query({ name: 'camera' });
+      if (status && status.state === 'denied') {
+        throw new Error(
+          'Camera permission is currently BLOCKED for this site.
+
+' +
+          'Fix: Chrome address bar → lock icon → Site settings → Camera → Allow, then reload.'
+        );
+      }
+    }
+  } catch (e) {
+    // Some browsers throw on permissions.query({name:'camera'}). Ignore and continue.
+  }
+
+  // Try requesting the environment camera first; fall back to any camera if constraints fail.
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
+    });
+    return stream;
+  } catch (err) {
+    // OverconstrainedError means the device can't satisfy facingMode constraint
+    if (err && (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError')) {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      return stream;
+    }
+    throw err;
+  }
+}
+
+// Scanner functions
 function openScanner() {
   scannerModal.classList.remove('hidden');
-  
+
   if (typeof Html5Qrcode === 'undefined') {
     alert('Camera scanning library not loaded. Please enter ISBN manually.');
     closeScanner();
     return;
   }
-  
+
+  // MUST be called from a user gesture for reliable prompting on mobile.
+  ensureCameraAccess()
+    .then(stream => {
+      console.log('✓ Camera access granted');
+      // Stop the test stream immediately (html5-qrcode will open its own stream).
+      stream.getTracks().forEach(track => track.stop());
+      startScanner();
+    })
+    .catch(err => {
+      console.error('Camera permission/error:', err);
+
+      // Normalize into a readable message.
+      const name = err?.name || 'Error';
+      const msg = err?.message || String(err);
+
+      let help = '';
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        help =
+          '
+
+Fix:' +
+          '
+1) Chrome address bar → lock icon → Site settings' +
+          '
+2) Camera → Allow' +
+          '
+3) Reload the page';
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        help = '
+
+No camera found on this device.';
+      } else if (name === 'NotReadableError' || name === 'TrackStartError') {
+        help = '
+
+Camera is busy (another app/tab is using it). Close other camera apps and try again.';
+      } else if (name === 'SecurityError') {
+        help = '
+
+This is usually an insecure origin issue. Open via https:// (not file:// or http://).';
+      }
+
+      alert('✗ Camera failed
+
+' + name + ': ' + msg + help);
+      closeScanner();
+    });
+}
+
+function startScanner() {
   html5QrCode = new Html5Qrcode("scanner-region");
   
   // Proven Android barcode scanning config
@@ -1435,10 +1587,8 @@ function openScanner() {
   // Conservative camera config that works on all Android devices
   // Start with basic config - no advanced features that might fail
   html5QrCode.start(
-    { 
-      facingMode: "environment",
-      // Explicitly request autofocus
-      focusMode: { ideal: "continuous" }
+    {
+      facingMode: { ideal: "environment" }
     },
     config,
     (decodedText) => {
