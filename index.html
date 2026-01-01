@@ -10,9 +10,6 @@
 <!-- For now using CDN: https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-<!-- Tesseract.js for OCR ISBN text recognition -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-
 <style>
 /* --- THEME & RESET --- */
 :root {
@@ -958,7 +955,7 @@ input[type="text"]:focus {
   <div class="header">
     <div class="header-left">
       <div class="app-title">Scout Pro v2</div>
-      <div class="app-subtitle">v3.4 - Camera Diagnostics</div>
+      <div class="app-subtitle">v3.6 - No Freeze</div>
     </div>
     <div class="header-buttons">
       <button class="header-btn" id="cameraBtn" title="Scan with Camera">📷</button>
@@ -1109,16 +1106,17 @@ input[type="text"]:focus {
   <div id="scannerModal" class="scanner-modal hidden">
     <div class="scanner-container">
       <div class="scanner-guidance" style="font-size: 15px; padding: 14px;">
-        <div style="font-weight: 800; margin-bottom: 4px;">📖 BLURRY? TAP FOCUS BUTTON</div>
-        <div style="font-size: 13px; opacity: 0.9;">Position barcode in box, use buttons below to fix blur</div>
+        <div style="font-weight: 800; margin-bottom: 4px;">📸 USE "TAKE PHOTO" FOR SHARP SCANS!</div>
+        <div style="font-size: 13px; opacity: 0.9;">Opens Android camera for crystal-clear barcode photos</div>
       </div>
       <div id="scanner-region"></div>
       <div class="scanner-controls">
+        <button class="scanner-btn" id="nativeCameraBtn" style="background: var(--green);">📸 Take Photo</button>
         <button class="scanner-btn" id="focusBtn" style="background: var(--orange);">🔍 Focus</button>
-        <button class="scanner-btn" id="ocrScanBtn" style="background: var(--purple);">📝 Text ISBN</button>
         <button class="scanner-btn" id="torchBtn" style="display:none;">🔦 Light</button>
         <button class="scanner-close" id="closeScannerBtn">Close</button>
       </div>
+      <input type="file" id="nativeInput" accept="image/*" capture="environment" style="display: none;">
     </div>
   </div>
   
@@ -1177,11 +1175,6 @@ input[type="text"]:focus {
   </div>
 
 <script>
-// ===== DEBUG LOGGING (set to true temporarily if you need verbose logs) =====
-const DEBUG = false;
-const LOG = (...args) => { if (DEBUG) console.log(...args); };
-// ===========================================================================
-
 // Configuration
 const CONFIG = {
   keepaKey: localStorage.getItem('keepaKey') || '',
@@ -1220,7 +1213,7 @@ function toggleFocusLock() {
 async function rerunAnalysis() {
   if (!currentKeepaData) return;
   
-  LOG('Re-running analysis with condition:', CONFIG.condition);
+  console.log('Re-running analysis with condition:', CONFIG.condition);
   
   // Show loading
   loadingState.classList.remove('hidden');
@@ -1242,7 +1235,7 @@ async function rerunAnalysis() {
 
 // Initialize
 function init() {
-  LOG('🚀 Initializing Scout Pro v2.4 - Scouting Only Edition...');
+  console.log('🚀 Initializing Scout Pro v2.4 - Scouting Only Edition...');
   
   // Get DOM elements (now that they exist)
   searchInput = document.getElementById('searchInput');
@@ -1274,7 +1267,7 @@ function init() {
   scannerModal = document.getElementById('scannerModal');
   closeScannerBtn = document.getElementById('closeScannerBtn');
   
-  LOG('Header buttons found:', {
+  console.log('Header buttons found:', {
     cameraBtn: cameraBtn,
     cameraBtnId: cameraBtn ? cameraBtn.id : 'NOT FOUND',
     settingsNavBtn: settingsNavBtn,
@@ -1306,7 +1299,7 @@ function init() {
   lockBtn.addEventListener('click', toggleFocusLock);
   
   cameraBtn.addEventListener('click', (e) => {
-    LOG('CAMERA BUTTON CLICKED');
+    console.log('CAMERA BUTTON CLICKED');
     e.preventDefault();
     e.stopPropagation();
     openScanner();
@@ -1320,19 +1313,21 @@ function init() {
       e.stopPropagation();
       
       try {
-        LOG('Testing camera access...');
-        const stream = await ensureCameraAccess();
+        console.log('Testing camera access...');
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "environment" } 
+        });
         
-        LOG('✓ Camera access granted!');
-        LOG('Stream:', stream);
-        LOG('Video tracks:', stream.getVideoTracks());
+        console.log('✓ Camera access granted!');
+        console.log('Stream:', stream);
+        console.log('Video tracks:', stream.getVideoTracks());
         
         const track = stream.getVideoTracks()[0];
         const settings = track.getSettings();
         const capabilities = track.getCapabilities();
         
-        LOG('Camera settings:', settings);
-        LOG('Camera capabilities:', capabilities);
+        console.log('Camera settings:', settings);
+        console.log('Camera capabilities:', capabilities);
         
         // Stop the stream
         stream.getTracks().forEach(t => t.stop());
@@ -1358,7 +1353,7 @@ function init() {
   
   // Settings modal
   settingsNavBtn.addEventListener('click', (e) => {
-    LOG('SETTINGS BUTTON CLICKED');
+    console.log('SETTINGS BUTTON CLICKED');
     e.preventDefault();
     e.stopPropagation();
     settingsModal.classList.remove('hidden');
@@ -1450,117 +1445,46 @@ function toggleWhy() {
 
 // Update "Add to List" button based on condition
 // Scanner functions
-function isProbablySecureOrigin() {
-  // getUserMedia requires a secure context (https or localhost). Some embedded webviews may also qualify.
-  const isLocalhost = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
-  return window.isSecureContext || location.protocol === 'https:' || isLocalhost;
-}
-
-async function ensureCameraAccess() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    throw new Error('Camera API not available in this browser. Try a modern Chrome/Edge/Safari.');
-  }
-
-  if (!isProbablySecureOrigin()) {
-    // This is the #1 reason Chrome will not even prompt.
-    throw new Error(
-      'Camera requires HTTPS (secure origin).
-
-' +
-      'Open this app via https:// (or localhost).
-' +
-      'If you opened it as a file (file://) or over http://, Chrome will block camera without prompting.'
-    );
-  }
-
-  // If Permissions API is available, surface the state.
-  try {
-    if (navigator.permissions && navigator.permissions.query) {
-      const status = await navigator.permissions.query({ name: 'camera' });
-      if (status && status.state === 'denied') {
-        throw new Error(
-          'Camera permission is currently BLOCKED for this site.
-
-' +
-          'Fix: Chrome address bar → lock icon → Site settings → Camera → Allow, then reload.'
-        );
-      }
-    }
-  } catch (e) {
-    // Some browsers throw on permissions.query({name:'camera'}). Ignore and continue.
-  }
-
-  // Try requesting the environment camera first; fall back to any camera if constraints fail.
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } },
-      audio: false
-    });
-    return stream;
-  } catch (err) {
-    // OverconstrainedError means the device can't satisfy facingMode constraint
-    if (err && (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError')) {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      return stream;
-    }
-    throw err;
-  }
-}
-
-// Scanner functions
 function openScanner() {
   scannerModal.classList.remove('hidden');
-
+  
   if (typeof Html5Qrcode === 'undefined') {
     alert('Camera scanning library not loaded. Please enter ISBN manually.');
     closeScanner();
     return;
   }
-
-  // MUST be called from a user gesture for reliable prompting on mobile.
-  ensureCameraAccess()
+  
+  // First, explicitly request camera permission
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
     .then(stream => {
-      LOG('✓ Camera access granted');
-      // Stop the test stream immediately (html5-qrcode will open its own stream).
+      console.log('✓ Camera permission granted');
+      // Stop the test stream
       stream.getTracks().forEach(track => track.stop());
+      
+      // Now start the actual scanner
       startScanner();
     })
     .catch(err => {
-      console.error('Camera permission/error:', err);
-
-      // Normalize into a readable message.
-      const name = err?.name || 'Error';
-      const msg = err?.message || String(err);
-
-      let help = '';
-      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-        help =
-          '
-
-Fix:' +
-          '
-1) Chrome address bar → lock icon → Site settings' +
-          '
-2) Camera → Allow' +
-          '
-3) Reload the page';
-      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-        help = '
-
-No camera found on this device.';
-      } else if (name === 'NotReadableError' || name === 'TrackStartError') {
-        help = '
-
-Camera is busy (another app/tab is using it). Close other camera apps and try again.';
-      } else if (name === 'SecurityError') {
-        help = '
-
-This is usually an insecure origin issue. Open via https:// (not file:// or http://).';
+      console.error('Camera permission error:', err);
+      
+      let errorMsg = 'Camera access denied.\n\n';
+      
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMsg += 'Please allow camera access:\n';
+        errorMsg += '1. Tap the lock/info icon in address bar\n';
+        errorMsg += '2. Find "Camera" permission\n';
+        errorMsg += '3. Change to "Allow"\n';
+        errorMsg += '4. Reload the page';
+      } else if (err.name === 'NotFoundError') {
+        errorMsg += 'No camera found on this device.';
+      } else if (err.name === 'NotReadableError') {
+        errorMsg += 'Camera is in use by another app.\n';
+        errorMsg += 'Close other camera apps and try again.';
+      } else {
+        errorMsg += 'Error: ' + err.name + '\n' + err.message;
       }
-
-      alert('✗ Camera failed
-
-' + name + ': ' + msg + help);
+      
+      alert(errorMsg);
       closeScanner();
     });
 }
@@ -1592,12 +1516,14 @@ function startScanner() {
   // Conservative camera config that works on all Android devices
   // Start with basic config - no advanced features that might fail
   html5QrCode.start(
-    {
-      facingMode: { ideal: "environment" }
+    { 
+      facingMode: "environment",
+      // Explicitly request autofocus
+      focusMode: { ideal: "continuous" }
     },
     config,
     (decodedText) => {
-      LOG('Scanned:', decodedText);
+      console.log('Scanned:', decodedText);
       // Vibrate on successful scan (if supported)
       if (navigator.vibrate) {
         navigator.vibrate(100);
@@ -1610,7 +1536,7 @@ function startScanner() {
       // Scanning errors are normal, ignore
     }
   ).then(() => {
-    LOG('Camera started successfully');
+    console.log('Camera started successfully');
     
     // Give camera 1 second to stabilize autofocus
     setTimeout(() => {
@@ -1629,25 +1555,80 @@ function startScanner() {
             focusDistance: 0
           }]
         }).then(() => {
-          LOG('Autofocus applied successfully');
+          console.log('Autofocus applied successfully');
         }).catch(err => {
-          LOG('Autofocus not supported:', err);
+          console.log('Autofocus not supported:', err);
           // Try single-shot as fallback
           videoTrack.applyConstraints({
             advanced: [{ focusMode: 'single-shot' }]
-          }).catch(e => LOG('No focus control available'));
+          }).catch(e => console.log('No focus control available'));
         });
       }
       
       // Setup other features
+      setupNativeCamera();
       setupFocusButton();
       setupTorch();
-      setupOCRScan();
     }, 1000);
   }).catch(err => {
     console.error('Camera failed:', err);
     alert('Camera access denied. Please enable camera permissions in Android settings.');
     closeScanner();
+  });
+}
+
+function setupNativeCamera() {
+  const nativeCameraBtn = document.getElementById('nativeCameraBtn');
+  const nativeInput = document.getElementById('nativeInput');
+  
+  if (!nativeCameraBtn || !nativeInput) return;
+  
+  // Trigger native Android camera app
+  nativeCameraBtn.addEventListener('click', () => {
+    nativeInput.click();
+  });
+  
+  // Process the photo once user takes it
+  nativeInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      nativeCameraBtn.textContent = '📸 Scanning...';
+      nativeCameraBtn.disabled = true;
+      
+      // Use html5-qrcode to scan the photo for barcodes
+      // This is fast and doesn't require downloading language files
+      const tempScanner = new Html5Qrcode("scanner-region", false);
+      
+      try {
+        const decodedText = await tempScanner.scanFile(file, true);
+        
+        console.log('Barcode found:', decodedText);
+        if (navigator.vibrate) navigator.vibrate(100);
+        
+        searchInput.value = decodedText;
+        closeScanner();
+        handleSearch();
+        
+      } catch (err) {
+        console.error('Barcode scan failed:', err);
+        alert('No barcode found in photo.\n\nTips:\n• Ensure barcode is clearly visible\n• Use good lighting\n• Center the barcode in frame\n• Try the live scanner instead');
+        
+        nativeCameraBtn.textContent = '📸 Take Photo';
+        nativeCameraBtn.disabled = false;
+      }
+      
+      // Reset input for next photo
+      nativeInput.value = '';
+      
+    } catch (err) {
+      console.error('Photo processing error:', err);
+      alert('Photo processing failed: ' + err.message);
+      nativeCameraBtn.textContent = '📸 Take Photo';
+      nativeCameraBtn.disabled = false;
+      nativeInput.value = '';
+    }
   });
 }
 
@@ -1677,7 +1658,7 @@ function setupFocusButton() {
       const videoTrack = stream.getVideoTracks()[0];
       const capabilities = videoTrack.getCapabilities();
       
-      LOG('Camera capabilities:', capabilities);
+      console.log('Camera capabilities:', capabilities);
       
       // Cycle to next focus mode
       focusMode = (focusMode + 1) % focusModes.length;
@@ -1712,7 +1693,7 @@ function setupFocusButton() {
       focusBtn.textContent = `🔍 ${currentMode.name}`;
       focusBtn.disabled = false;
       
-      LOG(`Focus set to: ${currentMode.name}`, constraints);
+      console.log(`Focus set to: ${currentMode.name}`, constraints);
       
     } catch (err) {
       console.error('Focus error:', err);
@@ -1751,18 +1732,18 @@ async function setupOCRScan() {
       const imageData = canvas.toDataURL('image/png');
       
       // Run OCR
-      LOG('Running OCR on image...');
+      console.log('Running OCR on image...');
       const result = await Tesseract.recognize(imageData, 'eng', {
-        logger: m => LOG('OCR progress:', m)
+        logger: m => console.log('OCR progress:', m)
       });
       
-      LOG('OCR result:', result.data.text);
+      console.log('OCR result:', result.data.text);
       
       // Extract ISBN from text using regex
       const isbn = extractISBN(result.data.text);
       
       if (isbn) {
-        LOG('Found ISBN:', isbn);
+        console.log('Found ISBN:', isbn);
         if (navigator.vibrate) navigator.vibrate(100);
         searchInput.value = isbn;
         closeScanner();
@@ -1886,11 +1867,11 @@ async function handleSearch() {
     currentKeepaData = keepaData;
     currentASIN = keepaData.asin;
     
-    LOG('Keepa data:', keepaData);
+    console.log('Keepa data:', keepaData);
     
     // KEEPA HISTORY ANALYSIS: If Keepa shows 0 FBA offers currently, check recent history
     if (keepaData.fbaCount === 0 || keepaData.fbaPrice === 0) {
-      LOG('⚠️ Keepa shows 0 current FBA offers - analyzing recent history...');
+      console.log('⚠️ Keepa shows 0 current FBA offers - analyzing recent history...');
       const recentActivity = await analyzeRecentFbaActivity(keepaData);
       
       // Add recent FBA data to keepaData
@@ -1903,16 +1884,16 @@ async function handleSearch() {
       keepaData.historicallyVerified = true;
       
       if (recentActivity.hadRecentFba) {
-        LOG(`✓ Found ${recentActivity.recentFbaCount} FBA offers in last 30 days (last seen ${recentActivity.lastSeenDaysAgo} days ago)`);
+        console.log(`✓ Found ${recentActivity.recentFbaCount} FBA offers in last 30 days (last seen ${recentActivity.lastSeenDaysAgo} days ago)`);
       } else {
-        LOG('✓ Confirmed: No FBA activity in last 30 days');
+        console.log('✓ Confirmed: No FBA activity in last 30 days');
       }
     }
     
     // Analyze with Gemini
     const geminiResult = await analyzeWithGemini(keepaData);
     
-    LOG('Gemini result:', geminiResult);
+    console.log('Gemini result:', geminiResult);
     
     // Display results
     displayResults(keepaData, geminiResult);
@@ -1948,7 +1929,7 @@ async function fetchKeepaData(query) {
     const paramName = (isISBN || isProductCode) ? 'code' : 'asin';
     let url = `https://api.keepa.com/product?key=${CONFIG.keepaKey}&domain=1&${paramName}=${clean}&stats=${days}&history=1`;
     
-    LOG('Fetching Keepa (product):', { query, clean, paramName });
+    console.log('Fetching Keepa (product):', { query, clean, paramName });
     
     try {
       const res = await fetch(url);
@@ -1964,16 +1945,16 @@ async function fetchKeepaData(query) {
     const encodedTitle = encodeURIComponent(cleanTitle).replace(/%20/g, '+');
     const baseUrl = `https://api.keepa.com/search?key=${CONFIG.keepaKey}&domain=1&type=product&term=${encodedTitle}`;
     
-    LOG('=== TITLE SEARCH ===');
-    LOG('Original:', query);
-    LOG('Encoded:', encodedTitle);
+    console.log('=== TITLE SEARCH ===');
+    console.log('Original:', query);
+    console.log('Encoded:', encodedTitle);
     
     let data = null;
     
     // Try proxy first if enabled
     if (CONFIG.useProxy) {
       try {
-        LOG('Trying with corsproxy.io...');
+        console.log('Trying with corsproxy.io...');
         const proxyEncodedTitle = encodeURIComponent(cleanTitle); // Use %20 for proxy
         const proxyBaseUrl = `https://api.keepa.com/search?key=${CONFIG.keepaKey}&domain=1&type=product&term=${proxyEncodedTitle}`;
         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(proxyBaseUrl)}`;
@@ -1981,31 +1962,31 @@ async function fetchKeepaData(query) {
         if (res.ok) {
           data = await res.json();
           if (!data.error && data.products && data.products.length > 0) {
-            LOG('Proxy success, got', data.products.length, 'results');
+            console.log('Proxy success, got', data.products.length, 'results');
           } else {
             data = null;
           }
         }
       } catch (proxyErr) {
-        LOG('Proxy failed:', proxyErr.message);
+        console.log('Proxy failed:', proxyErr.message);
       }
     }
     
     // Try direct if proxy failed or disabled
     if (!data) {
-      LOG('Trying direct fetch...');
+      console.log('Trying direct fetch...');
       const res = await fetch(baseUrl);
       if (!res.ok) throw new Error(`Keepa API Error: HTTP ${res.status}`);
       data = await res.json();
       if (data.error) throw new Error(data.error.message);
-      LOG('Direct fetch success, got', data.products?.length || 0, 'results');
+      console.log('Direct fetch success, got', data.products?.length || 0, 'results');
     }
     
     if (!data.products || data.products.length === 0) {
       throw new Error(`No products found for: "${query}"`);
     }
     
-    LOG(`Found ${data.products.length} results, showing picker`);
+    console.log(`Found ${data.products.length} results, showing picker`);
     
     // Show title picker with all results
     renderTitlePicker(data.products);
@@ -2065,17 +2046,17 @@ function calculatePriceRange(priceHistory, daysBack = 90) {
 
 // Parse product (complete v1 version)
 function parseProduct(p) {
-  LOG('=== KEEPA RAW DATA ===');
-  LOG('Full product object:', p);
-  LOG('p.packageWeight (RAW from Keepa):', p.packageWeight);
-  LOG('p.packageWeight / 100 =', p.packageWeight ? p.packageWeight / 100 : 'undefined');
-  LOG('p.packageWeight / 16 =', p.packageWeight ? p.packageWeight / 16 : 'undefined');
-  LOG('p.packageWeight / 453.592 =', p.packageWeight ? p.packageWeight / 453.592 : 'undefined');
-  LOG('p.stats:', p.stats);
-  LOG('p.stats.salesRankDrops30:', p.stats.salesRankDrops30);
-  LOG('p.stats.salesRankDrops90:', p.stats.salesRankDrops90);
-  LOG('p.stats.salesRankDrops180:', p.stats.salesRankDrops180);
-  LOG('p.stats.salesRankDrops360:', p.stats.salesRankDrops360);
+  console.log('=== KEEPA RAW DATA ===');
+  console.log('Full product object:', p);
+  console.log('p.packageWeight (RAW from Keepa):', p.packageWeight);
+  console.log('p.packageWeight / 100 =', p.packageWeight ? p.packageWeight / 100 : 'undefined');
+  console.log('p.packageWeight / 16 =', p.packageWeight ? p.packageWeight / 16 : 'undefined');
+  console.log('p.packageWeight / 453.592 =', p.packageWeight ? p.packageWeight / 453.592 : 'undefined');
+  console.log('p.stats:', p.stats);
+  console.log('p.stats.salesRankDrops30:', p.stats.salesRankDrops30);
+  console.log('p.stats.salesRankDrops90:', p.stats.salesRankDrops90);
+  console.log('p.stats.salesRankDrops180:', p.stats.salesRankDrops180);
+  console.log('p.stats.salesRankDrops360:', p.stats.salesRankDrops360);
   
   const s = p.stats.current;
   const avg = p.stats.avg90 || [];
@@ -2091,11 +2072,11 @@ function parseProduct(p) {
   const fbaCount = toVal(s[16]) || 0;
   const keepaBb = toPrice(s[18]);
   
-  LOG('=== FBA PRICE DEBUG ===');
-  LOG('s[10] (raw FBA price):', s[10]);
-  LOG('fbaPrice (converted):', fbaPrice);
-  LOG('s[16] (FBA offer count):', s[16]);
-  LOG('fbaCount:', fbaCount);
+  console.log('=== FBA PRICE DEBUG ===');
+  console.log('s[10] (raw FBA price):', s[10]);
+  console.log('fbaPrice (converted):', fbaPrice);
+  console.log('s[16] (FBA offer count):', s[16]);
+  console.log('fbaCount:', fbaCount);
   
   // Buy Box inference
   let inferredBbPrice = 0;
@@ -2171,8 +2152,8 @@ function parseProduct(p) {
     csv: p.csv || {} // Include CSV data for historical price analysis
   };
   
-  LOG('=== PARSED DATA ===');
-  LOG('Sales drops parsed:', {
+  console.log('=== PARSED DATA ===');
+  console.log('Sales drops parsed:', {
     drops30: parsedData.drops30,
     drops90: parsedData.drops90,
     drops180: parsedData.drops180,
@@ -2400,13 +2381,13 @@ function analyzeFbmCompetition(keepaData) {
 
 // Analyze recent FBA activity from Keepa CSV history (more reliable than scraping)
 async function analyzeRecentFbaActivity(keepaData) {
-  LOG('📊 Analyzing recent FBA activity from Keepa history...');
+  console.log('📊 Analyzing recent FBA activity from Keepa history...');
   
   const csv = keepaData.csv || {};
   const fbaHistory = csv[10] || []; // FBA offers history
   
   if (fbaHistory.length === 0) {
-    LOG('No FBA history data available');
+    console.log('No FBA history data available');
     return {
       hadRecentFba: false,
       recentFbaCount: 0,
@@ -2448,7 +2429,7 @@ async function analyzeRecentFbaActivity(keepaData) {
   const hadRecentFba = uniquePrices.length > 0;
   const lastSeenDaysAgo = lastSeenTimestamp > 0 ? Math.floor((now - lastSeenTimestamp) / (24 * 60 * 60 * 1000)) : null;
   
-  LOG('Recent FBA activity:', {
+  console.log('Recent FBA activity:', {
     hadRecentFba,
     recentFbaCount: uniquePrices.length,
     priceRange: uniquePrices.length > 0 ? `$${uniquePrices[0].toFixed(2)} - $${uniquePrices[uniquePrices.length-1].toFixed(2)}` : 'N/A',
@@ -2520,43 +2501,43 @@ function calculateFees(price, weight, category) {
     else fulfillmentFee = 4.40 + ((roundedWeight - 2) * 0.38);
   }
   
-  LOG('=== FEE BREAKDOWN ===');
-  LOG('Price:', price);
-  LOG('Weight (raw):', weight);
-  LOG('Weight (rounded):', roundedWeight);
-  LOG('Category:', category, '| isBooks:', isBooks, '| isMedia:', isMedia);
-  LOG('Referral fee (15%):', referralFee);
-  LOG('Fulfillment fee:', fulfillmentFee);
-  LOG('Closing fee:', closingFee);
-  LOG('Total:', closingFee + referralFee + fulfillmentFee);
+  console.log('=== FEE BREAKDOWN ===');
+  console.log('Price:', price);
+  console.log('Weight (raw):', weight);
+  console.log('Weight (rounded):', roundedWeight);
+  console.log('Category:', category, '| isBooks:', isBooks, '| isMedia:', isMedia);
+  console.log('Referral fee (15%):', referralFee);
+  console.log('Fulfillment fee:', fulfillmentFee);
+  console.log('Closing fee:', closingFee);
+  console.log('Total:', closingFee + referralFee + fulfillmentFee);
   
   return closingFee + referralFee + fulfillmentFee;
 }
 
 // Analyze with Gemini using Matt's detailed sourcing prompt
 async function analyzeWithGemini(keepaData) {
-  LOG('Analyzing with Gemini...', keepaData);
+  console.log('Analyzing with Gemini...', keepaData);
   
   // ============================================================================
   // SELL PRICE DETERMINATION - Buy Box Aware Logic
   // ============================================================================
   
-  LOG('=== BUY BOX ANALYSIS ===');
-  LOG('BB Owner Type:', keepaData.bbOwnerType);
-  LOG('FBA Count:', keepaData.fbaCount);
-  LOG('Total Offers:', keepaData.totalOffers);
-  LOG('Buy Box Price:', keepaData.buyBoxPrice);
-  LOG('FBA Price:', keepaData.fbaPrice);
-  LOG('Used Price:', keepaData.usedPrice);
-  LOG('New Price:', keepaData.newPrice);
-  LOG('Amazon Price:', keepaData.amzPrice);
-  LOG('Avg Used (90d):', keepaData.avgUsed);
-  LOG('Avg New (90d):', keepaData.avgNew);
-  LOG('Avg Used (180d):', keepaData.avgUsed180);
-  LOG('Avg Used (365d):', keepaData.avgUsed365);
-  LOG('---');
-  LOG('TITLE:', keepaData.title);
-  LOG('CONDITION:', CONFIG.condition);
+  console.log('=== BUY BOX ANALYSIS ===');
+  console.log('BB Owner Type:', keepaData.bbOwnerType);
+  console.log('FBA Count:', keepaData.fbaCount);
+  console.log('Total Offers:', keepaData.totalOffers);
+  console.log('Buy Box Price:', keepaData.buyBoxPrice);
+  console.log('FBA Price:', keepaData.fbaPrice);
+  console.log('Used Price:', keepaData.usedPrice);
+  console.log('New Price:', keepaData.newPrice);
+  console.log('Amazon Price:', keepaData.amzPrice);
+  console.log('Avg Used (90d):', keepaData.avgUsed);
+  console.log('Avg New (90d):', keepaData.avgNew);
+  console.log('Avg Used (180d):', keepaData.avgUsed180);
+  console.log('Avg Used (365d):', keepaData.avgUsed365);
+  console.log('---');
+  console.log('TITLE:', keepaData.title);
+  console.log('CONDITION:', CONFIG.condition);
   
   let sellPrice;
   let pricingNotes = '';
@@ -2587,7 +2568,7 @@ async function analyzeWithGemini(keepaData) {
         // Use median of historical FBA prices (more robust than average)
         validPrices.sort((a, b) => a - b);
         const median = validPrices[Math.floor(validPrices.length / 2)];
-        LOG(`✓ Found ${validPrices.length} historical FBA prices, median: $${median.toFixed(2)}`);
+        console.log(`✓ Found ${validPrices.length} historical FBA prices, median: $${median.toFixed(2)}`);
         return median;
       }
     }
@@ -2631,7 +2612,7 @@ async function analyzeWithGemini(keepaData) {
       
       if (totalSamples > 0) {
         const matchRate = matchCount / totalSamples;
-        LOG(`FBA/BB match rate: ${(matchRate * 100).toFixed(0)}% (${matchCount}/${totalSamples} samples)`);
+        console.log(`FBA/BB match rate: ${(matchRate * 100).toFixed(0)}% (${matchCount}/${totalSamples} samples)`);
         // If BB matched FBA at least 20% of the time, assume FBA made some sales
         return matchRate > 0.20;
       }
@@ -2652,7 +2633,7 @@ async function analyzeWithGemini(keepaData) {
     // CASE 1: AMAZON OWNS BUY BOX
     // ========================================================================
     case 'AMZ':
-      LOG('→ Amazon owns Buy Box');
+      console.log('→ Amazon owns Buy Box');
       
       // Check for non-Amazon FBA sales in last 180 days
       const hasNonAmzFbaSales = estimateFbaSales(180) && keepaData.fbaCount > 0;
@@ -2672,7 +2653,7 @@ async function analyzeWithGemini(keepaData) {
         
         sellPrice = currentFba > 0 && currentFba < medianFba ? currentFba : medianFba;
         pricingNotes = `Amazon owns BB but non-Amazon FBA making sales. Using ${currentFba > 0 && currentFba < medianFba ? 'current' : 'historical'} FBA price: $${sellPriceDisplay}`;
-        LOG(pricingNotes);
+        console.log(pricingNotes);
       }
       break;
     
@@ -2680,7 +2661,7 @@ async function analyzeWithGemini(keepaData) {
     // CASE 2: ROTATING FBA (Multiple FBA sellers rotating BB)
     // ========================================================================
     case 'ROTATING_FBA':
-      LOG('→ Rotating FBA Buy Box');
+      console.log('→ Rotating FBA Buy Box');
       
       const historicalFba2 = getHistoricalFbaPrice();
       const currentFba2 = keepaData.fbaPrice || 0;
@@ -2697,14 +2678,14 @@ async function analyzeWithGemini(keepaData) {
       } else {
         pricingNotes = `FBA rotation active. Using FBA price: $${sellPriceDisplay}`;
       }
-      LOG(pricingNotes);
+      console.log(pricingNotes);
       break;
     
     // ========================================================================
     // CASE 3: EXPLICIT BB (Single seller controls)
     // ========================================================================
     case 'EXPLICIT_BB':
-      LOG('→ Explicit Buy Box (single seller)');
+      console.log('→ Explicit Buy Box (single seller)');
       
       if (keepaData.fbaCount > 0) {
         // FBA sellers exist
@@ -2733,7 +2714,7 @@ async function analyzeWithGemini(keepaData) {
           pricingNotes = `No FBA detected. Using ${CONFIG.condition} price: $${sellPriceDisplay}. Gemini will assess.`;
         }
       }
-      LOG(pricingNotes);
+      console.log(pricingNotes);
       break;
     
     // ========================================================================
@@ -2744,7 +2725,7 @@ async function analyzeWithGemini(keepaData) {
     // CASE 4: FBM CONTROLS BB
     // ========================================================================
     case 'FBM_PRICE_DRIVEN':
-      LOG('→ FBM controls Buy Box');
+      console.log('→ FBM controls Buy Box');
       
       const hasFbaSales180_fbm = estimateFbaSales(180);
       const historicalFba4 = getHistoricalFbaPrice();
@@ -2785,7 +2766,7 @@ async function analyzeWithGemini(keepaData) {
             else if (historicalUsed365 && historicalUsed365 > 0) {
               fbmCompetitivePrice = historicalUsed365;
               pricingNotes = `No current USED offers. Using 365-day historical USED average: $${fbmCompetitivePrice.toFixed(2)}. Old data, market may have changed.`;
-              LOG(`✓ Found 365-day historical USED average: $${historicalUsed365}`);
+              console.log(`✓ Found 365-day historical USED average: $${historicalUsed365}`);
             }
             // Priority 4: Estimate from NEW
             else if (currentNew > 0 || avgNew > 0) {
@@ -2820,7 +2801,7 @@ async function analyzeWithGemini(keepaData) {
         sellPrice = fbmCompetitivePrice;
         pricingNotes += ` | No recent FBA sales. Gemini will assess FBA viability.`;
       }
-      LOG(pricingNotes);
+      console.log(pricingNotes);
       break;
     
     // ========================================================================
@@ -2828,7 +2809,7 @@ async function analyzeWithGemini(keepaData) {
     // ========================================================================
     case 'SUPPRESSED':
     default:
-      LOG('→ Suppressed or unknown Buy Box');
+      console.log('→ Suppressed or unknown Buy Box');
       
       const hasFbaSales180_supp = estimateFbaSales(180);
       
@@ -2869,7 +2850,7 @@ async function analyzeWithGemini(keepaData) {
           pricingNotes += ` Gemini will assess if seasonal or dead.`;
         }
       }
-      LOG(pricingNotes);
+      console.log(pricingNotes);
       break;
   }
   
@@ -2932,10 +2913,10 @@ async function analyzeWithGemini(keepaData) {
     }
   }
   
-  LOG('✓ Final Sell Price:', sellPrice);
-  LOG('✓ Pricing Notes:', pricingNotes);
-  LOG('✓ Buy Cost:', CONFIG.buyCost);
-  LOG('---');
+  console.log('✓ Final Sell Price:', sellPrice);
+  console.log('✓ Pricing Notes:', pricingNotes);
+  console.log('✓ Buy Cost:', CONFIG.buyCost);
+  console.log('---');
   
   // ============================================================================
   // PROFIT CALCULATION
@@ -2980,12 +2961,12 @@ async function analyzeWithGemini(keepaData) {
     
     if (totalSamples > 0) {
       fbaWinRate = (fbaControlCount / totalSamples) * 100;
-      LOG(`✓ FBA Win Rate: ${fbaWinRate.toFixed(1)}% (BB matched FBA ${fbaControlCount}/${totalSamples} times)`);
+      console.log(`✓ FBA Win Rate: ${fbaWinRate.toFixed(1)}% (BB matched FBA ${fbaControlCount}/${totalSamples} times)`);
     }
   } else if (keepaData.fbaCount > 0 && keepaData.totalOffers > 0) {
     // Fallback: Use offer count as rough proxy
     fbaWinRate = (keepaData.fbaCount / keepaData.totalOffers) * 100;
-    LOG(`⚠️ FBA Win Rate (estimated from offer count): ${fbaWinRate.toFixed(1)}%`);
+    console.log(`⚠️ FBA Win Rate (estimated from offer count): ${fbaWinRate.toFixed(1)}%`);
   }
   
   // GAP 1 FIX: Calculate sales velocity
@@ -3040,20 +3021,20 @@ async function analyzeWithGemini(keepaData) {
     timeToSaleExplanation = 'Sales declining - less than half of 360-day sales occurred in last 180 days.';
   }
   
-  LOG('=== TIME TO SALE ===');
-  LOG('Estimate:', timeToSale);
-  LOG('Explanation:', timeToSaleExplanation);
-  LOG('Is Seasonal:', isSeasonal);
-  LOG('FBA Win Rate:', fbaWinRate.toFixed(1) + '%');
+  console.log('=== TIME TO SALE ===');
+  console.log('Estimate:', timeToSale);
+  console.log('Explanation:', timeToSaleExplanation);
+  console.log('Is Seasonal:', isSeasonal);
+  console.log('FBA Win Rate:', fbaWinRate.toFixed(1) + '%');
   
-  LOG('=== PROFIT CALCULATION ===');
-  LOG('Sell price:', sellPrice);
-  LOG('Your cost:', CONFIG.buyCost);
-  LOG('Weight:', keepaData.weight);
-  LOG('Category:', keepaData.category);
-  LOG('Total fees:', totalFees);
-  LOG('Profit (price - cost - fees):', profit);
-  LOG('Formula:', `${sellPrice} - ${CONFIG.buyCost} - ${totalFees} = ${profit}`);
+  console.log('=== PROFIT CALCULATION ===');
+  console.log('Sell price:', sellPrice);
+  console.log('Your cost:', CONFIG.buyCost);
+  console.log('Weight:', keepaData.weight);
+  console.log('Category:', keepaData.category);
+  console.log('Total fees:', totalFees);
+  console.log('Profit (price - cost - fees):', profit);
+  console.log('Formula:', `${sellPrice} - ${CONFIG.buyCost} - ${totalFees} = ${profit}`);
   
   // Fix drops360 data if it's broken/missing
   // drops360 should always be >= drops180 (since it's cumulative)
@@ -3061,12 +3042,12 @@ async function analyzeWithGemini(keepaData) {
   let drops360 = keepaData.drops360;
   if (drops360 === undefined || drops360 === null || drops360 < keepaData.drops180) {
     drops360 = keepaData.drops180; // At minimum, 360-day sales = 180-day sales
-    LOG(`⚠️ Fixed drops360: Keepa returned ${keepaData.drops360}, using drops180 (${keepaData.drops180}) as minimum`);
+    console.log(`⚠️ Fixed drops360: Keepa returned ${keepaData.drops360}, using drops180 (${keepaData.drops180}) as minimum`);
   }
   
   // Build comprehensive Gemini prompt using Matt's detailed sourcing rules
-  LOG('=== BUILDING GEMINI PROMPT ===');
-  LOG('Keepa data being sent to Gemini:', {
+  console.log('=== BUILDING GEMINI PROMPT ===');
+  console.log('Keepa data being sent to Gemini:', {
     title: keepaData.title,
     category: keepaData.category,
     condition: CONFIG.condition,
@@ -3424,24 +3405,24 @@ Keep it CONVERSATIONAL but SPECIFIC. Matt is standing in a library sale making s
 
 Be DECISIVE. No hedging with "it depends" or "maybe." Give a clear answer with CONCRETE REASONS.`;
 
-  LOG('=== FULL GEMINI PROMPT ===');
-  LOG(prompt);
-  LOG('=== END PROMPT ===');
+  console.log('=== FULL GEMINI PROMPT ===');
+  console.log(prompt);
+  console.log('=== END PROMPT ===');
 
   try {
-    LOG('Sending request to Gemini...');
-    LOG('CONFIG.geminiKey length:', CONFIG.geminiKey ? CONFIG.geminiKey.length : 0);
-    LOG('CONFIG.useProxy:', CONFIG.useProxy);
+    console.log('Sending request to Gemini...');
+    console.log('CONFIG.geminiKey length:', CONFIG.geminiKey ? CONFIG.geminiKey.length : 0);
+    console.log('CONFIG.useProxy:', CONFIG.useProxy);
     
     let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${CONFIG.geminiKey}`;
     
-    LOG('Constructed URL (before proxy):', url.substring(0, 100) + '...');
+    console.log('Constructed URL (before proxy):', url.substring(0, 100) + '...');
     
     // Use proxy if enabled
     if (CONFIG.useProxy) {
       url = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-      LOG('Using proxy for Gemini API call');
-      LOG('Final URL (with proxy):', url.substring(0, 150) + '...');
+      console.log('Using proxy for Gemini API call');
+      console.log('Final URL (with proxy):', url.substring(0, 150) + '...');
     }
     
     const response = await fetch(url, {
@@ -3458,7 +3439,7 @@ Be DECISIVE. No hedging with "it depends" or "maybe." Give a clear answer with C
       })
     });
     
-    LOG('Gemini response status:', response.status);
+    console.log('Gemini response status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -3467,7 +3448,7 @@ Be DECISIVE. No hedging with "it depends" or "maybe." Give a clear answer with C
     }
     
     const data = await response.json();
-    LOG('Gemini full response:', data);
+    console.log('Gemini full response:', data);
     
     // Check for API errors
     if (data.error) {
@@ -3481,7 +3462,7 @@ Be DECISIVE. No hedging with "it depends" or "maybe." Give a clear answer with C
     }
     
     const text = data.candidates[0].content.parts[0].text;
-    LOG('Gemini raw text:', text);
+    console.log('Gemini raw text:', text);
     
     // Parse response with more flexible regex
     const verdictMatch = text.match(/VERDICT:\s*(BUY|TAKE THE RISK|REJECT)/i);
@@ -3517,8 +3498,8 @@ Be DECISIVE. No hedging with "it depends" or "maybe." Give a clear answer with C
       }
     }
     
-    LOG('Parsed verdict:', verdict);
-    LOG('Parsed reasoning:', reasoning);
+    console.log('Parsed verdict:', verdict);
+    console.log('Parsed reasoning:', reasoning);
     
     return {
       verdict,
